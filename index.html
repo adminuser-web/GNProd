@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      window.addEventListener('error', function(e) {
+        if (e.message === 'Script error.') {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+      }, true);
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="description" content="Explore Grainood premium English Willow cricket bats, compare series, customize your build, and find the right bat for your game." />
+    <meta name="theme-color" content="#121212" />
+    <meta property="og:title" content="Grainood | Premium English Willow Cricket Bats" />
+    <meta property="og:description" content="Explore Grainood premium English Willow cricket bats, compare series, customize your build, and find the right bat for your game." />
+    <meta property="og:type" content="website" />
+    <title>Grainood | Premium English Willow Cricket Bats</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

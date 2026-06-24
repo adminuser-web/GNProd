@@ -1,0 +1,10 @@
+{
+  "projectId": "grainood-prod",
+  "appId": "1:49062721678:web:4b4e238448ce9c4af271df",
+  "apiKey": "AIzaSyApf5g2dCw0fSIyUOkthLUo9K2_9_nZfWM",
+  "authDomain": "grainood-prod.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "grainood-prod.firebasestorage.app",
+  "messagingSenderId": "49062721678",
+  "measurementId": "G-99CVW3R74S"
+}
