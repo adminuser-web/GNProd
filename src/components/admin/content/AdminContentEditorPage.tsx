@@ -15,12 +15,35 @@ export function AdminContentEditorPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     if (!ctxLoading && contentMap) {
       setEditorData(contentMap[activeArea] || DEFAULT_SITE_CONTENT[activeArea]);
+      setIsDirty(false);
     }
   }, [activeArea, contentMap, ctxLoading]);
+
+  // Warn before a full page unload/refresh if there are unsaved edits.
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  // Guard against silently discarding unsaved edits when switching sections.
+  const handleAreaChange = (area: keyof SiteContentMap) => {
+    if (area === activeArea) return;
+    if (isDirty && !window.confirm('You have unsaved changes in this section. Discard them and switch?')) {
+      return;
+    }
+    setActiveArea(area);
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -29,6 +52,7 @@ export function AdminContentEditorPage() {
     try {
       await contentService.updateArea(activeArea, editorData);
       await refresh();
+      setIsDirty(false);
       setSuccess('Content updated successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -40,6 +64,7 @@ export function AdminContentEditorPage() {
   };
 
   const handleChange = (path: string[], value: any) => {
+    setIsDirty(true);
     setEditorData((prev: any) => {
       const draft = JSON.parse(JSON.stringify(prev));
       let current = draft;
@@ -191,7 +216,7 @@ export function AdminContentEditorPage() {
     );
   };
 
-  const areas: (keyof SiteContentMap)[] = ['brand', 'home', 'philosophy', 'contact', 'footer', 'legal', 'reviews'];
+  const areas: (keyof SiteContentMap)[] = ['brand', 'home', 'philosophy', 'contact', 'footer', 'legal', 'seo', 'reviews'];
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -203,10 +228,18 @@ export function AdminContentEditorPage() {
           </h1>
           <p className="text-muted text-xs tracking-widest uppercase mt-2">Manage website copy and structure</p>
         </div>
-        <GoldButton onClick={handleSave} disabled={saving} className="flex items-center gap-2">
-          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          SAVE CHANGES
-        </GoldButton>
+        <div className="flex items-center gap-4">
+          {isDirty && (
+            <span className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-amber-400">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              Unsaved changes
+            </span>
+          )}
+          <GoldButton onClick={handleSave} disabled={saving || !isDirty} className="flex items-center gap-2">
+            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            SAVE CHANGES
+          </GoldButton>
+        </div>
       </div>
 
       {error && (
@@ -225,11 +258,11 @@ export function AdminContentEditorPage() {
 
       <div className="flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-64 shrink-0">
-          <div className="bg-surface/50 border border-[#c5a059]/20 p-2 flex flex-col gap-1 sticky top-24">
+          <div className="bg-surface/50 border border-[#c5a059]/20 p-2 flex flex-col gap-1 sticky top-4">
             {areas.map(area => (
               <button
                 key={area}
-                onClick={() => setActiveArea(area)}
+                onClick={() => handleAreaChange(area)}
                 className={`text-left px-4 py-3 text-xs font-bold tracking-widest uppercase transition-colors ${
                   activeArea === area ? 'bg-[#c5a059] text-bg' : 'text-content hover:bg-[#c5a059]/10'
                 }`}
