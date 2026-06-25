@@ -4,7 +4,7 @@
  */
 
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { HomePage } from './components/HomePage';
@@ -64,6 +64,14 @@ import { FEATURES } from './config/features';
 
 const SeriesOrProductRouter = lazy(() => import('./components/SeriesOrProductRouter').then(m => ({ default: m.SeriesOrProductRouter })));
 
+// Customer-facing chrome (storefront nav, footer, cart drawer, WhatsApp bubble)
+// must not render on /admin routes — the admin shell has its own header/sidebar,
+// and the storefront nav otherwise overlaps it.
+function HideOnAdmin({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  return pathname.startsWith('/admin') ? null : <>{children}</>;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -87,9 +95,11 @@ export default function App() {
                   <ScrollToTop />
                 <BackgroundGraphics />
                 <div className="relative z-raised flex flex-col min-h-screen bg-transparent">
-                  <Navbar />
-                  <OrderDrawer />
-                  <FloatingWhatsApp />
+                  <HideOnAdmin><Navbar /></HideOnAdmin>
+                  <HideOnAdmin>
+                    <OrderDrawer />
+                    <FloatingWhatsApp />
+                  </HideOnAdmin>
                   <main className="flex-grow">
                     <PageTransition>
                       <Suspense fallback={
@@ -149,7 +159,7 @@ export default function App() {
                     </Suspense>
                   </PageTransition>
                 </main>
-                <Footer />
+                <HideOnAdmin><Footer /></HideOnAdmin>
               </div>
             </Router>
             </ProductsProvider>
