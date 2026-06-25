@@ -2,7 +2,7 @@ export const getSubSeries = (baseSlug: string) => {
   switch(baseSlug) {
     case 'debutant':
       return [{
-        id: 'debutant-standard', slug: 'debutant-standard', name: 'Debutant Standard Editon', sku: 'GRN-DEB-01-STD',
+        id: 'debutant-standard', slug: 'debutant-standard', name: 'Debutant Standard Edition', sku: 'GRN-DEB-01-STD',
         active: true, sortOrder: 1, grade: 'Grade 4 English Willow', gradeLabel: 'Grade 4',
         basePrice: 14999, tagline: 'Where the Journey Begins',
         shortDescription: 'Entry-level English Willow, best for beginners, casual match players, and early club players.',

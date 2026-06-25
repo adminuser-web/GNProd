@@ -484,7 +484,7 @@ export function OrderDetailPage() {
               <div className="space-y-8">
                 {order.items?.map((item: any, i: number) => {
                   const itemTotal = item.lineTotal ?? item.totalPrice ?? (item.unitPrice ?? item.price) * item.quantity;
-                  const itemImage = item.product?.media?.find((m: any) => m.isPrimary)?.url || item.product?.media?.[0]?.url || item.product?.imageUrl || 'https://images.unsplash.com/photo-1540748117769-ce47eaec5fc1?auto=format&fit=crop&q=80&w=400';
+                  const itemImage = item.product?.media?.find((m: any) => m.isPrimary)?.url || item.product?.media?.[0]?.url || item.product?.imageUrl || '/product-bat.webp';
                   
                   return (
                     <div key={i} className="flex flex-col sm:flex-row justify-between border-b border-[#c5a059]/5 pb-6 last:border-0 last:pb-0 gap-6">

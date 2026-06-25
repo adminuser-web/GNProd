@@ -18,8 +18,6 @@ import { buildService } from '../features/builds/services/buildService';
 import { SPEC_TO_CUSTOMIZATION_MAP, ALWAYS_FIXED_SPECS } from '../config/attributeMap';
 import { EnquiryDrawer } from './EnquiryDrawer';
 
-import { LazyImage } from './LazyImage';
-
 export function ProductPage() {
   const { seriesSlug, subSeriesSlug, slug } = useParams<{ seriesSlug?: string, subSeriesSlug?: string, slug?: string }>();
   const { user } = useAuth();

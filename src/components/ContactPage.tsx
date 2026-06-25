@@ -305,10 +305,10 @@ export function ContactPage() {
                 <div>
                   <h3 className="text-[#c5a059] font-bold text-xl uppercase tracking-widest mb-4">Store</h3>
                   <p className="text-content/80 mb-6 max-w-sm text-sm leading-loose whitespace-pre-line">
-                    {brandContent?.store?.address || 'No. 3/4, C P M St, 1st Lane, Pudupet, Anna Road, Chennai – 600002, Tamil Nadu'}
+                    {brandContent?.store?.address || '12/42, F Type, 4th Main Road, Sidco Nagar, Villivakkam, Chennai-600049, Tamil Nadu'}
                   </p>
                   <p className="text-content/80 text-sm leading-loose mb-8 font-mono bg-bg py-2 px-4 inline-block border border-line whitespace-pre-line">
-                    <strong className="text-[#c5a059] uppercase tracking-widest text-[10px]">Hours:</strong> {brandContent?.store?.hours || 'All days 10am–10pm'}
+                    <strong className="text-[#c5a059] uppercase tracking-widest text-[10px]">Hours:</strong> {brandContent?.store?.hours || 'Mon-Sat 10am-8pm'}
                   </p>
                   <br />
                   <GoldButton as="a" href={brandContent?.store?.mapLink && brandContent.store.mapLink !== '#' ? brandContent.store.mapLink : "https://maps.google.com/?q=13.0847951,80.2443419"} target="_blank" variant="outline">
@@ -318,7 +318,7 @@ export function ContactPage() {
                 <div className="aspect-video w-full bg-bg border border-[#c5a059]/20 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-[#c5a059]/10 pointer-events-none z-raised group-hover:bg-transparent transition-colors duration-500"></div>
                     <iframe 
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(brandContent?.store?.address || 'No. 3/4, C P M St, 1st Lane, Pudupet, Anna Road, Chennai – 600002, Tamil Nadu')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(brandContent?.store?.address || '12/42, F Type, 4th Main Road, Sidco Nagar, Villivakkam, Chennai-600049, Tamil Nadu')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                       width="100%" 
                       height="100%" 
                       style={{border:0}} 
