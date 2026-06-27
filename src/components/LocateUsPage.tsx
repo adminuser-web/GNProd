@@ -12,8 +12,8 @@ export function LocateUsPage() {
   }, [brandContent]);
 
   const storeLocation = {
-    address: brandContent?.store?.address || 'No. 3/4, C P M St, 1st Lane, Pudupet, Anna Road, Chennai – 600002, Tamil Nadu',
-    hours: brandContent?.store?.hours || 'Open all days 10:00 AM – 10:00 PM',
+    address: brandContent?.store?.address || '12/42, F Type, 4th Main Road, Sidco Nagar, Villivakkam, Chennai-600049, Tamil Nadu',
+    hours: brandContent?.store?.hours || 'Mon-Sat 10am-8pm',
     phone: brandContent?.contact?.phone || '+91 89395 68005',
     email: brandContent?.contact?.email || 'CONNECT@GRAINOOD.COM',
     mapsLink: brandContent?.store?.mapLink && brandContent.store.mapLink !== '#' ? brandContent.store.mapLink : 'https://maps.app.goo.gl/K2dtLjVPy32m8vEF8'

@@ -110,7 +110,7 @@ export function PhilosophyPage() {
         <div className="absolute inset-0 opacity-20 pointer-events-none z-base">
           <LazyImage 
             src="/handmade-mastery.webp" 
-            fallbackSrc="https://images.unsplash.com/photo-1531061919934-297d022b7dcc?auto=format&fit=crop&q=80&w=1600&h=900"
+            fallbackSrc="/hero-bat.webp"
             alt="Grainood Workshop" 
             containerClassName="w-full h-full bg-bg"
             className="w-full h-full object-cover grayscale"

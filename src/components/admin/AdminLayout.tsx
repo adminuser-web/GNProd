@@ -3,7 +3,7 @@ import { Navigate, Outlet, Link, useLocation, useNavigate } from 'react-router-d
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LayoutDashboard, ShoppingBag, Box, LifeBuoy, Menu, X, DollarSign, Factory, Archive, Wrench, Shield, BarChart2, Users, Search, FileText } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Box, LifeBuoy, Menu, X, DollarSign, Factory, Archive, Wrench, Shield, BarChart2, Users, Search, FileText, Store, LogOut } from 'lucide-react';
 import { NotificationBell } from '../NotificationBell';
 import { clsx } from 'clsx';
 import { useAllOrders } from '../../features/orders/hooks/useOrders';
@@ -105,9 +105,17 @@ function AdminOrderSearch() {
 }
 
 export function AdminLayout() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } finally {
+      navigate('/');
+    }
+  };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openTicketsCount, setOpenTicketsCount] = useState(0);
   const [newEnquiriesCount, setNewEnquiriesCount] = useState(0);
@@ -157,9 +165,9 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-content pt-20 md:pt-24 flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen bg-bg text-content flex flex-col md:flex-row font-sans">
       {/* Mobile Top Bar */}
-      <div className="md:hidden border-b border-[#c5a059]/20 bg-surface/95 sticky top-16 z-sticky-section">
+      <div className="md:hidden border-b border-[#c5a059]/20 bg-surface/95 sticky top-0 z-sticky-section">
         <div className="flex items-center justify-between p-4">
           <span className="text-[10px] tracking-[0.4em] uppercase text-premium-gold-text font-bold">Admin Panel</span>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-content p-2">
@@ -207,7 +215,7 @@ export function AdminLayout() {
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex flex-col w-64 border-r border-[#c5a059]/20 bg-surface/30 min-h-[calc(100vh-6rem)] sticky top-24 shrink-0">
+      <div className="hidden md:flex flex-col w-64 border-r border-[#c5a059]/20 bg-surface/30 min-h-screen sticky top-0 shrink-0">
         <div className="p-8">
           <span className="text-[10px] tracking-[0.4em] uppercase text-premium-gold-text font-bold block mb-8">Admin Panel</span>
           <div className="flex flex-col gap-2">
@@ -254,7 +262,25 @@ export function AdminLayout() {
         {/* Global Admin Search & Notifications */}
         <div className="mb-6 relative z-header flex items-center justify-between gap-4">
            <AdminOrderSearch />
-           <NotificationBell roleTarget="admin" />
+           <div className="flex items-center gap-2 shrink-0">
+             <Link
+               to="/"
+               title="View store"
+               className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold tracking-widest uppercase text-muted border border-[#c5a059]/20 rounded-sm hover:text-[#c5a059] hover:border-[#c5a059]/50 transition-colors"
+             >
+               <Store className="w-4 h-4" />
+               <span className="hidden sm:inline">View Store</span>
+             </Link>
+             <NotificationBell roleTarget="admin" />
+             <button
+               onClick={handleSignOut}
+               title="Sign out"
+               className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold tracking-widest uppercase text-muted border border-[#c5a059]/20 rounded-sm hover:text-red-400 hover:border-red-400/50 transition-colors"
+             >
+               <LogOut className="w-4 h-4" />
+               <span className="hidden sm:inline">Sign Out</span>
+             </button>
+           </div>
         </div>
 
         <Outlet />

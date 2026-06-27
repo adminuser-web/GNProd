@@ -102,7 +102,7 @@ export function Footer() {
         
         {/* Copyright */}
         <div className="mt-12 pt-6 border-t border-[#c5a059]/10 flex flex-col md:flex-row justify-between items-center text-[9px] tracking-[0.3em] uppercase text-content/60 gap-4">
-          <p className="order-last my-2 md:my-0">{footerContent?.bottomCopy}</p>
+          <p className="order-last my-2 md:my-0">{(footerContent?.bottomCopy || '© GRAINOOD CRICKET. ALL RIGHTS RESERVED.').replace(/(©\s*)\d{4}/, `$1${new Date().getFullYear()}`)}</p>
           <div className="space-x-4">
             <span>HANDCRAFTED IN INDIA</span>
           </div>

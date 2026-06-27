@@ -128,7 +128,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentMap = {
     hero: {
       headline: "THE EVOLUTION OF PERFORMANCE.",
       subheadline: "Masterfully crafted willow. Engineered for absolute dominance at the crease.",
-      bgImageUrl: "https://images.unsplash.com/photo-1531061919934-297d022b7dcc?auto=format&fit=crop&q=80&w=1600&h=900",
+      bgImageUrl: "/hero-bat.webp",
       videoUrl: "",
       primaryCtaLabel: "EXPLORE COLLECTION",
       primaryCtaLink: "/collection",
@@ -189,7 +189,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentMap = {
         ]
       }
     ],
-    bottomCopy: "© 2024 GRAINOOD CRICKET. ALL RIGHTS RESERVED."
+    bottomCopy: "© 2026 GRAINOOD CRICKET. ALL RIGHTS RESERVED."
   },
   legal: {
     privacy: { title: "Privacy Policy", body: "Privacy policy content." },

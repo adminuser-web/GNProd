@@ -64,7 +64,7 @@ export function HomePage() {
           ) : null}
           <ScrimImage 
             src={content?.hero?.bgImageUrl || (content?.hero as any)?.image} 
-            placeholderSrc="https://images.unsplash.com/photo-1540205082463-54cd8c292eb5?auto=format&fit=crop&q=80&w=1600&h=900"
+            placeholderSrc="/hero-bat.webp"
             alt="Hero Background"
             className={`absolute inset-0 w-full h-full ${content?.hero?.videoUrl ? 'md:hidden' : ''}`}
             scrim="linear-gradient(to top, rgba(8,8,10,0.9) 0%, rgba(8,8,10,0.55) 40%, rgba(8,8,10,0.2) 75%, rgba(8,8,10,0.1) 100%)"
