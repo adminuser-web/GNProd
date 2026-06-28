@@ -57,7 +57,17 @@ export function AdminContentEditorPage() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to update content');
+      const code = String(err?.code || '');
+      const msg = String(err?.message || '');
+      if (code.includes('permission-denied') || /insufficient permissions/i.test(msg)) {
+        setError('Save was blocked by the database security rules. This admin account is missing the required permissions, or the Firestore rules for this project have not been published yet. This is a backend setup step — it is not a problem with your edits.');
+      } else if (code.includes('unauthenticated')) {
+        setError('You appear to be signed out. Please sign in again and retry.');
+      } else if (code.includes('unavailable') || /app check|appcheck/i.test(msg)) {
+        setError('The request could not reach the database (App Check or network). Confirm App Check is configured for this domain, then retry.');
+      } else {
+        setError(msg || 'Failed to update content');
+      }
     } finally {
       setSaving(false);
     }
