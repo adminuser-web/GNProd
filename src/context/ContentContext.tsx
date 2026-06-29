@@ -18,20 +18,22 @@ function isObject(item: any) {
   return (item && typeof item === 'object' && !Array.isArray(item));
 }
 
-function deepMerge(target: any, source: any) {
-  let output = Object.assign({}, target);
-  if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach(key => {
-      if (isObject(source[key])) {
-        if (!(key in target))
-          Object.assign(output, { [key]: source[key] });
-        else
-          output[key] = deepMerge(target[key], source[key]);
-      } else {
-        Object.assign(output, { [key]: source[key] });
-      }
-    });
+function deepMerge(target: any, source: any): any {
+  // If either side isn't a plain object (leaf value, or a type mismatch such as
+  // a string default vs. a themed-image object), the saved/source value wins.
+  // (The old version did Object.assign({}, "str") which shredded strings into
+  // character-indexed objects like {0:'/',1:'h',...}.)
+  if (!isObject(target) || !isObject(source)) {
+    return source;
   }
+  const output: any = { ...target };
+  Object.keys(source).forEach(key => {
+    if (isObject(target[key]) && isObject(source[key])) {
+      output[key] = deepMerge(target[key], source[key]);
+    } else {
+      output[key] = source[key];
+    }
+  });
   return output;
 }
 

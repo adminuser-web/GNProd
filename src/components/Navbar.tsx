@@ -7,8 +7,8 @@ import { useOrder } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useProducts } from '../context/ProductsContext';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { orderService } from '../features/orders/services/orderService';
+import { ticketService } from '../features/support/services/ticketService';
 import { NotificationBell } from './NotificationBell';
 
 export function Navbar() {
@@ -35,39 +35,19 @@ export function Navbar() {
     if (!user || isAdmin) return;
 
     const unsubs: (() => void)[] = [];
+    const toMillis = (v: any) =>
+      v ? (typeof v?.toMillis === 'function' ? v.toMillis() : new Date(v).getTime()) : 0;
 
-    // Check orders
-    const qOrders = query(collection(db, 'orders'), where('userId', '==', user.uid));
-    unsubs.push(onSnapshot(qOrders, (snap) => {
-      let hasUnread = false;
+    // Orders — unread if any updated since last viewed
+    unsubs.push(orderService.subscribeToUserOrders(user.uid, (orders) => {
       const lastViewed = parseInt(localStorage.getItem(`lastViewedOrders_${user.uid}`) || '0', 10);
-      snap.forEach(doc => {
-        const data = doc.data();
-        const updatedTime = data.updatedAt?.toMillis ? data.updatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : 0);
-        if (updatedTime > lastViewed) {
-          hasUnread = true;
-        }
-      });
-      setUnreadOrders(hasUnread);
-    }, (error) => {
-      console.error("Navbar qOrders onSnapshot error:", error);
+      setUnreadOrders(orders.some((o: any) => toMillis(o.updatedAt || o.createdAt) > lastViewed));
     }));
 
-    // Check tickets
-    const qTickets = query(collection(db, 'tickets'), where('userId', '==', user.uid));
-    unsubs.push(onSnapshot(qTickets, (snap) => {
-      let hasUnread = false;
+    // Tickets — unread if any updated since last viewed
+    unsubs.push(ticketService.subscribeToUserTickets(user.uid, (tickets) => {
       const lastViewed = parseInt(localStorage.getItem(`lastViewedTickets_${user.uid}`) || '0', 10);
-      snap.forEach(doc => {
-        const data = doc.data();
-        const updatedTime = data.updatedAt?.toMillis ? data.updatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : 0);
-        if (updatedTime > lastViewed) {
-          hasUnread = true;
-        }
-      });
-      setUnreadRequests(hasUnread);
-    }, (error) => {
-      console.error("Navbar qTickets onSnapshot error:", error);
+      setUnreadRequests(tickets.some((t: any) => toMillis(t.updatedAt || t.createdAt) > lastViewed));
     }));
 
     return () => {

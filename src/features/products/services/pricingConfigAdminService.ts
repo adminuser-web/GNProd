@@ -1,59 +1,54 @@
-import { collection, doc, getDocs, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
+import { supabase } from '../../../lib/supabase';
 import { PricingRule, DiscountCode } from '../../../lib/pricing';
 
 export const pricingConfigAdminService = {
   async getPricingRules(): Promise<PricingRule[]> {
-    try {
-      const q = collection(db, 'pricingRules');
-      const snap = await getDocs(q);
-      if (snap.empty) return [];
-      return snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as unknown as PricingRule));
-    } catch {
-      return [];
-    }
+    const { data, error } = await supabase.from('pricing_rules').select('*');
+    if (error) { console.error(error); return []; }
+    return (data ?? []).map((r: any) => ({ ...(r.data as any), id: r.id } as unknown as PricingRule));
   },
 
   async getDiscountCodes(): Promise<DiscountCode[]> {
-    try {
-      const q = collection(db, 'discountCodes');
-      const snap = await getDocs(q);
-      if (snap.empty) return [];
-      return snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as unknown as DiscountCode));
-    } catch {
-      return [];
-    }
+    const { data, error } = await supabase.from('discount_codes').select('*');
+    if (error) { console.error(error); return []; }
+    return (data ?? []).map((r: any) => ({ ...(r.data as any), id: r.id } as unknown as DiscountCode));
   },
 
   async createPricingRule(rule: Partial<PricingRule>) {
-    const data = { ...rule };
+    const data: any = { ...rule };
     delete data.id;
-    await addDoc(collection(db, 'pricingRules'), data);
+    const { error } = await supabase.from('pricing_rules').insert({ data });
+    if (error) throw error;
   },
 
   async updatePricingRule(id: string, updates: Partial<PricingRule>) {
-    const data = { ...updates };
+    const data: any = { ...updates };
     delete data.id;
-    await updateDoc(doc(db, 'pricingRules', id), data);
+    const { error } = await supabase.from('pricing_rules').update({ data }).eq('id', id);
+    if (error) throw error;
   },
 
   async deletePricingRule(id: string) {
-    await deleteDoc(doc(db, 'pricingRules', id));
+    const { error } = await supabase.from('pricing_rules').delete().eq('id', id);
+    if (error) throw error;
   },
 
   async createDiscountCode(code: Partial<DiscountCode>) {
-    const data = { ...code } as any;
+    const data: any = { ...code };
     delete data.id;
-    await addDoc(collection(db, 'discountCodes'), data);
+    const { error } = await supabase.from('discount_codes').insert({ data });
+    if (error) throw error;
   },
 
   async updateDiscountCode(id: string, updates: Partial<DiscountCode>) {
-    const data = { ...updates } as any;
+    const data: any = { ...updates };
     delete data.id;
-    await updateDoc(doc(db, 'discountCodes', id), data);
+    const { error } = await supabase.from('discount_codes').update({ data }).eq('id', id);
+    if (error) throw error;
   },
 
   async deleteDiscountCode(id: string) {
-    await deleteDoc(doc(db, 'discountCodes', id));
-  }
+    const { error } = await supabase.from('discount_codes').delete().eq('id', id);
+    if (error) throw error;
+  },
 };

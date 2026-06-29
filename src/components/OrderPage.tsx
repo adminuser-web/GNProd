@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useOrder } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import { BRAND } from '../types';
-import { serverTimestamp } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { GoldButton } from './GoldButton';
 import { LazyImage } from './LazyImage';
@@ -230,8 +229,8 @@ export function OrderPage() {
           address: formData.address,
           notes: formData.notes
         },
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       await orderService.createOrder(orderId, orderData);

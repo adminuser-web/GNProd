@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoldButton } from './GoldButton';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { clsx } from 'clsx';
 import { RevealSection } from './Reveal';
 import { toast } from 'sonner';
@@ -32,7 +31,9 @@ function FloatingInput({ label, name, type = 'text', value, onChange, error, req
           "peer-placeholder-shown:text-base peer-placeholder-shown:top-8",
           "peer-focus:top-2 peer-focus:text-xs",
           error ? "text-red-500 peer-focus:text-red-500" : "text-muted peer-focus:text-[#c5a059]",
-          (!value && !error) ? "top-8 text-base" : "top-2 text-xs"
+          // Date inputs always show a native placeholder (dd/mm/yyyy), so keep the
+          // label raised to avoid overlapping it.
+          (type !== 'date' && !value && !error) ? "top-8 text-base" : "top-2 text-xs"
         )}
       >
         {label} {required && '*'}
@@ -152,25 +153,28 @@ export function ProfileSetupPage({ isSetup = false }: { isSetup?: boolean }) {
       const countryName = COUNTRIES.find(c => c.code === formData.country)?.name || formData.country;
       const stateName = STATES_BY_COUNTRY[formData.country]?.find(s => s.code === formData.state)?.name || formData.state;
 
-      const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, {
-        fullName: formData.fullName,
-        phone: formData.phone,
-        dob: formData.dob || null,
-        address: {
-          line1: formData.line1,
-          line2: formData.line2 || '',
-          city: formData.city,
-          stateCode: formData.state,
-          state: stateName,
-          pincode: formData.pincode,
-          countryCode: formData.country,
-          country: countryName
-        },
-        marketingConsent: formData.marketingConsent,
-        profileCompleted: isComplete,
-        updatedAt: serverTimestamp()
-      });
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: formData.fullName,
+          phone: formData.phone,
+          dob: formData.dob || null,
+          address: {
+            line1: formData.line1,
+            line2: formData.line2 || '',
+            city: formData.city,
+            stateCode: formData.state,
+            state: stateName,
+            pincode: formData.pincode,
+            countryCode: formData.country,
+            country: countryName
+          },
+          marketing_consent: formData.marketingConsent,
+          profile_completed: isComplete,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.uid);
+      if (updateError) throw updateError;
 
       if (isSetup) {
         toast.success("Profile setup complete!");

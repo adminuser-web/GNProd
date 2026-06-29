@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, Check, AlertTriangle, Info } from 'lucide-react';
 import { UPLOAD_SPECS, UploadSpecKey } from '../../config/uploadSpecs';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../lib/firebase';
+import { uploadToStorage } from '../../lib/storage';
 import { clsx } from 'clsx';
 import { ThemedImage } from '../../types';
 
@@ -35,19 +34,19 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
   const [canUpload, setCanUpload] = useState(false);
   const [needsCanvasResize, setNeedsCanvasResize] = useState(false);
 
-  const validateFile = (file: File): Promise<boolean> => {
+  const validateFile = (file: File): Promise<{ ok: boolean; needsResize: boolean }> => {
     return new Promise((resolve) => {
       setValidationMsg(null);
       setNeedsCanvasResize(false);
-      
+
       if (file.size > spec.maxBytes) {
         setValidationMsg({ type: 'error', text: `File too large. Max ${formatSize(spec.maxBytes)}.` });
-        resolve(false);
+        resolve({ ok: false, needsResize: false });
         return;
       }
 
       if (file.type.startsWith('video/')) {
-        resolve(true);
+        resolve({ ok: true, needsResize: false });
         return;
       }
 
@@ -57,7 +56,7 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
       }
 
       if (!file.type.startsWith('image/')) {
-        resolve(true);
+        resolve({ ok: true, needsResize: false });
         return;
       }
 
@@ -65,24 +64,26 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
       img.onload = () => {
         const width = img.naturalWidth;
         const height = img.naturalHeight;
-        
+
         const aspect = width / height;
         const recommendedAspect = spec.recommendedWidth / spec.recommendedHeight;
         const aspectDiff = Math.abs(aspect - recommendedAspect);
-        
+        let needsResize = false;
+
         if (width > spec.recommendedWidth * 1.5 || height > spec.recommendedHeight * 1.5) {
            setValidationMsg({ type: 'warn', text: `Large dimensions (${width}x${height}). Consider scaling it down.` });
            setNeedsCanvasResize(true);
+           needsResize = true;
         } else if (aspectDiff > 0.2 && spec.aspectLabel !== 'Any') {
            setValidationMsg({ type: 'warn', text: `Aspect ratio offset. Recommended: ${spec.aspectLabel}.` });
         } else if (!isPngRequired) {
            setValidationMsg({ type: 'ok', text: `Looks good (${width}x${height}, ${formatSize(file.size)})` });
         }
-        resolve(true);
+        resolve({ ok: true, needsResize });
       };
       img.onerror = () => {
         setValidationMsg({ type: 'error', text: 'Invalid image file.' });
-        resolve(false);
+        resolve({ ok: false, needsResize: false });
       }
       img.src = URL.createObjectURL(file);
     });
@@ -91,12 +92,17 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     setPendingFile(file);
     setPendingPreviewUrl(URL.createObjectURL(file));
-    
-    const canProceed = await validateFile(file);
-    setCanUpload(canProceed);
+
+    const { ok, needsResize } = await validateFile(file);
+    setCanUpload(ok);
+    // Auto-upload valid images immediately so the URL is set without a second
+    // click. Oversized images still wait so the user can choose to compress.
+    if (ok && !needsResize) {
+      overrideAndUpload(file);
+    }
   };
 
   const resizeAndUpload = () => {
@@ -126,35 +132,23 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
     img.src = URL.createObjectURL(pendingFile);
   };
 
-  const overrideAndUpload = (file: File) => {
+  const overrideAndUpload = async (file: File) => {
     setIsUploading(true);
-    setProgress(0);
-
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-    const fullPath = `${storagePath}/${Date.now()}-${safeName}`;
-    const storageRef = ref(storage, fullPath);
-    
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setProgress(p);
-      },
-      (error) => {
-        console.error("Upload failed", error);
-        setValidationMsg({ type: 'error', text: error.message });
-        setIsUploading(false);
-      },
-      async () => {
-        const url = await getDownloadURL(uploadTask.snapshot.ref);
-        onChange(url, file);
-        setIsUploading(false);
-        setPendingFile(null);
-        setPendingPreviewUrl(null);
-      }
-    );
+    setProgress(30);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+      const fullPath = `${storagePath}/${Date.now()}-${safeName}`;
+      const url = await uploadToStorage(fullPath, file);
+      setProgress(100);
+      onChange(url, file);
+      setIsUploading(false);
+      setPendingFile(null);
+      setPendingPreviewUrl(null);
+    } catch (error: any) {
+      console.error('Upload failed', error);
+      setValidationMsg({ type: 'error', text: error.message || 'Upload failed' });
+      setIsUploading(false);
+    }
   };
 
   const isVideoField = specKey === 'heroVideo';
@@ -315,35 +309,21 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ specKey, value, onChange, storagePath, className, supportThemes = true }: ImageUploadProps) {
-  // Coerce string to { light: string, dark: string } internally for editor
   const lightVal = typeof value === 'string' ? value : (value?.light || '');
   const darkVal = typeof value === 'string' ? '' : (value?.dark || '');
 
-  const handleChange = (themeMode: 'light' | 'dark', url: string, file?: File) => {
-    // If we only support strings or it's turned off
-    if (!supportThemes) {
-      onChange(url, file);
-      return;
-    }
+  // Default to one asset for both themes (a plain string serves both); users can
+  // opt into separate light/dark uploads.
+  const [sameForBoth, setSameForBoth] = useState<boolean>(
+    typeof value === 'string' || !darkVal || darkVal === lightVal
+  );
 
-    const newVal = {
-      light: themeMode === 'light' ? url : lightVal,
-      dark: themeMode === 'dark' ? url : darkVal
-    };
-    
-    // If both empty, return empty string
-    if (!newVal.light && !newVal.dark) {
-      onChange('', file);
-      return;
-    }
-    onChange(newVal, file);
-  };
-
+  // Non-themed fields (e.g. video) are always a single asset / string.
   if (!supportThemes) {
     return (
-       <SingleImageUpload 
+       <SingleImageUpload
          specKey={specKey}
-         value={typeof value === 'string' ? value : value?.light}
+         value={lightVal}
          onChange={(url, file) => onChange(url, file)}
          storagePath={storagePath}
          className={className}
@@ -351,24 +331,64 @@ export function ImageUpload({ specKey, value, onChange, storagePath, className, 
     );
   }
 
+  const handleThemed = (themeMode: 'light' | 'dark', url: string, file?: File) => {
+    const newVal = {
+      light: themeMode === 'light' ? url : lightVal,
+      dark: themeMode === 'dark' ? url : darkVal,
+    };
+    if (!newVal.light && !newVal.dark) {
+      onChange('', file);
+      return;
+    }
+    onChange(newVal, file);
+  };
+
+  const toggleSame = (checked: boolean) => {
+    setSameForBoth(checked);
+    const current = lightVal || darkVal || '';
+    // checked -> single string (serves both); unchecked -> themed object seeded from current.
+    onChange(checked ? current : (current ? { light: current, dark: current } : ''));
+  };
+
   return (
     <div className={clsx("flex flex-col gap-3", className)}>
-      <SingleImageUpload 
-        label="Light Theme Image"
-        specKey={specKey}
-        value={lightVal}
-        onChange={(url, file) => handleChange('light', url, file)}
-        storagePath={storagePath}
-        fallbackNotice={darkVal && !lightVal ? "Using Dark for Light" : undefined}
-      />
-      <SingleImageUpload 
-        label="Dark Theme Image"
-        specKey={specKey}
-        value={darkVal}
-        onChange={(url, file) => handleChange('dark', url, file)}
-        storagePath={storagePath}
-        fallbackNotice={lightVal && !darkVal ? "Using Light for Dark" : undefined}
-      />
+      <label className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-content/70 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={sameForBoth}
+          onChange={(e) => toggleSame(e.target.checked)}
+          className="accent-[#c5a059] w-3.5 h-3.5"
+        />
+        Use the same asset for light &amp; dark
+      </label>
+
+      {sameForBoth ? (
+        <SingleImageUpload
+          specKey={specKey}
+          value={lightVal || darkVal}
+          onChange={(url, file) => onChange(url, file)}
+          storagePath={storagePath}
+        />
+      ) : (
+        <>
+          <SingleImageUpload
+            label="Light Theme Image"
+            specKey={specKey}
+            value={lightVal}
+            onChange={(url, file) => handleThemed('light', url, file)}
+            storagePath={storagePath}
+            fallbackNotice={darkVal && !lightVal ? "Using Dark for Light" : undefined}
+          />
+          <SingleImageUpload
+            label="Dark Theme Image"
+            specKey={specKey}
+            value={darkVal}
+            onChange={(url, file) => handleThemed('dark', url, file)}
+            storagePath={storagePath}
+            fallbackNotice={lightVal && !darkVal ? "Using Light for Dark" : undefined}
+          />
+        </>
+      )}
     </div>
   );
 }

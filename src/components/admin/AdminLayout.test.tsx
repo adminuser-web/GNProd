@@ -4,20 +4,6 @@ import { AdminLayout } from './AdminLayout';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import * as AuthContext from '../../context/AuthContext';
 
-// We just need a dummy implementation of layout to test if the fallback is triggered
-vi.mock('../../lib/firebase', () => ({
-  db: {}
-}));
-
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  query: vi.fn(),
-  where: vi.fn(),
-  orderBy: vi.fn(),
-  limit: vi.fn(),
-  onSnapshot: vi.fn(() => vi.fn())
-}));
-
 describe('AdminLayout gating', () => {
   it('redirects to login when user is not authenticated', () => {
     vi.spyOn(AuthContext, 'useAuth').mockReturnValue({

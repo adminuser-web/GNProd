@@ -1,27 +1,16 @@
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
+import { supabase } from '../../../lib/supabase';
 import { PricingRule, DiscountCode } from '../../../lib/pricing';
 
 export const pricingConfigService = {
   async getPricingRules(): Promise<PricingRule[]> {
-    try {
-      const q = collection(db, 'pricingRules');
-      const snap = await getDocs(q);
-      if (snap.empty) return [];
-      return snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as unknown as PricingRule));
-    } catch {
-      return [];
-    }
+    const { data, error } = await supabase.from('pricing_rules').select('*');
+    if (error) { console.error('getPricingRules', error); return []; }
+    return (data ?? []).map((r: any) => ({ ...(r.data as any), id: r.id } as unknown as PricingRule));
   },
 
   async getDiscountCodes(): Promise<DiscountCode[]> {
-    try {
-      const q = collection(db, 'discountCodes');
-      const snap = await getDocs(q);
-      if (snap.empty) return [];
-      return snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as unknown as DiscountCode));
-    } catch {
-      return [];
-    }
-  }
+    const { data, error } = await supabase.from('discount_codes').select('*');
+    if (error) { console.error('getDiscountCodes', error); return []; }
+    return (data ?? []).map((r: any) => ({ ...(r.data as any), id: r.id } as unknown as DiscountCode));
+  },
 };

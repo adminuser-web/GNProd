@@ -220,7 +220,7 @@ export function HomePage() {
                   <div className="text-center relative z-sticky-section">
                     <p className="text-[#c5a059] text-[10px] tracking-widest mb-2 font-semibold uppercase">{product.tier}</p>
                     <h3 className="text-lg md:text-xl font-medium text-content tracking-tight mb-2 capitalize whitespace-nowrap">{product.name}</h3>
-                    <p className="text-muted text-xs tracking-wide">From ₹{product.price.toLocaleString('en-IN')}</p>
+                    <p className="text-muted text-xs tracking-wide">From ₹{(product.price ?? 0).toLocaleString('en-IN')}</p>
                   </div>
                 </Link>
               </Reveal>

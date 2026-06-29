@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { collection, query, onSnapshot, limit } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { supabase } from "../lib/supabase";
 import { RevealSection } from "./Reveal";
 import { clsx } from "clsx";
 import {
@@ -30,18 +29,14 @@ function useAllSavedBuilds() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "savedBuilds"), limit(500));
-    const unsubscribe = onSnapshot(
-      q,
-      (snap) => {
-        setBuilds(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    supabase
+      .from("builds")
+      .select("*")
+      .limit(500)
+      .then(({ data }) => {
+        setBuilds((data ?? []).map((d: any) => ({ id: d.id, ...(d.snapshot as any) })));
         setLoading(false);
-      },
-      () => {
-        setLoading(false);
-      },
-    );
-    return () => unsubscribe();
+      });
   }, []);
 
   return { builds, loading };

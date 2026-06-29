@@ -485,7 +485,7 @@ export function ProductPage() {
                 <div>
                   <div className="flex items-baseline gap-3">
                     <p className="text-3xl sm:text-4xl text-[#c5a059] font-bold tracking-wider">
-                      From ₹{product.price.toLocaleString('en-IN')}
+                      From ₹{(product.price ?? 0).toLocaleString('en-IN')}
                     </p>
                     {product.price > product.basePrice && (
                       <p className="text-sm text-muted/50 line-through tracking-wider">
@@ -759,7 +759,7 @@ export function ProductPage() {
                   
                   <div className="flex justify-between items-center text-[11px] tracking-wider uppercase text-content/80">
                     <span>{product.name} Base</span>
-                    <span>₹{product.price.toLocaleString('en-IN')}</span>
+                    <span>₹{(product.price ?? 0).toLocaleString('en-IN')}</span>
                   </div>
                   
                   {selectedPairs.map(({group, opt, textValue}) => {
@@ -1080,7 +1080,7 @@ export function ProductPage() {
                     </div>
                     <div className="p-5 text-center relative z-raised bg-transparent">
                       <h4 className="text-content font-bold tracking-[0.2em] uppercase text-sm mb-2">{p.name}</h4>
-                      <p className="text-muted text-[10px] tracking-widest uppercase">₹{p.price.toLocaleString('en-IN')}</p>
+                      <p className="text-muted text-[10px] tracking-widest uppercase">₹{(p.price ?? 0).toLocaleString('en-IN')}</p>
                     </div>
                   </Link>
                 </RevealSection>
@@ -1124,7 +1124,7 @@ export function ProductPage() {
                   <div className="py-4 space-y-3">
                     <div className="flex justify-between items-center text-[10px] tracking-wider uppercase text-content/80">
                       <span>{product.name} Base</span>
-                      <span>₹{product.price.toLocaleString('en-IN')}</span>
+                      <span>₹{(product.price ?? 0).toLocaleString('en-IN')}</span>
                     </div>
                     {selectedPairs.map(({group, opt, textValue}) => {
                       if (!opt) return null;

@@ -1,37 +1,32 @@
-import { db } from '../../../lib/firebase';
-import { collection, doc, addDoc, getDocs, deleteDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../../../lib/supabase';
 import { SavedBuild } from '../types';
 
-const COLLECTION = 'savedBuilds';
-
+// builds rows: { id, user_id, name, snapshot (full SavedBuild), created_at }.
 export const buildService = {
   async saveBuild(buildInfo: Omit<SavedBuild, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const docRef = await addDoc(collection(db, COLLECTION), {
-      ...buildInfo,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    return docRef.id;
+    const info: any = buildInfo;
+    const { data, error } = await supabase
+      .from('builds')
+      .insert({ user_id: info.userId, name: info.name ?? null, snapshot: buildInfo })
+      .select('id')
+      .single();
+    if (error) throw error;
+    return data!.id;
   },
 
   async getUserBuilds(userId: string): Promise<SavedBuild[]> {
     if (!userId) return [];
-    
-    // Sort logic might require an index, but since users won't have many builds, 
-    // we can sort client side if Firebase complains, or just use orderBy if indexed.
-    // Assuming simple query without orderBy to avoid needing a new index immediately
-    const q = query(
-      collection(db, COLLECTION),
-      where('userId', '==', userId)
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({
-      id: d.id,
-      ...d.data()
-    })) as SavedBuild[];
+    const { data, error } = await supabase
+      .from('builds')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((r: any) => ({ ...(r.snapshot as any), id: r.id, createdAt: r.created_at } as SavedBuild));
   },
 
   async deleteBuild(id: string): Promise<void> {
-    await deleteDoc(doc(db, COLLECTION, id));
-  }
+    const { error } = await supabase.from('builds').delete().eq('id', id);
+    if (error) throw error;
+  },
 };

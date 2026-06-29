@@ -134,7 +134,7 @@ export function BatConsultantPage() {
                     <h4 className="text-xl text-content/80 mt-1 uppercase tracking-wide">{result.subSeriesName}</h4>
                   )}
                   {result.price !== undefined && (
-                     <p className="text-sm font-mono mt-2 text-[#c5a059]">Starting from ₹{result.price.toLocaleString('en-IN')}</p>
+                     <p className="text-sm font-mono mt-2 text-[#c5a059]">Starting from ₹{(result.price ?? 0).toLocaleString('en-IN')}</p>
                   )}
                 </div>
                 

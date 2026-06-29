@@ -1,44 +1,40 @@
-import { collection, doc, setDoc, getDocs, updateDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
+import { supabase } from '../../../lib/supabase';
 import { Enquiry, EnquiryStatus } from '../types';
 import { notificationService } from '../../notifications/services/notificationService';
 import { auditService } from '../../audit/services/auditService';
 
+// enquiries are document rows: { id, status, data (full Enquiry), created_at }.
 export const enquiryService = {
-  async submitEnquiry(enquiry: Omit<Enquiry, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<string> {
-    const id = doc(collection(db, 'enquiries')).id;
-    const docRef = doc(db, 'enquiries', id);
-    const newEnquiry = {
-      ...enquiry,
-      id,
-      status: 'new' as EnquiryStatus,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    await setDoc(docRef, newEnquiry);
-    
+  async submitEnquiry(
+    enquiry: Omit<Enquiry, 'id' | 'createdAt' | 'updatedAt' | 'status'>
+  ): Promise<string> {
+    const { data, error } = await supabase
+      .from('enquiries')
+      .insert({ status: 'new', data: enquiry })
+      .select('id')
+      .single();
+    if (error) throw error;
+
+    const e: any = enquiry;
     try {
       await notificationService.createNotification({
-        userId: enquiry.userId || 'system',
+        userId: e.userId || 'system',
         roleTarget: 'admin',
         type: 'new_enquiry',
         title: 'New Enquiry',
-        message: `${enquiry.customerName} submitted a new ${enquiry.type?.replace(/_/g, ' ') || 'enquiry'}.`,
-        link: '/admin/enquiries'
-      });
-    } catch (e) {
-      console.error("Error creating notification for enquiry", e);
+        message: `${e.customerName} submitted a new ${e.type?.replace(/_/g, ' ') || 'enquiry'}.`,
+        link: '/admin/enquiries',
+      } as any);
+    } catch (err) {
+      console.error('Error creating notification for enquiry', err);
     }
-    
-    return id;
+
+    return data!.id;
   },
 
   async updateEnquiryStatus(id: string, status: EnquiryStatus): Promise<void> {
-    const docRef = doc(db, 'enquiries', id);
-    await updateDoc(docRef, {
-      status,
-      updatedAt: serverTimestamp()
-    });
+    const { error } = await supabase.from('enquiries').update({ status }).eq('id', id);
+    if (error) throw error;
 
     await auditService.writeAudit({
       action: 'enquiry_status_updated',
@@ -46,5 +42,5 @@ export const enquiryService = {
       entityId: id,
       after: { status },
     });
-  }
+  },
 };

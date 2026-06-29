@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { db, auth, storage } from '../../lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ticketService } from '../../features/support/services/ticketService';
+import { useAuth } from '../../context/AuthContext';
 import { clsx } from 'clsx';
 import { Skeleton } from '../Skeleton';
 import { 
   ShoppingBag, ChevronRight, MessageCircle, Save, X, Phone, Mail, 
-  Search, Filter, ChevronDown, MoreVertical, CreditCard, Box, Calendar, Clock, Banknote
+  Search, Filter, ChevronDown, CreditCard, Box, Calendar, Clock, Banknote
 } from 'lucide-react';
 import { GoldButton } from '../GoldButton';
 import { LazyImage } from '../LazyImage';
@@ -58,6 +57,7 @@ function StatusBadge({ status, type = 'order' }: { status: string, type?: 'order
 }
 
 function PaymentPanel({ order, onUpdate }: { order: any, onUpdate: (o: any) => void }) {
+  const { user } = useAuth();
   const defaultAmount = order.totalPrice || order.grandTotal || 0;
   const currentPayment = order.payment || { status: order.paymentStatus || 'pending', paidAmount: 0 };
   
@@ -83,7 +83,7 @@ function PaymentPanel({ order, onUpdate }: { order: any, onUpdate: (o: any) => v
 
       if (newStatus === 'confirmed') {
         paymentUpdate.confirmedAt = new Date();
-        paymentUpdate.confirmedBy = auth.currentUser?.email || 'Admin';
+        paymentUpdate.confirmedBy = user?.email || 'Admin';
       }
 
       if (newStatus === 'confirmed') {
@@ -190,6 +190,7 @@ function PaymentPanel({ order, onUpdate }: { order: any, onUpdate: (o: any) => v
 
 export function AdminOrdersBoard() {
   const { orders, loading } = useAllOrders();
+  const { user } = useAuth();
   
   const [searchParams] = useSearchParams();
   
@@ -229,17 +230,8 @@ export function AdminOrdersBoard() {
   const [openTicketsMap, setOpenTicketsMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    // Fetch open tickets map for filtering
-    const qOpenTickets = query(collection(db, 'tickets'), where('status', '!=', 'resolved'));
-    const unsub = onSnapshot(qOpenTickets, (snap: any) => {
-      const map: Record<string, boolean> = {};
-      snap.docs.forEach((doc: any) => {
-        const data = doc.data();
-        if (data.orderId) map[data.orderId] = true;
-      });
-      setOpenTicketsMap(map);
-    });
-    return () => unsub();
+    // Map of orderId -> true for orders with an active (non-resolved) ticket.
+    ticketService.getActiveOrderIds().then(setOpenTicketsMap);
   }, []);
 
   // Derived filtered data
@@ -315,7 +307,7 @@ export function AdminOrdersBoard() {
   const handleStatusChange = async (order: any, status: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     try {
-      await orderService.updateOrderStatus(order.id, status as OrderStatus, auth.currentUser?.uid || 'Admin');
+      await orderService.updateOrderStatus(order.id, status as OrderStatus, user?.uid || 'Admin');
       toast.success(`Order status updated to ${status}`);
       if (selectedOrder?.id === order.id) {
         setSelectedOrder({...selectedOrder, status});
@@ -466,8 +458,8 @@ export function AdminOrdersBoard() {
               <div className="col-span-2">Series / Product</div>
               <div className="col-span-1 text-right">Amount</div>
               <div className="col-span-2 text-center">Payment</div>
-              <div className="col-span-2 text-center">Status</div>
-              <div className="col-span-1 text-right">Actions</div>
+              <div className="col-span-1 text-center">Status</div>
+              <div className="col-span-2 text-right">Actions</div>
             </div>
 
             {/* List Body */}
@@ -496,7 +488,7 @@ export function AdminOrdersBoard() {
                          </span>
                          <span className="text-[10px] text-muted tracking-widest uppercase flex items-center">
                            <Clock className="w-3 h-3 mr-1 inline opacity-50" />
-                           {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'N/A'}
+                           {(() => { const d = order.createdAt?.toDate ? order.createdAt.toDate() : (order.createdAt ? new Date(order.createdAt) : null); return d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'N/A'; })()}
                          </span>
                        </div>
                        <div className="lg:hidden flex flex-col items-end gap-1">
@@ -541,27 +533,24 @@ export function AdminOrdersBoard() {
                     </div>
 
                     {/* Order Status */}
-                    <div className="col-span-2 w-full hidden lg:flex flex-col items-center justify-center">
+                    <div className="col-span-1 w-full hidden lg:flex flex-col items-center justify-center">
                        <StatusBadge status={mappedStatus} type="order" />
                        <span className="text-[8px] uppercase tracking-widest text-[#c5a059]/50 mt-1.5">{order.orderSource || 'website'}</span>
                     </div>
 
-                    {/* Actions Menu */}
-                    <div className="col-span-1 w-full flex lg:justify-end border-t border-[#c5a059]/10 pt-4 lg:pt-0 lg:border-0 mt-2 lg:mt-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                      <div className="flex gap-2 w-full lg:w-auto" onClick={e => e.stopPropagation()}>
+                    {/* Actions: change status (always visible, no hover reveal) */}
+                    <div className="col-span-2 w-full flex lg:justify-end border-t border-[#c5a059]/10 pt-4 lg:pt-0 lg:border-0 mt-2 lg:mt-0">
+                      <div className="w-full lg:w-auto lg:min-w-[150px]" onClick={e => e.stopPropagation()}>
                         <select
                           value={mappedStatus}
                           onChange={(e) => handleStatusChange(order, e.target.value)}
-                          className="w-full lg:w-auto bg-bg text-[9px] font-bold uppercase tracking-widest p-1.5 focus:outline-none focus:border-[#c5a059] border border-[#c5a059]/30 text-content cursor-pointer"
+                          className="w-full bg-bg text-[9px] font-bold uppercase tracking-widest py-2 px-3 rounded-sm focus:outline-none focus:border-[#c5a059] border border-[#c5a059]/25 hover:border-[#c5a059]/60 text-content cursor-pointer transition-colors"
                         >
                           {!validTransitions.includes(mappedStatus) && (
                             <option value={mappedStatus} disabled>{mappedStatus}</option>
                           )}
                           {validTransitions.map((s: string) => <option key={s} value={s}>{s}</option>)}
                         </select>
-                        <button className="px-2 border border-[#c5a059]/30 hover:bg-[#c5a059]/10 text-content transition-colors bg-bg hidden lg:flex items-center justify-center">
-                          <MoreVertical className="w-3 h-3" />
-                        </button>
                       </div>
                     </div>
 
