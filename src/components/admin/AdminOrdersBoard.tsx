@@ -5,7 +5,7 @@ import { clsx } from 'clsx';
 import { Skeleton } from '../Skeleton';
 import { 
   ShoppingBag, ChevronRight, MessageCircle, Save, X, Phone, Mail, 
-  Search, Filter, ChevronDown, MoreVertical, CreditCard, Box, Calendar, Clock, Banknote
+  Search, Filter, ChevronDown, CreditCard, Box, Calendar, Clock, Banknote
 } from 'lucide-react';
 import { GoldButton } from '../GoldButton';
 import { LazyImage } from '../LazyImage';
@@ -538,22 +538,19 @@ export function AdminOrdersBoard() {
                        <span className="text-[8px] uppercase tracking-widest text-[#c5a059]/50 mt-1.5">{order.orderSource || 'website'}</span>
                     </div>
 
-                    {/* Actions Menu */}
-                    <div className="col-span-2 w-full flex lg:justify-end border-t border-[#c5a059]/10 pt-4 lg:pt-0 lg:border-0 mt-2 lg:mt-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                      <div className="flex gap-2 w-full" onClick={e => e.stopPropagation()}>
+                    {/* Actions: change status (always visible, no hover reveal) */}
+                    <div className="col-span-2 w-full flex lg:justify-end border-t border-[#c5a059]/10 pt-4 lg:pt-0 lg:border-0 mt-2 lg:mt-0">
+                      <div className="w-full lg:w-auto lg:min-w-[150px]" onClick={e => e.stopPropagation()}>
                         <select
                           value={mappedStatus}
                           onChange={(e) => handleStatusChange(order, e.target.value)}
-                          className="flex-1 min-w-0 bg-bg text-[9px] font-bold uppercase tracking-widest p-1.5 focus:outline-none focus:border-[#c5a059] border border-[#c5a059]/30 text-content cursor-pointer"
+                          className="w-full bg-bg text-[9px] font-bold uppercase tracking-widest py-2 px-3 rounded-sm focus:outline-none focus:border-[#c5a059] border border-[#c5a059]/25 hover:border-[#c5a059]/60 text-content cursor-pointer transition-colors"
                         >
                           {!validTransitions.includes(mappedStatus) && (
                             <option value={mappedStatus} disabled>{mappedStatus}</option>
                           )}
                           {validTransitions.map((s: string) => <option key={s} value={s}>{s}</option>)}
                         </select>
-                        <button className="px-2 shrink-0 border border-[#c5a059]/30 hover:bg-[#c5a059]/10 text-content transition-colors bg-bg hidden lg:flex items-center justify-center">
-                          <MoreVertical className="w-3 h-3" />
-                        </button>
                       </div>
                     </div>
 
