@@ -309,35 +309,21 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ specKey, value, onChange, storagePath, className, supportThemes = true }: ImageUploadProps) {
-  // Coerce string to { light: string, dark: string } internally for editor
   const lightVal = typeof value === 'string' ? value : (value?.light || '');
   const darkVal = typeof value === 'string' ? '' : (value?.dark || '');
 
-  const handleChange = (themeMode: 'light' | 'dark', url: string, file?: File) => {
-    // If we only support strings or it's turned off
-    if (!supportThemes) {
-      onChange(url, file);
-      return;
-    }
+  // Default to one asset for both themes (a plain string serves both); users can
+  // opt into separate light/dark uploads.
+  const [sameForBoth, setSameForBoth] = useState<boolean>(
+    typeof value === 'string' || !darkVal || darkVal === lightVal
+  );
 
-    const newVal = {
-      light: themeMode === 'light' ? url : lightVal,
-      dark: themeMode === 'dark' ? url : darkVal
-    };
-    
-    // If both empty, return empty string
-    if (!newVal.light && !newVal.dark) {
-      onChange('', file);
-      return;
-    }
-    onChange(newVal, file);
-  };
-
+  // Non-themed fields (e.g. video) are always a single asset / string.
   if (!supportThemes) {
     return (
-       <SingleImageUpload 
+       <SingleImageUpload
          specKey={specKey}
-         value={typeof value === 'string' ? value : value?.light}
+         value={lightVal}
          onChange={(url, file) => onChange(url, file)}
          storagePath={storagePath}
          className={className}
@@ -345,24 +331,64 @@ export function ImageUpload({ specKey, value, onChange, storagePath, className, 
     );
   }
 
+  const handleThemed = (themeMode: 'light' | 'dark', url: string, file?: File) => {
+    const newVal = {
+      light: themeMode === 'light' ? url : lightVal,
+      dark: themeMode === 'dark' ? url : darkVal,
+    };
+    if (!newVal.light && !newVal.dark) {
+      onChange('', file);
+      return;
+    }
+    onChange(newVal, file);
+  };
+
+  const toggleSame = (checked: boolean) => {
+    setSameForBoth(checked);
+    const current = lightVal || darkVal || '';
+    // checked -> single string (serves both); unchecked -> themed object seeded from current.
+    onChange(checked ? current : (current ? { light: current, dark: current } : ''));
+  };
+
   return (
     <div className={clsx("flex flex-col gap-3", className)}>
-      <SingleImageUpload 
-        label="Light Theme Image"
-        specKey={specKey}
-        value={lightVal}
-        onChange={(url, file) => handleChange('light', url, file)}
-        storagePath={storagePath}
-        fallbackNotice={darkVal && !lightVal ? "Using Dark for Light" : undefined}
-      />
-      <SingleImageUpload 
-        label="Dark Theme Image"
-        specKey={specKey}
-        value={darkVal}
-        onChange={(url, file) => handleChange('dark', url, file)}
-        storagePath={storagePath}
-        fallbackNotice={lightVal && !darkVal ? "Using Light for Dark" : undefined}
-      />
+      <label className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-content/70 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={sameForBoth}
+          onChange={(e) => toggleSame(e.target.checked)}
+          className="accent-[#c5a059] w-3.5 h-3.5"
+        />
+        Use the same asset for light &amp; dark
+      </label>
+
+      {sameForBoth ? (
+        <SingleImageUpload
+          specKey={specKey}
+          value={lightVal || darkVal}
+          onChange={(url, file) => onChange(url, file)}
+          storagePath={storagePath}
+        />
+      ) : (
+        <>
+          <SingleImageUpload
+            label="Light Theme Image"
+            specKey={specKey}
+            value={lightVal}
+            onChange={(url, file) => handleThemed('light', url, file)}
+            storagePath={storagePath}
+            fallbackNotice={darkVal && !lightVal ? "Using Dark for Light" : undefined}
+          />
+          <SingleImageUpload
+            label="Dark Theme Image"
+            specKey={specKey}
+            value={darkVal}
+            onChange={(url, file) => handleThemed('dark', url, file)}
+            storagePath={storagePath}
+            fallbackNotice={lightVal && !darkVal ? "Using Light for Dark" : undefined}
+          />
+        </>
+      )}
     </div>
   );
 }

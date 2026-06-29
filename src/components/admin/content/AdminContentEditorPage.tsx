@@ -196,14 +196,15 @@ export function AdminContentEditorPage() {
           <div className="flex flex-col gap-2">
             <ImageUpload
               specKey={isVideoField ? 'heroVideo' : (key.toLowerCase().includes('logo') ? 'brandLogo' : (key.toLowerCase().includes('hero') ? 'heroImage' : 'contentImage'))}
-              value={value as string || ''}
+              value={value as any}
+              supportThemes={!isVideoField}
               onChange={(url) => handleChange(path, url)}
               storagePath={`content/${activeArea}`}
             />
             <input
               type="text"
               placeholder="Or enter media URL manually"
-              value={value as string || ''}
+              value={typeof value === 'string' ? value : ((value as any)?.light || '')}
               onChange={(e) => handleChange(path, e.target.value)}
               className="w-full bg-surface border border-[#c5a059]/20 px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none font-mono tracking-widest text-[#c5a059] placeholder:text-muted/50"
             />
