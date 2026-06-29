@@ -24,6 +24,7 @@ import {
 import { clsx } from "clsx";
 import { ticketService } from "../../features/support/services/ticketService";
 import { useAuth } from "../../context/AuthContext";
+import { PageHeader, EmptyState } from "./ui";
 
 function Customer360({
   customer,
@@ -680,18 +681,12 @@ export function AdminCustomersPage() {
 
   return (
     <div className="space-y-6 md:space-y-8 pb-16 font-sans border-t border-transparent h-full flex flex-col">
-      <RevealSection className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 border-b border-[#c5a059]/10 pb-6 shrink-0">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <User className="w-8 h-8 text-[#c5a059]" />
-            <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content">
-              Customers CRM
-            </h1>
-          </div>
-          <p className="text-[10px] lg:text-xs text-muted tracking-widest uppercase">
-            Showing {filteredCustomers.length} customers
-          </p>
-        </div>
+      <RevealSection className="shrink-0">
+        <PageHeader
+          eyebrow="Relationships"
+          title="Customers CRM"
+          description={`Showing ${filteredCustomers.length} ${filteredCustomers.length === 1 ? 'customer' : 'customers'}`}
+          actions={
         <div className="flex flex-col lg:flex-row w-full xl:w-auto gap-4 shrink-0">
           {/* Filters */}
           <div className="relative w-full lg:w-48 shrink-0">
@@ -733,18 +728,14 @@ export function AdminCustomersPage() {
             <Search className="w-3.5 h-3.5 text-[#c5a059] absolute left-3 top-1/2 -translate-y-1/2" />
           </div>
         </div>
+          }
+        />
       </RevealSection>
 
       <div className="flex-1 overflow-hidden flex flex-col w-full pb-10">
         {filteredCustomers.length === 0 ? (
-          <div className="p-16 text-center text-muted border border-[#c5a059]/10 border-dashed bg-surface/30 flex flex-col items-center justify-center">
-            <User className="w-12 h-12 text-[#c5a059]/20 mx-auto mb-4" />
-            <p className="text-sm font-bold text-content uppercase tracking-widest mb-2">
-              No customers found
-            </p>
-            <p className="text-[10px] text-muted tracking-widest uppercase">
-              Try adjusting your filters or search query.
-            </p>
+          <div className="border border-[#c5a059]/10 border-dashed bg-surface/30">
+            <EmptyState icon={User} title="No customers found" description="Try adjusting your filters or search query." />
           </div>
         ) : (
           <div className="flex flex-col w-full h-full overflow-y-auto mt-2">

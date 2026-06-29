@@ -6,6 +6,7 @@ import { GoldButton } from './GoldButton';
 import { useProducts } from '../context/ProductsContext';
 import { productService } from '../features/products/services/productService';
 import { toast } from 'sonner';
+import { PageHeader, EmptyState } from './admin/ui';
 
 export function AdminProductsPage() {
   const { products, refresh, loading: productsLoading, error: productsError } = useProducts();
@@ -51,31 +52,23 @@ export function AdminProductsPage() {
   if (checkingEmpty) return null;
 
   return (
-    <div>
+    <div className="pb-16">
       <RevealSection>
-        <div className="flex flex-col md:flex-row justify-between md:items-end mb-8">
-          <div>
-            <div className="flex bg-[#c5a059]/10 text-[#c5a059] px-3 py-1 text-[10px] tracking-widest uppercase font-bold w-max mb-4">
-              Products
+        <PageHeader eyebrow="Catalogue" title="Series Architecture" description="The Grainood collection — English Willow only." />
+        {import.meta.env.MODE !== 'production' && (
+          <details className="-mt-4 mb-8 group">
+            <summary className="text-[10px] text-red-500 uppercase tracking-widest cursor-pointer list-none flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+              Danger Zone
+            </summary>
+            <div className="pt-4 mt-2 border-t border-red-500/20">
+              <GoldButton onClick={handleSeed} variant="outline" className="px-4 py-2 text-[10px] border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
+                Reset & Seed Series DB
+              </GoldButton>
+              <p className="text-[9px] text-red-400/80 mt-2 uppercase tracking-widest">This will destroy all current catalogue data.</p>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content mb-2">Series Architecture</h1>
-            <p className="text-muted text-xs tracking-widest uppercase mb-4">The Grainood collection</p>
-            {import.meta.env.MODE !== 'production' && (
-              <details className="mt-6 md:mt-2 group">
-                 <summary className="text-[10px] text-red-500 uppercase tracking-widest cursor-pointer list-none flex items-center gap-2">
-                   <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                   Danger Zone
-                 </summary>
-                 <div className="pt-4 mt-2 border-t border-red-500/20">
-                   <GoldButton onClick={handleSeed} variant="outline" className="px-4 py-2 text-[10px] border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
-                     Reset & Seed Series DB
-                   </GoldButton>
-                   <p className="text-[9px] text-red-400/80 mt-2 uppercase tracking-widest">This will destroy all current catalogue data.</p>
-                 </div>
-              </details>
-            )}
-          </div>
-        </div>
+          </details>
+        )}
       </RevealSection>
 
       {productsLoading && !collectionEmpty ? (
@@ -158,8 +151,8 @@ export function AdminProductsPage() {
             );
           })}
           {products.length === 0 && !collectionEmpty && (
-            <div className="text-center text-muted tracking-widest uppercase text-xs py-12 col-span-full">
-              No series found.
+            <div className="col-span-full bg-surface border border-[#c5a059]/20">
+              <EmptyState icon={Box} title="No series found" description="Seed the catalogue from the Danger Zone, or check your connection." />
             </div>
           )}
         </div>

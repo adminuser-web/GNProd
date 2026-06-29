@@ -4,10 +4,19 @@ import { useEnquiries } from '../../features/enquiries/hooks/useEnquiries';
 import { enquiryService } from '../../features/enquiries/services/enquiryService';
 import { EnquiryStatus } from '../../features/enquiries/types';
 import { Skeleton } from '../Skeleton';
-import { clsx } from 'clsx';
-import { Mail, Phone, Calendar, Search, Sparkles } from 'lucide-react';
+import { Mail, Phone, Calendar, Sparkles, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { qualifyEnquiry, draftEnquiryReply } from '../../features/aiSuggestions/aiService';
+import { PageHeader, SearchInput, EmptyState, StatusPill } from './ui';
+
+// Timestamps are ISO strings now (Supabase); tolerate legacy Firestore .toDate().
+function fmtDate(createdAt: any): string {
+  if (!createdAt) return 'N/A';
+  if (typeof createdAt === 'string') return new Date(createdAt).toLocaleString();
+  if (createdAt?.toDate) return createdAt.toDate().toLocaleString();
+  if (createdAt?.seconds) return new Date(createdAt.seconds * 1000).toLocaleString();
+  return 'N/A';
+}
 
 export function AdminEnquiriesPage() {
   const { enquiries, loading } = useEnquiries();
@@ -72,44 +81,35 @@ export function AdminEnquiriesPage() {
   }
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
-        <div>
-          <p className="text-[11px] tracking-[0.4em] uppercase text-premium-gold-text mb-2">Sales Intent</p>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content">Enquiries</h1>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 mb-6 relative z-10">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-          <input 
-            type="text" 
-            placeholder="Search name, email, phone..." 
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full bg-surface border border-[#c5a059]/30 pl-10 pr-4 py-2 text-xs text-content focus:outline-none focus:border-[#c5a059]"
-          />
-        </div>
-        <select 
-          value={filter}
-          onChange={e => setFilter(e.target.value as any)}
-          className="bg-surface border border-[#c5a059]/30 text-content text-xs px-4 py-2 focus:outline-none"
-        >
-          <option value="all">All Enquiries</option>
-          <option value="new">New</option>
-          <option value="in_review">In Review</option>
-          <option value="responded">Responded</option>
-          <option value="waiting_for_customer">Waiting for Customer</option>
-          <option value="converted_to_order">Converted to Order</option>
-          <option value="closed">Closed</option>
-        </select>
-      </div>
+    <div className="pb-16">
+      <PageHeader
+        eyebrow="Sales Intent"
+        title="Enquiries"
+        description={`${filteredEnquiries.length} ${filteredEnquiries.length === 1 ? 'enquiry' : 'enquiries'}${filter !== 'all' ? ' in this view' : ''}`}
+        actions={
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search name, email, phone…" className="w-full sm:w-64" />
+            <select
+              value={filter}
+              onChange={e => setFilter(e.target.value as any)}
+              className="bg-bg border border-[#c5a059]/20 text-content text-xs uppercase tracking-widest px-3 py-2 focus:outline-none focus:border-[#c5a059]"
+            >
+              <option value="all">All Enquiries</option>
+              <option value="new">New</option>
+              <option value="in_review">In Review</option>
+              <option value="responded">Responded</option>
+              <option value="waiting_for_customer">Waiting for Customer</option>
+              <option value="converted_to_order">Converted to Order</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+        }
+      />
 
       <div className="space-y-4">
         {filteredEnquiries.length === 0 ? (
-          <div className="bg-surface border border-[#c5a059]/20 p-8 text-center text-muted uppercase tracking-widest text-xs">
-            No enquiries found.
+          <div className="bg-surface border border-[#c5a059]/20">
+            <EmptyState icon={MessageSquare} title="No enquiries found" description={search || filter !== 'all' ? 'Try clearing the search or filter.' : 'New customer enquiries will appear here.'} />
           </div>
         ) : (
           filteredEnquiries.map(enq => {
@@ -138,13 +138,8 @@ export function AdminEnquiriesPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="md:hidden">
-                      <span 
-                        className="px-3 py-1 text-[9px] uppercase tracking-widest rounded-sm border inline-block ml-4 shrink-0" 
-                        style={{ color: statusColors[enq.status] || '#6b7280', borderColor: (statusColors[enq.status] || '#6b7280') + '40', backgroundColor: (statusColors[enq.status] || '#6b7280') + '10' }}
-                      >
-                        {enq.status.replace(/_/g, ' ')}
-                      </span>
+                    <div className="md:hidden ml-4">
+                      <StatusPill label={enq.status.replace(/_/g, ' ')} color={statusColors[enq.status] || '#6b7280'} />
                     </div>
                   </div>
 
@@ -159,18 +154,13 @@ export function AdminEnquiriesPage() {
                   
                   <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted mt-4">
                     <Calendar className="w-3 h-3" />
-                    {enq.createdAt?.toDate ? enq.createdAt.toDate().toLocaleString() : 'N/A'}
+                    {fmtDate(enq.createdAt)}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-4 w-full md:w-auto mt-4 md:mt-0 relative z-10 shrink-0">
                   <div className="hidden md:block self-end text-right">
-                    <span 
-                      className="px-3 py-1 text-[9px] uppercase tracking-widest rounded-sm border inline-block" 
-                      style={{ color: statusColors[enq.status] || '#6b7280', borderColor: (statusColors[enq.status] || '#6b7280') + '40', backgroundColor: (statusColors[enq.status] || '#6b7280') + '10' }}
-                    >
-                      {enq.status.replace(/_/g, ' ')}
-                    </span>
+                    <StatusPill label={enq.status.replace(/_/g, ' ')} color={statusColors[enq.status] || '#6b7280'} />
                   </div>
                   
                   <div className="flex flex-col gap-2 relative">

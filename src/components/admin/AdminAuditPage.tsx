@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollText, RotateCcw, ChevronRight } from 'lucide-react';
-import { clsx } from 'clsx';
 import { auditService, AuditAction } from '../../features/audit/services/auditService';
 import { AuditLog } from '../../features/audit/types';
 import { Skeleton } from '../Skeleton';
+import { PageHeader, Card, EmptyState, StatusPill } from './ui';
 
 const ACTION_LABELS: Record<AuditAction, string> = {
   product_created: 'Product created',
@@ -60,34 +60,32 @@ export function AdminAuditPage() {
   }, [actionFilter]);
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-1">
-        <ScrollText className="w-5 h-5 text-[#c5a059]" />
-        <h1 className="text-xl font-bold tracking-wide">Audit Log</h1>
-      </div>
-      <p className="text-xs text-muted mb-6">
-        Immutable, append-only record of admin actions. Read-only.
-      </p>
-
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <label className="text-[10px] uppercase tracking-widest text-muted">Action</label>
-        <select
-          value={actionFilter}
-          onChange={(e) => setActionFilter(e.target.value as AuditAction | 'all')}
-          className="bg-bg border border-[#c5a059]/30 text-sm px-3 py-2 focus:outline-none focus:border-[#c5a059]"
-        >
-          <option value="all">All actions</option>
-          {ACTIONS.map((a) => (
-            <option key={a} value={a}>{ACTION_LABELS[a]}</option>
-          ))}
-        </select>
-        <button
-          onClick={() => load(true)}
-          className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-[#c5a059] transition-colors"
-        >
-          <RotateCcw className="w-3.5 h-3.5" /> Refresh
-        </button>
-      </div>
+    <div className="max-w-5xl mx-auto pb-16">
+      <PageHeader
+        eyebrow="System"
+        title="Audit Log"
+        description="Immutable, append-only record of admin actions. Read-only."
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={actionFilter}
+              onChange={(e) => setActionFilter(e.target.value as AuditAction | 'all')}
+              className="bg-bg border border-[#c5a059]/20 text-xs uppercase tracking-widest px-3 py-2 text-content focus:outline-none focus:border-[#c5a059]"
+            >
+              <option value="all">All actions</option>
+              {ACTIONS.map((a) => (
+                <option key={a} value={a}>{ACTION_LABELS[a]}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => load(true)}
+              className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted border border-[#c5a059]/20 px-3 py-2 rounded-sm hover:text-[#c5a059] hover:border-[#c5a059]/50 transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Refresh
+            </button>
+          </div>
+        }
+      />
 
       {error && (
         <div className="border border-red-500/30 bg-red-500/5 text-red-400 text-sm p-3 mb-4">{error}</div>
@@ -98,33 +96,34 @@ export function AdminAuditPage() {
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
         </div>
       ) : logs.length === 0 ? (
-        <div className="text-center text-muted text-sm py-16 border border-[#c5a059]/10">
-          No audit entries{actionFilter !== 'all' ? ' for this action' : ''} yet.
-        </div>
+        <Card bodyClassName="p-0">
+          <EmptyState
+            icon={ScrollText}
+            title="No audit entries"
+            description={actionFilter !== 'all' ? 'No actions of this type have been recorded yet.' : 'Admin actions will appear here as they happen.'}
+          />
+        </Card>
       ) : (
-        <div className="border border-[#c5a059]/15 divide-y divide-[#c5a059]/10">
-          {logs.map((log, idx) => (
-            <div key={log.id || idx} className="p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className={clsx(
-                    'text-[10px] uppercase tracking-widest px-2 py-0.5 border',
-                    'border-[#c5a059]/30 text-[#c5a059]'
-                  )}>
-                    {ACTION_LABELS[log.action] || log.action}
-                  </span>
-                  <span className="text-xs text-muted truncate">
-                    {log.entityType}/{log.entityId}
-                  </span>
+        <Card bodyClassName="p-0">
+          <div className="divide-y divide-[#c5a059]/10">
+            {logs.map((log, idx) => (
+              <div key={log.id || idx} className="p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <StatusPill label={ACTION_LABELS[log.action] || log.action} />
+                    <span className="text-xs text-muted truncate font-mono">
+                      {log.entityType}/{log.entityId}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-xs text-muted sm:text-right shrink-0">
+                  <div className="text-content">{log.actorName || log.actorUserId}</div>
+                  <div>{formatTimestamp(log.createdAt)}</div>
                 </div>
               </div>
-              <div className="text-xs text-muted sm:text-right shrink-0">
-                <div className="text-content">{log.actorName || log.actorUserId}</div>
-                <div>{formatTimestamp(log.createdAt)}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       {!loading && hasMore && (
