@@ -6,6 +6,8 @@ import { twMerge } from 'tailwind-merge';
 import { useOrder } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useContent } from '../context/ContentContext';
+import { resolveThemedImage } from '../lib/themedImage';
 import { useProducts } from '../context/ProductsContext';
 import { orderService } from '../features/orders/services/orderService';
 import { ticketService } from '../features/support/services/ticketService';
@@ -23,6 +25,9 @@ export function Navbar() {
   const { itemCount, openDrawer } = useOrder();
   const { user, isAdmin, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const brandContent = useContent('brand');
+  const logoSrc = resolveThemedImage(brandContent?.logoUrl as any, theme);
+  const brandName = brandContent?.brandName || 'GRAINOOD';
   const { products } = useProducts();
   const [bounce, setBounce] = useState(false);
   const navigate = useNavigate();
@@ -137,8 +142,12 @@ export function Navbar() {
           
           {/* LEFT ZONE: LOGO */}
           <div className="flex-1 flex justify-start items-center">
-            <Link to="/" className="text-2xl font-bold tracking-[0.2em] uppercase flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] rounded-sm">
-              GRAINOOD
+            <Link to="/" aria-label={brandName} className="text-2xl font-bold tracking-[0.2em] uppercase flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] rounded-sm">
+              {logoSrc ? (
+                <img src={logoSrc} alt={brandName} className="h-8 w-auto object-contain" />
+              ) : (
+                brandName
+              )}
             </Link>
           </div>
 

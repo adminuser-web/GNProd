@@ -8,6 +8,91 @@ import { GoldButton } from '../../GoldButton';
 import { ImageUpload } from '../ImageUpload';
 import { UploadSpecKey } from '../../../config/uploadSpecs';
 
+// Friendly section metadata for the sidebar + header.
+const AREA_META: Record<string, { label: string; desc: string }> = {
+  brand: { label: 'Brand & Identity', desc: 'Logo, favicon, name, contact, store & social links.' },
+  home: { label: 'Homepage', desc: 'Hero, featured and homepage sections.' },
+  philosophy: { label: 'Philosophy', desc: 'The about / philosophy page copy.' },
+  contact: { label: 'Contact', desc: 'Contact page intro and FAQs.' },
+  footer: { label: 'Footer', desc: 'Footer columns and copyright.' },
+  legal: { label: 'Legal', desc: 'Privacy, terms and returns.' },
+  seo: { label: 'SEO & Social', desc: 'Browser tab title, description and share image.' },
+  reviews: { label: 'Reviews', desc: 'Customer reviews shown on the site.' },
+};
+
+function Field({ label, help, value, onChange, type = 'text', textarea = false }: any) {
+  return (
+    <div>
+      <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">{label}</label>
+      {textarea ? (
+        <textarea value={value || ''} onChange={(e) => onChange(e.target.value)} rows={3}
+          className="w-full bg-bg border border-[#c5a059]/20 px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors" />
+      ) : (
+        <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)}
+          className="w-full bg-bg border border-[#c5a059]/20 px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors" />
+      )}
+      {help && <p className="text-[10px] text-muted mt-1 leading-relaxed">{help}</p>}
+    </div>
+  );
+}
+
+function Card({ title, desc, children }: any) {
+  return (
+    <div className="bg-bg/40 border border-[#c5a059]/10 p-5">
+      <h3 className="text-xs font-bold uppercase tracking-widest text-[#c5a059]">{title}</h3>
+      {desc && <p className="text-[10px] text-muted mt-1">{desc}</p>}
+      <div className="space-y-4 mt-4">{children}</div>
+    </div>
+  );
+}
+
+function BrandIdentityForm({ data, onChange }: { data: any; onChange: (path: string[], value: any) => void }) {
+  const d = data || {};
+  return (
+    <div className="space-y-6">
+      <Card title="Identity" desc="Store name, tagline, logo and browser icon.">
+        <Field label="Brand Name" value={d.brandName} onChange={(v: string) => onChange(['brandName'], v)} help="Used in the browser tab, and in the header when no logo is set." />
+        <Field label="Tagline" value={d.tagline} onChange={(v: string) => onChange(['tagline'], v)} />
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Logo</label>
+          <p className="text-[10px] text-muted mb-2">Shown in the site header (falls back to the text wordmark if empty). Transparent PNG recommended.</p>
+          <ImageUpload specKey="brandLogo" value={d.logoUrl} onChange={(v) => onChange(['logoUrl'], v)} storagePath="content/brand/logo" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Favicon</label>
+          <p className="text-[10px] text-muted mb-2">The small icon in the browser tab. Square image (e.g. 64×64) — PNG, SVG or ICO.</p>
+          <ImageUpload specKey="brandLogo" supportThemes={false} value={d.faviconUrl} onChange={(v) => onChange(['faviconUrl'], v)} storagePath="content/brand/favicon" />
+        </div>
+      </Card>
+
+      <Card title="Contact" desc="Used in the footer, contact page and WhatsApp links.">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Phone" value={d.contact?.phone} onChange={(v: string) => onChange(['contact', 'phone'], v)} />
+          <Field label="WhatsApp" value={d.contact?.whatsapp} onChange={(v: string) => onChange(['contact', 'whatsapp'], v)} />
+          <Field label="Email" value={d.contact?.email} onChange={(v: string) => onChange(['contact', 'email'], v)} />
+          <Field label="Instagram URL" value={d.contact?.instagram} onChange={(v: string) => onChange(['contact', 'instagram'], v)} />
+        </div>
+      </Card>
+
+      <Card title="Store" desc="Your physical store details (shown on Contact & Locate Us).">
+        <Field label="Address" textarea value={d.store?.address} onChange={(v: string) => onChange(['store', 'address'], v)} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Hours" value={d.store?.hours} onChange={(v: string) => onChange(['store', 'hours'], v)} />
+          <Field label="Google Maps Link" value={d.store?.mapLink} onChange={(v: string) => onChange(['store', 'mapLink'], v)} />
+        </div>
+      </Card>
+
+      <Card title="Social" desc="Social profile handles or URLs.">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Field label="Instagram" value={d.social?.instagram} onChange={(v: string) => onChange(['social', 'instagram'], v)} />
+          <Field label="Facebook" value={d.social?.facebook} onChange={(v: string) => onChange(['social', 'facebook'], v)} />
+          <Field label="YouTube" value={d.social?.youtube} onChange={(v: string) => onChange(['social', 'youtube'], v)} />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export function AdminContentEditorPage() {
   const { contentMap, refresh, loading: ctxLoading } = useContentContext();
   const [activeArea, setActiveArea] = useState<keyof SiteContentMap>('brand');
@@ -278,20 +363,29 @@ export function AdminContentEditorPage() {
                   activeArea === area ? 'bg-[#c5a059] text-bg' : 'text-content hover:bg-[#c5a059]/10'
                 }`}
               >
-                {area}
+                {AREA_META[area]?.label || area}
               </button>
             ))}
           </div>
         </div>
         
         <div className="flex-1 bg-surface border border-[#c5a059]/20 p-6">
-          <h2 className="text-lg font-bold tracking-[0.2em] text-[#c5a059] uppercase mb-6 pb-4 border-b border-[#c5a059]/20">
-            Editing {activeArea} Content
-          </h2>
-          
-          <div className="space-y-2">
-            {Object.entries(editorData).map(([key, value]) => renderField(key, value, [key]))}
+          <div className="mb-6 pb-4 border-b border-[#c5a059]/20">
+            <h2 className="text-lg font-bold tracking-[0.2em] text-[#c5a059] uppercase">
+              {AREA_META[activeArea]?.label || activeArea}
+            </h2>
+            {AREA_META[activeArea]?.desc && (
+              <p className="text-[10px] text-muted tracking-widest uppercase mt-1">{AREA_META[activeArea].desc}</p>
+            )}
           </div>
+
+          {activeArea === 'brand' ? (
+            <BrandIdentityForm data={editorData} onChange={handleChange} />
+          ) : (
+            <div className="space-y-2">
+              {Object.entries(editorData).map(([key, value]) => renderField(key, value, [key]))}
+            </div>
+          )}
         </div>
       </div>
     </div>
