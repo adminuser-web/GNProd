@@ -1,33 +1,30 @@
-import { db } from '../../../lib/firebase';
-import { collection, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../../../lib/supabase';
 
 export const crmService = {
-  async getCustomerNote(userId: string) {
+  async getCustomerNote(userId: string): Promise<string> {
     if (!userId) return '';
     try {
-      const docRef = doc(db, 'customerNotes', userId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return docSnap.data().note || '';
-      }
-      return '';
+      const { data, error } = await supabase
+        .from('customer_notes')
+        .select('note')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.note || '';
     } catch (err) {
       console.error('Error fetching customer note', err);
       return '';
     }
   },
 
-  async updateCustomerNote(userId: string, note: string) {
+  async updateCustomerNote(userId: string, note: string): Promise<void> {
     if (!userId) return;
-    try {
-      const docRef = doc(db, 'customerNotes', userId);
-      await setDoc(docRef, {
-        note,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-    } catch (err) {
-      console.error('Error updating customer note', err);
-      throw err;
+    const { error } = await supabase
+      .from('customer_notes')
+      .upsert({ user_id: userId, note, updated_at: new Date().toISOString() });
+    if (error) {
+      console.error('Error updating customer note', error);
+      throw error;
     }
-  }
+  },
 };
