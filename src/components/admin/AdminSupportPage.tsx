@@ -6,8 +6,7 @@ import { clsx } from 'clsx';
 import { ticketService } from '../../features/support/services/ticketService';
 import { useAllTickets } from '../../features/support/hooks/useTickets';
 import { Link, useSearchParams } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { orderService } from '../../features/orders/services/orderService';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -50,9 +49,9 @@ function AdminTicketDetailDrawer({ ticket, onBack }: { ticket: SupportTicket, on
     if (!ticket.orderId) return;
     const fetchOrder = async () => {
       try {
-        const orderSnap = await getDoc(doc(db, 'orders', ticket.orderId!));
-        if (orderSnap.exists()) {
-          setLinkedOrder({ id: orderSnap.id, ...orderSnap.data() } as OrderRecord);
+        const fetchedOrder = await orderService.getOrder(ticket.orderId!);
+        if (fetchedOrder) {
+          setLinkedOrder(fetchedOrder as OrderRecord);
         }
       } catch (err) {
         console.error("Failed to load linked order summary", err);

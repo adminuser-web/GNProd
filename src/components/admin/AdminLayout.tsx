@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Navigate, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { db } from '../../lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { supabase } from '../../lib/supabase';
 import { LayoutDashboard, ShoppingBag, Box, LifeBuoy, Menu, X, DollarSign, Factory, Archive, Wrench, Shield, BarChart2, Users, Search, FileText, Store, LogOut } from 'lucide-react';
 import { NotificationBell } from '../NotificationBell';
 import { clsx } from 'clsx';
@@ -127,17 +126,10 @@ export function AdminLayout() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    const q = query(collection(db, 'tickets'), where('status', '==', 'open'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setOpenTicketsCount(snapshot.size);
-    }, (err) => console.error(err));
-
-    const qEnq = query(collection(db, 'enquiries'), where('status', '==', 'new'));
-    const unsubscribeEnq = onSnapshot(qEnq, (snapshot) => {
-      setNewEnquiriesCount(snapshot.size);
-    }, (err) => console.error(err));
-
-    return () => { unsubscribe(); unsubscribeEnq(); };
+    supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'open')
+      .then(({ count }) => setOpenTicketsCount(count ?? 0));
+    supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'new')
+      .then(({ count }) => setNewEnquiriesCount(count ?? 0));
   }, [isAdmin]);
 
   if (loading) {

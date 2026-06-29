@@ -237,10 +237,7 @@ export function MyRequestsPage() {
     if (!user) return;
     setNewSubmitting(true);
     try {
-      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-      
-      await addDoc(collection(db, 'tickets'), {
+      await ticketService.createTicket({
         userId: user.uid,
         type: newType,
         subject: newSubj,
@@ -253,9 +250,7 @@ export function MyRequestsPage() {
           text: newDesc,
           createdAt: new Date().toISOString()
         }],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+      } as any);
       toast.success("Request submitted successfully.");
       setShowNewModal(false);
       setNewSubj('');

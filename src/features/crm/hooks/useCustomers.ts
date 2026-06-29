@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { collection, query, onSnapshot, getDocs, limit } from "firebase/firestore";
-import { db } from "../../../lib/firebase";
+import { supabase } from "../../../lib/supabase";
 import { useAllOrders } from "../../orders/hooks/useOrders";
 import { useAllTickets } from "../../support/hooks/useTickets";
 
@@ -33,26 +32,30 @@ export function useCustomers() {
   const [loadingExtras, setLoadingExtras] = useState(true);
 
   useEffect(() => {
-    let unsubs: (() => void)[] = [];
-
-    // Fetch users
-    const usersQ = query(collection(db, "users"), limit(500));
-    unsubs.push(
-      onSnapshot(usersQ, (snap) => {
-        setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      }),
-    );
-
-    // Fetch savedBuilds
-    const buildsQ = query(collection(db, "savedBuilds"), limit(500));
-    unsubs.push(
-      onSnapshot(buildsQ, (snap) => {
-        setSavedBuilds(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      }),
-    );
-
-    setLoadingExtras(false);
-    return () => unsubs.forEach((u) => u());
+    let active = true;
+    (async () => {
+      const [{ data: profs }, { data: blds }] = await Promise.all([
+        supabase.from("profiles").select("*").limit(500),
+        supabase.from("builds").select("*").limit(500),
+      ]);
+      if (!active) return;
+      setUsers(
+        (profs ?? []).map((r: any) => ({
+          id: r.id,
+          name: r.full_name,
+          email: r.email,
+          phone: r.phone,
+          dob: r.dob,
+          address: r.address?.line1 || "",
+          city: r.address?.city || "",
+          state: r.address?.state || "",
+          createdAt: r.created_at,
+        })),
+      );
+      setSavedBuilds((blds ?? []).map((r: any) => ({ id: r.id, ...(r.snapshot as any) })));
+      setLoadingExtras(false);
+    })();
+    return () => { active = false; };
   }, []);
 
   const customers = useMemo(() => {

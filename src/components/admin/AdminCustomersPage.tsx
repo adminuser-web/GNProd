@@ -22,8 +22,7 @@ import {
   Home
 } from "lucide-react";
 import { clsx } from "clsx";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+import { ticketService } from "../../features/support/services/ticketService";
 import { useAuth } from "../../context/AuthContext";
 
 function Customer360({
@@ -99,7 +98,7 @@ function Customer360({
 
     setCreatingTicket(true);
     try {
-      await addDoc(collection(db, "tickets"), {
+      await ticketService.createTicket({
         userId: customer.userId,
         customerName: customer.name,
         customerEmail: customer.email,
@@ -115,9 +114,7 @@ function Customer360({
             createdAt: new Date().toISOString(),
           },
         ],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      } as any);
       setShowTicketModal(false);
       setTicketSubject("");
       setTicketMessage("");
