@@ -2,22 +2,43 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Navigate, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { LayoutDashboard, ShoppingBag, Box, LifeBuoy, Menu, X, DollarSign, Factory, Archive, Wrench, Shield, BarChart2, Users, Search, FileText, Store, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Box, LifeBuoy, Menu, X, DollarSign, Shield, Users, Search, FileText, Store, LogOut } from 'lucide-react';
 import { NotificationBell } from '../NotificationBell';
 import { clsx } from 'clsx';
 import { useAllOrders } from '../../features/orders/hooks/useOrders';
 import { FEATURES } from '../../config/features';
 import { Skeleton } from '../Skeleton';
 
-const ADMIN_LINKS = [
-  { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/admin/products', label: 'Products', icon: Box },
-  { path: '/admin/orders', label: 'Sales/Orders', icon: ShoppingBag, badge: 'orders' },
-  { path: '/admin/customers', label: 'Customers', icon: Users },
-  { path: '/admin/content', label: 'Content', icon: FileText },
-  { path: '/admin/enquiries', label: 'Enquiries', icon: DollarSign, badge: 'enquiries' },
-  { path: '/admin/support', label: 'Support', icon: LifeBuoy, badge: 'support' },
-  { path: '/admin/audit', label: 'Audit Log', icon: Shield },
+type AdminLink = { path: string; label: string; icon: any; badge?: 'orders' | 'enquiries' | 'support' };
+
+// Grouped so the sidebar reads as a few calm sections instead of one long list.
+const NAV_GROUPS: { heading: string; links: AdminLink[] }[] = [
+  {
+    heading: 'Overview',
+    links: [{ path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
+  },
+  {
+    heading: 'Commerce',
+    links: [
+      { path: '/admin/products', label: 'Products', icon: Box },
+      { path: '/admin/orders', label: 'Sales / Orders', icon: ShoppingBag, badge: 'orders' },
+    ],
+  },
+  {
+    heading: 'Customers',
+    links: [
+      { path: '/admin/customers', label: 'Customers', icon: Users },
+      { path: '/admin/enquiries', label: 'Enquiries', icon: DollarSign, badge: 'enquiries' },
+      { path: '/admin/support', label: 'Support', icon: LifeBuoy, badge: 'support' },
+    ],
+  },
+  {
+    heading: 'Content & System',
+    links: [
+      { path: '/admin/content', label: 'Content', icon: FileText },
+      { path: '/admin/audit', label: 'Audit Log', icon: Shield },
+    ],
+  },
 ];
 
 function AdminOrderSearch() {
@@ -103,6 +124,52 @@ function AdminOrderSearch() {
   );
 }
 
+function NavItem({
+  link,
+  active,
+  badgeCount,
+  variant,
+  onClick,
+}: {
+  link: AdminLink;
+  active: boolean;
+  badgeCount: number;
+  variant: 'mobile' | 'desktop';
+  onClick?: () => void;
+}) {
+  return (
+    <Link
+      to={link.path}
+      onClick={onClick}
+      className={clsx(
+        'flex items-center gap-3 text-xs font-bold tracking-widest uppercase transition-all',
+        variant === 'mobile'
+          ? clsx(
+              'p-4 border-l-2',
+              active ? 'border-[#c5a059] bg-[#c5a059]/10 text-[#c5a059]' : 'border-transparent text-muted hover:bg-surface/80 hover:text-content',
+            )
+          : clsx(
+              'p-3 rounded-sm duration-300',
+              active ? 'bg-[#c5a059] text-[#333333]' : 'text-muted hover:bg-surface hover:text-[#c5a059]',
+            ),
+      )}
+    >
+      <link.icon className="w-4 h-4 shrink-0" />
+      <span className="flex-1">{link.label}</span>
+      {link.badge && badgeCount > 0 && (
+        <span
+          className={clsx(
+            'text-[9px] px-2 py-0.5 rounded-full ml-2',
+            active ? 'bg-[#333333] text-[#c5a059]' : 'bg-[#c5a059] text-[#1a1a1a]',
+          )}
+        >
+          {badgeCount}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 export function AdminLayout() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const location = useLocation();
@@ -131,6 +198,11 @@ export function AdminLayout() {
     supabase.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'new')
       .then(({ count }) => setNewEnquiriesCount(count ?? 0));
   }, [isAdmin]);
+
+  const badgeFor = (badge?: AdminLink['badge']) =>
+    badge === 'orders' ? pendingOrdersCount : badge === 'support' ? openTicketsCount : badge === 'enquiries' ? newEnquiriesCount : 0;
+  const isActive = (path: string) =>
+    location.pathname === path || (path !== '/admin' && location.pathname.startsWith(path));
 
   if (loading) {
     return (
@@ -167,41 +239,22 @@ export function AdminLayout() {
           </button>
         </div>
         {mobileMenuOpen && (
-          <div className="absolute top-[100%] left-0 w-full bg-surface border-b border-[#c5a059]/20 flex flex-col shadow-2xl z-[100]">
-            {ADMIN_LINKS.map(link => {
-              const active = location.pathname === link.path || (link.path !== '/admin' && location.pathname.startsWith(link.path));
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={clsx(
-                    "flex items-center gap-3 p-4 text-xs font-bold tracking-widest uppercase border-l-2 transition-colors",
-                    active 
-                      ? "border-[#c5a059] bg-[#c5a059]/10 text-[#c5a059]" 
-                      : "border-transparent text-muted hover:bg-surface/80 hover:text-content"
-                  )}
-                >
-                  <link.icon className="w-4 h-4 shrink-0" />
-                  <span className="flex-1">{link.label}</span>
-                  {link.badge === 'support' && openTicketsCount > 0 && (
-                    <span className={clsx("text-[9px] px-2 py-0.5 rounded-full ml-2", active ? "bg-[#333333] text-[#c5a059]" : "bg-[#c5a059] text-[#1a1a1a]")}>
-                      {openTicketsCount}
-                    </span>
-                  )}
-                  {link.badge === 'orders' && pendingOrdersCount > 0 && (
-                    <span className={clsx("text-[9px] px-2 py-0.5 rounded-full ml-2", active ? "bg-[#333333] text-[#c5a059]" : "bg-[#c5a059] text-[#1a1a1a]")}>
-                      {pendingOrdersCount}
-                    </span>
-                  )}
-                  {link.badge === 'enquiries' && newEnquiriesCount > 0 && (
-                    <span className={clsx("text-[9px] px-2 py-0.5 rounded-full ml-2", active ? "bg-[#333333] text-[#c5a059]" : "bg-[#c5a059] text-[#1a1a1a]")}>
-                      {newEnquiriesCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+          <div className="absolute top-[100%] left-0 w-full bg-surface border-b border-[#c5a059]/20 flex flex-col shadow-2xl z-[100] max-h-[80vh] overflow-y-auto">
+            {NAV_GROUPS.map(group => (
+              <div key={group.heading}>
+                <div className="px-4 pt-4 pb-1 text-[9px] font-bold uppercase tracking-[0.3em] text-muted/50">{group.heading}</div>
+                {group.links.map(link => (
+                  <NavItem
+                    key={link.path}
+                    link={link}
+                    active={isActive(link.path)}
+                    badgeCount={badgeFor(link.badge)}
+                    variant="mobile"
+                    onClick={() => setMobileMenuOpen(false)}
+                  />
+                ))}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -210,40 +263,21 @@ export function AdminLayout() {
       <div className="hidden md:flex flex-col w-64 border-r border-[#c5a059]/20 bg-surface/30 min-h-screen sticky top-0 shrink-0">
         <div className="p-8">
           <span className="text-[10px] tracking-[0.4em] uppercase text-premium-gold-text font-bold block mb-8">Admin Panel</span>
-          <div className="flex flex-col gap-2">
-            {ADMIN_LINKS.map(link => {
-              const active = location.pathname === link.path || (link.path !== '/admin' && location.pathname.startsWith(link.path));
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={clsx(
-                    "flex items-center gap-3 p-3 text-xs font-bold tracking-widest uppercase rounded-sm transition-all duration-300",
-                    active 
-                      ? "bg-[#c5a059] text-[#333333]" 
-                      : "text-muted hover:bg-surface hover:text-[#c5a059]"
-                  )}
-                >
-                  <link.icon className="w-4 h-4 shrink-0" />
-                  <span className="flex-1">{link.label}</span>
-                  {link.badge === 'support' && openTicketsCount > 0 && (
-                    <span className={clsx("text-[9px] px-2 py-0.5 rounded-full ml-auto", active ? "bg-[#333333] text-[#c5a059]" : "bg-[#c5a059] text-[#1a1a1a]")}>
-                      {openTicketsCount}
-                    </span>
-                  )}
-                  {link.badge === 'orders' && pendingOrdersCount > 0 && (
-                    <span className={clsx("text-[9px] px-2 py-0.5 rounded-full ml-auto", active ? "bg-[#333333] text-[#c5a059]" : "bg-[#c5a059] text-[#1a1a1a]")}>
-                      {pendingOrdersCount}
-                    </span>
-                  )}
-                  {link.badge === 'enquiries' && newEnquiriesCount > 0 && (
-                    <span className={clsx("text-[9px] px-2 py-0.5 rounded-full ml-auto", active ? "bg-[#333333] text-[#c5a059]" : "bg-[#c5a059] text-[#1a1a1a]")}>
-                      {newEnquiriesCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+          <div className="flex flex-col gap-6">
+            {NAV_GROUPS.map(group => (
+              <div key={group.heading} className="flex flex-col gap-1.5">
+                <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-muted/50 px-3 mb-1">{group.heading}</span>
+                {group.links.map(link => (
+                  <NavItem
+                    key={link.path}
+                    link={link}
+                    active={isActive(link.path)}
+                    badgeCount={badgeFor(link.badge)}
+                    variant="desktop"
+                  />
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       </div>

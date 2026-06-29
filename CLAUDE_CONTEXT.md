@@ -94,10 +94,11 @@ supabase/migrations/2026062800000{1..8}_*.sql  # versioned schema (source of tru
 - **Realtime is gone:** `orderService`/`ticketService` `subscribeTo*` are now fetch-on-call (return no-op unsubscribe). Admin boards don't live-update; they refetch on mount. Re-add Supabase realtime channels during hardening if desired.
 - **Other date displays** may still use Firestore-style `createdAt.toDate()` (timestamps are ISO strings now). Fixed in AdminOrdersBoard; audit others if "N/A"/invalid dates appear.
 
-### Security TODO (user must do)
-- **Revoke the Supabase Management API token** named `migration` (it was used to run migrations/seed via the Management API): https://supabase.com/dashboard/account/tokens
-- **Delete** `~/Downloads/Grainood Keys - Sheet1.csv` (holds that `sbp_` token).
-- The Supabase **`service_role` key was already rotated** by the user (good).
+### Security — ✅ DONE (2026-06-29)
+- **Revoked** the Supabase Management API token named `migration` (user confirmed deleted on the dashboard).
+- **Deleted** `~/Downloads/Grainood Keys - Sheet1.csv` (verified gone).
+- The Supabase **`service_role` key was already rotated** by the user.
+- Repo scanned: no live `sbp_`/`service_role`/JWT values in tracked files (only comments/docs that mention them).
 - Never commit secrets. `.env.local`, `serviceAccountKey.json`, `*serviceAccount*.json`, `.supabase-token*` are gitignored.
 
 ---
