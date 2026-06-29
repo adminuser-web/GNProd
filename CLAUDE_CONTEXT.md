@@ -112,8 +112,10 @@ Decisions: **Razorpay**, **payment-link-after-WhatsApp-confirm** model, server c
 - **BLOCKED ON USER:** Razorpay account + KYC (multi-day), then TEST keys. **Phase 2** = wire admin "Generate & send link" + customer pay handling behind the flag, test end-to-end. **Phase 3** = refunds, reconciliation, live keys.
 - ⚠️ Edge functions are Deno (import from esm.sh/deno.land) — they live OUTSIDE `src`, so `tsconfig` (include: ["src"]) and `npm run lint` do NOT type-check them. Validate by deploying to Supabase.
 
-## Transactional email — Resend (scaffold on `develop`)
-Decisions: **Resend**, triggered by a **Supabase Database Webhook on `orders`** (INSERT+UPDATE) → one `send-email` edge function. Covers storefront, admin, and the Razorpay payment webhook because all write to `orders`.
+## Transactional email (scaffold on `develop`)
+Transport: **Google Workspace SMTP by default** (free — domain already Google-authenticated, no new DNS), via denomailer in the edge function. Resend HTTP API is an optional fallback (`EMAIL_PROVIDER=resend`). Triggered by a **Supabase Database Webhook on `orders`** (INSERT+UPDATE) → one `send-email` edge function. Covers storefront, admin, and the Razorpay payment webhook because all write to `orders`.
+- SMTP secrets: SMTP_USER (real Workspace user), SMTP_PASS (16-char App Password, needs 2FA), EMAIL_FROM (= `noreply@` **alias of SMTP_USER** — free alias, Google auto-verifies send-as so From isn't rewritten), EMAIL_REPLY_TO, OWNER_EMAIL, EMAIL_WEBHOOK_SECRET, SITE_URL, BRAND_NAME. Defaults SMTP_HOST=smtp.gmail.com, SMTP_PORT=465 (TLS). ~2000/day limit.
+- `_shared/email.ts` `sendEmail()` switches transport on `EMAIL_PROVIDER` (smtp default | resend).
 - `supabase/functions/send-email/` — routes DB-webhook events: INSERT → order-placed (customer) + new-order alert (owner); UPDATE → payment-confirmed (when `data.payment.status` flips to confirmed), Shipped/Delivered/Completed/Cancelled status emails. Shared-secret header `x-webhook-secret`. Returns 200 even on send failure (no retry double-send).
 - `supabase/functions/_shared/email.ts` (Resend client + branded inline-HTML layout/itemsTable/button) + `emailTemplates.ts` (per-event).
 - Recipient email read from `order.data.customer.email` (works for guests).

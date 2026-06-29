@@ -1,7 +1,19 @@
-// Resend email helper + shared branded HTML layout.
-// Secret RESEND_API_KEY is read from the function environment — never the browser.
-//   supabase secrets set RESEND_API_KEY=... EMAIL_FROM="Grainood <orders@yourdomain>" \
-//     EMAIL_REPLY_TO=... OWNER_EMAIL=... EMAIL_WEBHOOK_SECRET=...
+// Email helper + shared branded HTML layout.
+//
+// Default transport = **Google Workspace SMTP** (free, no new DNS — the domain
+// is already Google-authenticated). Set:
+//   supabase secrets set \
+//     SMTP_USER=admin@yourdomain  SMTP_PASS=<16-char app password> \
+//     EMAIL_FROM="Grainood <noreply@yourdomain>"  EMAIL_REPLY_TO=support@yourdomain \
+//     OWNER_EMAIL=you@yourdomain  EMAIL_WEBHOOK_SECRET=...  SITE_URL=...  BRAND_NAME=GRAINOOD
+//
+// `noreply@yourdomain` must be an ALIAS of SMTP_USER (Google auto-adds it as a
+// verified "send mail as" address, so Gmail won't rewrite the From).
+//
+// Optional: set EMAIL_PROVIDER=resend + RESEND_API_KEY to use Resend's HTTP API
+// instead (no SMTP). SMTP is the default.
+
+import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
 const GOLD = '#c5a059';
 const INK = '#1a1a1a';
@@ -14,22 +26,52 @@ export interface SendEmailArgs {
   html: string;
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailArgs) {
+export async function sendEmail(args: SendEmailArgs) {
+  if (!args.to) throw new Error('No recipient');
+  const provider = (Deno.env.get('EMAIL_PROVIDER') || 'smtp').toLowerCase();
+  return provider === 'resend' ? sendViaResend(args) : sendViaSmtp(args);
+}
+
+// --- Google Workspace / generic SMTP (default) ---
+async function sendViaSmtp({ to, subject, html }: SendEmailArgs) {
+  const host = Deno.env.get('SMTP_HOST') || 'smtp.gmail.com';
+  const port = Number(Deno.env.get('SMTP_PORT') || '465');
+  const user = Deno.env.get('SMTP_USER');
+  const pass = Deno.env.get('SMTP_PASS');
+  const from = Deno.env.get('EMAIL_FROM') || user || '';
+  const replyTo = Deno.env.get('EMAIL_REPLY_TO') || undefined;
+  if (!user || !pass) throw new Error('SMTP_USER / SMTP_PASS not configured');
+
+  const client = new SMTPClient({
+    connection: { hostname: host, port, tls: port === 465, auth: { username: user, password: pass } },
+  });
+  try {
+    await client.send({
+      from,
+      to,
+      replyTo,
+      subject,
+      content: 'This email requires an HTML-capable client.',
+      html,
+    });
+  } finally {
+    await client.close();
+  }
+}
+
+// --- Resend HTTP API (optional fallback) ---
+async function sendViaResend({ to, subject, html }: SendEmailArgs) {
   const apiKey = Deno.env.get('RESEND_API_KEY');
   const from = Deno.env.get('EMAIL_FROM') || 'Grainood <onboarding@resend.dev>';
   const replyTo = Deno.env.get('EMAIL_REPLY_TO') || undefined;
   if (!apiKey) throw new Error('RESEND_API_KEY not configured');
-  if (!to) throw new Error('No recipient');
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from, to, subject, html, reply_to: replyTo }),
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Resend error: ${err}`);
-  }
+  if (!res.ok) throw new Error(`Resend error: ${await res.text()}`);
   return res.json();
 }
 

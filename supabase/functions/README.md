@@ -67,7 +67,7 @@ supabase secrets set \
 
 ---
 
-# Transactional email (Resend) — `send-email`
+# Transactional email — `send-email`
 
 One function, triggered by a **Database Webhook on `orders`** (INSERT + UPDATE).
 Every order path writes to `orders`, so this covers storefront checkout, admin
@@ -76,30 +76,41 @@ status changes, AND the Razorpay payment webhook with no scattered calls.
 Emails: order placed (customer) + new-order alert (owner); payment confirmed;
 shipped (with tracking if present); delivered/completed; cancelled.
 
-## One-time setup (when your Resend account is ready)
+Transport is **Google Workspace SMTP by default** (free, no new DNS since the
+domain is already Google-authenticated). To use Resend's HTTP API instead, set
+`EMAIL_PROVIDER=resend` + `RESEND_API_KEY` (see end of section).
 
-### 1. Resend account + sender
-- Create a [Resend](https://resend.com) account.
-- **Verify your domain** (Resend → Domains → add DNS records SPF/DKIM at your registrar) so you can send from e.g. `orders@grainood.com`.
-  - *For testing before DNS is done*, leave `EMAIL_FROM` unset — it falls back to Resend's `onboarding@resend.dev` sandbox sender (only delivers to your own verified address).
-- Get an **API key** (Resend → API Keys).
+## One-time setup — Google Workspace SMTP (recommended, free)
 
-### 2. Deploy
+### 1. Create a free `noreply@` alias
+- Google Admin → **Directory → Users →** pick an existing user (e.g. `admin@grainood.com`) → **Add alternate email (alias)** → `noreply@grainood.com`.
+  - An **alias is free**; a new *user* would cost a seat. Google auto-registers the alias as a verified "send mail as" address, so Gmail won't rewrite the From.
+
+### 2. App Password on that user
+- That user → enable **2-Step Verification** → **App Passwords** → generate one (16 chars). This is `SMTP_PASS`.
+
+### 3. Deploy
 ```bash
 supabase functions deploy send-email --no-verify-jwt
 ```
 
-### 3. Secrets
+### 4. Secrets
 ```bash
 supabase secrets set \
-  RESEND_API_KEY=re_xxx \
-  EMAIL_FROM="Grainood <orders@grainood.com>" \
+  SMTP_USER=admin@grainood.com \
+  SMTP_PASS=your_16_char_app_password \
+  EMAIL_FROM="Grainood <noreply@grainood.com>" \
   EMAIL_REPLY_TO=support@grainood.com \
   OWNER_EMAIL=you@grainood.com \
   EMAIL_WEBHOOK_SECRET=some_strong_random_string \
   SITE_URL=https://grainood.com \
   BRAND_NAME=GRAINOOD
 ```
+- `SMTP_USER` = the real Workspace user you authenticate as.
+- `EMAIL_FROM` = the `noreply@` alias (must belong to `SMTP_USER`).
+- Defaults: `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465` (TLS). Limit ≈ 2,000/day.
+
+> Prefer Resend instead? `supabase secrets set EMAIL_PROVIDER=resend RESEND_API_KEY=re_xxx EMAIL_FROM="Grainood <orders@grainood.com>"` and verify your domain in Resend (adds DKIM DNS records alongside Google's — they coexist fine).
 
 ### 4. Create the Database Webhook
 Supabase Dashboard → **Database → Webhooks → Create a new hook**:
@@ -116,6 +127,6 @@ Supabase Dashboard → **Database → Webhooks → Create a new hook**:
 - Confirm a payment (manual or via Razorpay test) → payment-received email.
 
 ## Notes
-- Templates live in `_shared/emailTemplates.ts`; the shared shell + Resend client in `_shared/email.ts`.
+- Templates live in `_shared/emailTemplates.ts`; the shared shell + transport (SMTP/Resend) in `_shared/email.ts`.
 - The function returns **200 even on send failure** (errors in the body) so the DB webhook doesn't retry and double-send. Check function logs for failures.
 - Guests: the recipient email is read from the order's `data.customer.email` (captured at checkout), not from auth — so guest orders email correctly.
