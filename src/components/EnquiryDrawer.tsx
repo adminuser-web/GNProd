@@ -4,7 +4,7 @@ import { GoldButton } from './GoldButton';
 import { enquiryService } from '../features/enquiries/services/enquiryService';
 import { Enquiry, EnquiryType } from '../features/enquiries/types';
 import { toast } from 'sonner';
-import { auth } from '../lib/firebase';
+import { useAuth } from '../context/AuthContext';
 
 interface EnquiryDrawerProps {
   isOpen: boolean;
@@ -26,7 +26,7 @@ export function EnquiryDrawer({
   description = "Have questions about a bat or a custom build? Send us a message and our experts will get back to you soon."
 }: EnquiryDrawerProps) {
   const [loading, setLoading] = useState(false);
-  const user = auth.currentUser;
+  const { user } = useAuth();
   
   const [formData, setFormData] = useState({
     customerName: user?.displayName || '',
