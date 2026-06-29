@@ -18,7 +18,37 @@ export type { OrderStatus } from './lib/orderStatus';
 // Legacy types for compatibility
 export type EnquiryStatus = any;
 export type OrderRecord = any;
-export type OrderPayment = any;
+
+// Payment on an order. Kept permissive ([k: string]: any) so existing loose
+// access sites keep compiling, while documenting the real shape — including the
+// Razorpay payment-link gateway fields added during gateway integration.
+export type PaymentStatus =
+  | 'pending'        // order placed, no payment action yet
+  | 'link_sent'      // a Razorpay payment link has been generated/sent
+  | 'submitted'      // legacy: customer claims paid (manual UPI proof)
+  | 'processing'     // gateway reports in-progress
+  | 'confirmed'      // paid & verified (gateway webhook or admin)
+  | 'failed'
+  | 'refunded';
+
+export interface OrderPayment {
+  status: PaymentStatus;
+  paidAmount?: number;
+  method?: string;                 // 'upi' | 'card' | 'netbanking' | 'wallet' | manual
+  reference?: string;              // UPI ref / manual reference
+  notes?: string;
+  proofImageUrl?: string;          // legacy manual-proof upload
+  confirmedAt?: any;
+  confirmedBy?: string;
+  // --- Razorpay gateway fields ---
+  gateway?: 'razorpay';
+  gatewayLinkId?: string;          // razorpay payment_link id (plink_...)
+  gatewayLinkUrl?: string;         // short_url to send via WhatsApp
+  gatewayPaymentId?: string;       // pay_... once paid
+  gatewayOrderId?: string;         // order_... (standard checkout flow)
+  refunds?: Array<{ id: string; amount: number; createdAt: string }>;
+  [k: string]: any;
+}
 export type SupportTicketMessage = any;
 export type TicketAttachment = any;
 export type OrderItemSelection = any;

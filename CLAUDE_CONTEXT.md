@@ -98,6 +98,20 @@ Round 3 — customer + owner flow polish (scope the user approved):
 - **ProductPage buy box reordered** (`ProductPage.tsx`, `@ts-nocheck`): primary **ADD TO CART** now leads, ENQUIRE secondary, SAVE/SHARE demoted to subtle text actions; compact HowItWorks strip added. Mobile sticky CTA already existed.
 - Not done this round (deferred): #6/#7 WhatsApp-customer button + one-click Confirm Payment on order detail; bundle code-splitting.
 
+## Payment gateway — Razorpay (Phase 1 scaffold on `develop`)
+Decisions: **Razorpay**, **payment-link-after-WhatsApp-confirm** model, server code in **Supabase Edge Functions**. App had NO backend before this.
+- **Phase 1 (done, on `develop`, NOT shipped):**
+  - `src/types.ts` — typed `OrderPayment` + `PaymentStatus` (permissive `[k:string]:any`; adds Razorpay fields gatewayLinkId/Url, gatewayPaymentId, refunds…).
+  - `src/config/features.ts` — `paymentGateway: false` flag (gates all UI; keep off until tested).
+  - `supabase/functions/create-payment-link/` — admin-only; computes amount server-side from order, creates Razorpay link, stores on order (`payment.status='link_sent'`).
+  - `supabase/functions/razorpay-webhook/` — verifies HMAC on raw body, idempotent via `payment_events`, marks order `confirmed` + audit + customer notification. Deploy with `--no-verify-jwt`.
+  - `supabase/functions/_shared/` — cors + razorpay helpers (auth header, `verifyWebhookSignature`, `createPaymentLink`).
+  - `supabase/migrations/20260629000001_payment_events.sql` — idempotency ledger, RLS on, no policies (service-role only).
+  - `supabase/functions/README.md` — full deploy/secrets/webhook runbook.
+  - Schemas matched to reality: notifications = flat cols (`user_id, role_target, type, title, message, read`); audit_logs = `actor_user_id/actor_name/action/entity_type/entity_id/before/after`; orders has no `receipt_number` col (read from `data`).
+- **BLOCKED ON USER:** Razorpay account + KYC (multi-day), then TEST keys. **Phase 2** = wire admin "Generate & send link" + customer pay handling behind the flag, test end-to-end. **Phase 3** = refunds, reconciliation, live keys.
+- ⚠️ Edge functions are Deno (import from esm.sh/deno.land) — they live OUTSIDE `src`, so `tsconfig` (include: ["src"]) and `npm run lint` do NOT type-check them. Validate by deploying to Supabase.
+
 ## Known Issues & Bugs
 
 - **Bundle size:** main chunk 766 kB > Vite's 500 kB warning. Not addressed (candidate: `manualChunks`). Non-blocking.
