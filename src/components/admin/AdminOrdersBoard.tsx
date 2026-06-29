@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { db, auth, storage } from '../../lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { storage } from '../../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ticketService } from '../../features/support/services/ticketService';
+import { useAuth } from '../../context/AuthContext';
 import { clsx } from 'clsx';
 import { Skeleton } from '../Skeleton';
 import { 
@@ -58,6 +59,7 @@ function StatusBadge({ status, type = 'order' }: { status: string, type?: 'order
 }
 
 function PaymentPanel({ order, onUpdate }: { order: any, onUpdate: (o: any) => void }) {
+  const { user } = useAuth();
   const defaultAmount = order.totalPrice || order.grandTotal || 0;
   const currentPayment = order.payment || { status: order.paymentStatus || 'pending', paidAmount: 0 };
   
@@ -83,7 +85,7 @@ function PaymentPanel({ order, onUpdate }: { order: any, onUpdate: (o: any) => v
 
       if (newStatus === 'confirmed') {
         paymentUpdate.confirmedAt = new Date();
-        paymentUpdate.confirmedBy = auth.currentUser?.email || 'Admin';
+        paymentUpdate.confirmedBy = user?.email || 'Admin';
       }
 
       if (newStatus === 'confirmed') {
@@ -190,6 +192,7 @@ function PaymentPanel({ order, onUpdate }: { order: any, onUpdate: (o: any) => v
 
 export function AdminOrdersBoard() {
   const { orders, loading } = useAllOrders();
+  const { user } = useAuth();
   
   const [searchParams] = useSearchParams();
   
@@ -229,17 +232,8 @@ export function AdminOrdersBoard() {
   const [openTicketsMap, setOpenTicketsMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    // Fetch open tickets map for filtering
-    const qOpenTickets = query(collection(db, 'tickets'), where('status', '!=', 'resolved'));
-    const unsub = onSnapshot(qOpenTickets, (snap: any) => {
-      const map: Record<string, boolean> = {};
-      snap.docs.forEach((doc: any) => {
-        const data = doc.data();
-        if (data.orderId) map[data.orderId] = true;
-      });
-      setOpenTicketsMap(map);
-    });
-    return () => unsub();
+    // Map of orderId -> true for orders with an active (non-resolved) ticket.
+    ticketService.getActiveOrderIds().then(setOpenTicketsMap);
   }, []);
 
   // Derived filtered data
@@ -315,7 +309,7 @@ export function AdminOrdersBoard() {
   const handleStatusChange = async (order: any, status: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     try {
-      await orderService.updateOrderStatus(order.id, status as OrderStatus, auth.currentUser?.uid || 'Admin');
+      await orderService.updateOrderStatus(order.id, status as OrderStatus, user?.uid || 'Admin');
       toast.success(`Order status updated to ${status}`);
       if (selectedOrder?.id === order.id) {
         setSelectedOrder({...selectedOrder, status});

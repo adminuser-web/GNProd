@@ -57,6 +57,11 @@ export const orderService = {
     return () => {};
   },
 
+  async getOrder(orderId: string): Promise<OrderRecord | null> {
+    const row = await fetchOrderRow(orderId);
+    return row ? rowToOrder(row) : null;
+  },
+
   async updateOrderStatus(orderId: string, status: OrderStatus, changedBy: string, note?: string) {
     const row = await fetchOrderRow(orderId);
     if (!row) throw new Error('Order not found');

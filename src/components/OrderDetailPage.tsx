@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { orderService } from '../features/orders/services/orderService';
+import { ticketService } from '../features/support/services/ticketService';
 import { useAuth } from '../context/AuthContext';
 import { GoldButton } from './GoldButton';
 import { RevealSection } from './Reveal';
@@ -196,23 +196,15 @@ export function OrderDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const orderRef = doc(db, 'orders', id);
-        const orderSnap = await getDoc(orderRef);
-        
-        if (!orderSnap.exists()) {
+        const data: any = await orderService.getOrder(id);
+
+        if (!data || data.userId !== user.uid) {
           setError('Order not found.');
           setLoading(false);
           return;
         }
 
-        const data = orderSnap.data();
-        if (data.userId !== user.uid) {
-          setError('Order not found.');
-          setLoading(false);
-          return;
-        }
-
-        setOrder({ id: orderSnap.id, ...data });
+        setOrder(data);
       } catch (err: any) {
         console.error("Error fetching order details:", err);
         setError('Failed to load order details.');
@@ -231,14 +223,11 @@ export function OrderDetailPage() {
     setSubmitError('');
 
     try {
-      const { doc, setDoc } = await import('firebase/firestore');
-      const ticketRef = doc(collection(db, 'tickets'));
-      const newTicketId = ticketRef.id;
+      const newTicketId = crypto.randomUUID();
 
       let attachments = [];
       if (file) {
         try {
-          const { ticketService } = await import('../features/support/services/ticketService');
           const fileData = await ticketService.uploadAttachment(file, user.uid, newTicketId);
           attachments.push(fileData);
         } catch(err) {
@@ -276,7 +265,7 @@ export function OrderDetailPage() {
          }
       }
 
-      await setDoc(ticketRef, {
+      await ticketService.createTicket({
         userId: user.uid,
         orderId: order.id,
         orderCode: order.receiptNumber || order.id,
@@ -295,9 +284,7 @@ export function OrderDetailPage() {
         }],
         ...(attachments.length ? { attachments } : {}),
         ...(eligibility ? { eligibility } : {}),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+      } as any);
 
       toast.success("Support request submitted");
       setShowSupportModal(false);

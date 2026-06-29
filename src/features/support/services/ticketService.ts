@@ -55,6 +55,27 @@ export const ticketService = {
     return () => {};
   },
 
+  /** Map of orderId -> true for orders with a non-resolved ticket. */
+  async getActiveOrderIds(): Promise<Record<string, boolean>> {
+    const { data, error } = await supabase.from('tickets').select('data').neq('status', 'resolved');
+    if (error) { console.error('getActiveOrderIds', error); return {}; }
+    const map: Record<string, boolean> = {};
+    (data ?? []).forEach((r: any) => {
+      const oid = r.data?.orderId;
+      if (oid) map[oid] = true;
+    });
+    return map;
+  },
+
+  async getTicketCountByOrder(orderId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .eq('data->>orderId', orderId);
+    if (error) { console.error('getTicketCountByOrder', error); return 0; }
+    return count ?? 0;
+  },
+
   async createTicket(ticketData: Omit<SupportTicket, 'id' | 'createdAt' | 'updatedAt'>) {
     const td: any = ticketData;
     const { data, error } = await supabase

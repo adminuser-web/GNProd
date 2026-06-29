@@ -6,8 +6,7 @@ import { OrderRecord } from '../../types';
 import { ShoppingBag, User, DollarSign, Factory, Truck, Shield, Wrench, ArrowLeft, RefreshCw, FileText, ClipboardList, Activity } from 'lucide-react';
 import { GoldButton } from '../GoldButton';
 
-import { db } from '../../lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { ticketService } from '../../features/support/services/ticketService';
 import { ORDER_STATUSES, OrderStatus, ALLOWED_TRANSITIONS, mapLegacyStatus } from '../../lib/orderStatus';
 import { FEATURES } from '../../config/features';
 
@@ -65,15 +64,11 @@ export function AdminOrderDetailsPage() {
       setLoading(false);
     });
 
-    // Subscribe to Tickets
-    const qTickets = query(collection(db, 'tickets'), where('orderId', '==', id));
-    const unsubTickets = onSnapshot(qTickets, (snap) => {
-       setTicketsCount(snap.size);
-    });
+    // Tickets count for this order
+    if (id) ticketService.getTicketCountByOrder(id).then(setTicketsCount);
 
     return () => {
       unsubOrder();
-      unsubTickets();
     };
   }, [id, user]);
 

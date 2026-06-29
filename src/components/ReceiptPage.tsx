@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { orderService } from '../features/orders/services/orderService';
 import { useAuth } from '../context/AuthContext';
 import { BRAND } from '../types';
 
@@ -37,16 +36,14 @@ export function ReceiptPage() {
       setLoading(true);
       setError(null);
       try {
-        const orderRef = doc(db, 'orders', id);
-        const orderSnap = await getDoc(orderRef);
-        
-        if (!orderSnap.exists()) {
+        const data: any = await orderService.getOrder(id);
+
+        if (!data) {
           setError('Order not found.');
           setLoading(false);
           return;
         }
 
-        const data = orderSnap.data();
         if (data.userId !== user.uid) {
           setError('Order not found.');
           setLoading(false);
@@ -61,7 +58,7 @@ export function ReceiptPage() {
            return;
         }
 
-        setOrder({ id: orderSnap.id, ...data });
+        setOrder(data);
       } catch (err: any) {
         console.error("Error fetching order details:", err);
         setError('Failed to load order details.');
