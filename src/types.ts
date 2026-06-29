@@ -19,34 +19,25 @@ export type { OrderStatus } from './lib/orderStatus';
 export type EnquiryStatus = any;
 export type OrderRecord = any;
 
-// Payment on an order. Kept permissive ([k: string]: any) so existing loose
-// access sites keep compiling, while documenting the real shape — including the
-// Razorpay payment-link gateway fields added during gateway integration.
+// Payment on an order. Manual UPI / bank collection (no gateway): the customer
+// pays via a UPI link/QR, then we confirm from the bank. Kept permissive
+// ([k: string]: any) so existing loose access sites keep compiling.
 export type PaymentStatus =
   | 'pending'        // order placed, no payment action yet
-  | 'link_sent'      // a Razorpay payment link has been generated/sent
-  | 'submitted'      // legacy: customer claims paid (manual UPI proof)
-  | 'processing'     // gateway reports in-progress
-  | 'confirmed'      // paid & verified (gateway webhook or admin)
+  | 'submitted'      // customer reports paid (UPI ref / proof) — awaiting admin check
+  | 'confirmed'      // payment verified by admin (seen in bank)
   | 'failed'
   | 'refunded';
 
 export interface OrderPayment {
   status: PaymentStatus;
   paidAmount?: number;
-  method?: string;                 // 'upi' | 'card' | 'netbanking' | 'wallet' | manual
-  reference?: string;              // UPI ref / manual reference
+  method?: string;                 // 'upi' | 'bank_transfer' | 'cash' | ...
+  reference?: string;              // UPI UTR / bank reference
   notes?: string;
-  proofImageUrl?: string;          // legacy manual-proof upload
+  proofImageUrl?: string;          // payment screenshot upload
   confirmedAt?: any;
   confirmedBy?: string;
-  // --- Razorpay gateway fields ---
-  gateway?: 'razorpay';
-  gatewayLinkId?: string;          // razorpay payment_link id (plink_...)
-  gatewayLinkUrl?: string;         // short_url to send via WhatsApp
-  gatewayPaymentId?: string;       // pay_... once paid
-  gatewayOrderId?: string;         // order_... (standard checkout flow)
-  refunds?: Array<{ id: string; amount: number; createdAt: string }>;
   [k: string]: any;
 }
 export type SupportTicketMessage = any;
@@ -73,6 +64,9 @@ export interface BrandContent {
   contact: { phone: string; whatsapp: string; email: string; instagram: string; };
   store: { address: string; hours: string; mapLink: string; };
   social?: { instagram?: string; facebook?: string; youtube?: string; };
+  // Manual UPI collection: the business UPI ID money is paid into, and the
+  // payee name shown in the customer's UPI app. Configured in admin → Content → Brand.
+  payments?: { upiId?: string; upiPayeeName?: string };
 }
 
 export interface HomeContent {
@@ -154,6 +148,10 @@ export const DEFAULT_SITE_CONTENT: SiteContentMap = {
       instagram: "grainood",
       facebook: "",
       youtube: ""
+    },
+    payments: {
+      upiId: "",
+      upiPayeeName: "GRAINOOD"
     }
   },
   home: {

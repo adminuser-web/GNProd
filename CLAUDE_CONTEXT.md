@@ -98,19 +98,14 @@ Round 3 — customer + owner flow polish (scope the user approved):
 - **ProductPage buy box reordered** (`ProductPage.tsx`, `@ts-nocheck`): primary **ADD TO CART** now leads, ENQUIRE secondary, SAVE/SHARE demoted to subtle text actions; compact HowItWorks strip added. Mobile sticky CTA already existed.
 - Not done this round (deferred): #6/#7 WhatsApp-customer button + one-click Confirm Payment on order detail; bundle code-splitting.
 
-## Payment gateway — Razorpay (Phase 1 scaffold on `develop`)
-Decisions: **Razorpay**, **payment-link-after-WhatsApp-confirm** model, server code in **Supabase Edge Functions**. App had NO backend before this.
-- **Phase 1 (done, on `develop`, NOT shipped):**
-  - `src/types.ts` — typed `OrderPayment` + `PaymentStatus` (permissive `[k:string]:any`; adds Razorpay fields gatewayLinkId/Url, gatewayPaymentId, refunds…).
-  - `src/config/features.ts` — `paymentGateway: false` flag (gates all UI; keep off until tested).
-  - `supabase/functions/create-payment-link/` — admin-only; computes amount server-side from order, creates Razorpay link, stores on order (`payment.status='link_sent'`).
-  - `supabase/functions/razorpay-webhook/` — verifies HMAC on raw body, idempotent via `payment_events`, marks order `confirmed` + audit + customer notification. Deploy with `--no-verify-jwt`.
-  - `supabase/functions/_shared/` — cors + razorpay helpers (auth header, `verifyWebhookSignature`, `createPaymentLink`).
-  - `supabase/migrations/20260629000001_payment_events.sql` — idempotency ledger, RLS on, no policies (service-role only).
-  - `supabase/functions/README.md` — full deploy/secrets/webhook runbook.
-  - Schemas matched to reality: notifications = flat cols (`user_id, role_target, type, title, message, read`); audit_logs = `actor_user_id/actor_name/action/entity_type/entity_id/before/after`; orders has no `receipt_number` col (read from `data`).
-- **BLOCKED ON USER:** Razorpay account + KYC (multi-day), then TEST keys. **Phase 2** = wire admin "Generate & send link" + customer pay handling behind the flag, test end-to-end. **Phase 3** = refunds, reconciliation, live keys.
-- ⚠️ Edge functions are Deno (import from esm.sh/deno.land) — they live OUTSIDE `src`, so `tsconfig` (include: ["src"]) and `npm run lint` do NOT type-check them. Validate by deploying to Supabase.
+## Payments — gateway-free UPI (manual confirm) on `develop`
+**Decision (after solution-arch review): NO payment gateway.** Driver = security/compliance simplicity; manual confirmation is acceptable; India-first, international (PayPal/Wise) later. **Razorpay scaffold was removed** (create-payment-link, razorpay-webhook, _shared/razorpay.ts, payment_events migration deleted). Also rejected the arch's microservices/FastAPI suggestion as over-engineering for a solo-maintained low-volume shop — staying a modular monolith.
+- `src/lib/upi.ts` — `buildUpiUri()` builds `upi://pay?pa=&pn=&am=&cu=INR&tn=` (pure string, no keys); `hasUpiConfigured()`.
+- `src/components/UpiPayBox.tsx` — customer Pay-via-UPI box (amount, QR via `qrcode.react`, copy-UPI-ID, mobile deep-link button, "I've paid → WhatsApp" hand-off). Graceful fallback when no UPI id set. Rendered on `OrderDetailPage` when `payment.status !== 'confirmed'`.
+- Admin `AdminOrderDetailsPage` — "Request Payment (WhatsApp)" button (prefilled msg w/ UPI id + amount + order ref + tap-to-pay link). Existing "Mark Paid" confirms (→ triggers confirmation email via orders DB webhook).
+- UPI config in **brand content** (`brand.payments.upiId`/`upiPayeeName`), editable in admin → Content → Brand → "Payments (UPI)". `OrderPayment`/`PaymentStatus` simplified (pending/submitted/confirmed/failed/refunded; no gateway fields). `paymentGateway` feature flag removed.
+- New dep: `qrcode.react@4`. **ACTION (user):** set the business UPI ID in admin Content → Brand (else customers see the WhatsApp fallback). No deploy/keys needed — UPI is keyless.
+- ⚠️ `UpiPayBox` is on the login-gated order page → verify visually on a real order (lint/build pass; UPI-URI logic preview-tested).
 
 ## Transactional email (scaffold on `develop`)
 Transport: **Google Workspace SMTP by default** (free — domain already Google-authenticated, no new DNS), via denomailer in the edge function. Resend HTTP API is an optional fallback (`EMAIL_PROVIDER=resend`). Triggered by a **Supabase Database Webhook on `orders`** (INSERT+UPDATE) → one `send-email` edge function. Covers storefront, admin, and the Razorpay payment webhook because all write to `orders`.

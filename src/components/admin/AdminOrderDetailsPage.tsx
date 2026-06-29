@@ -9,13 +9,16 @@ import { GoldButton } from '../GoldButton';
 import { ticketService } from '../../features/support/services/ticketService';
 import { ORDER_STATUSES, OrderStatus, ALLOWED_TRANSITIONS, mapLegacyStatus } from '../../lib/orderStatus';
 import { FEATURES } from '../../config/features';
+import { useContent } from '../../context/ContentContext';
+import { buildUpiUri } from '../../lib/upi';
 
 import { toast } from 'sonner';
 
 export function AdminOrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  
+  const brand = useContent('brand');
+
   const [order, setOrder] = useState<OrderRecord | null>(null);
   const [ticketsCount, setTicketsCount] = useState<number>(0);
   
@@ -171,7 +174,31 @@ export function AdminOrderDetailsPage() {
              )}
            </div>
          </div>
-         <div className="flex gap-2">
+         <div className="flex gap-2 flex-wrap">
+            {(() => {
+              const amt = (order as any).totalPrice ?? (order as any).pricing?.total ?? (order as any).grandTotal ?? 0;
+              const ref = order.receiptNumber || order.id;
+              const cName = (order as any).customerInfo?.name || order.shippingDetails?.name || 'there';
+              const phone = ((order as any).customerInfo?.phone || order.shippingDetails?.phone || '').replace(/\D/g, '');
+              const upiId = brand?.payments?.upiId;
+              const upiUri = upiId ? buildUpiUri({ payeeVpa: upiId, payeeName: brand?.payments?.upiPayeeName || brand?.brandName || 'Grainood', amount: amt, note: `Order ${ref}` }) : '';
+              const msg = encodeURIComponent(
+                `Hi ${cName}, your Grainood order ${ref} is confirmed for ₹${Math.round(amt).toLocaleString('en-IN')}.` +
+                (upiId ? `\n\nPay via UPI to: ${upiId}` + (upiUri ? `\nor tap to pay: ${upiUri}` : '') : '') +
+                `\n\nPlease reply with your UPI reference once paid. Thank you!`,
+              );
+              const waUrl = phone ? `https://wa.me/${phone}?text=${msg}` : '';
+              return order.payment?.status !== 'confirmed' && waUrl ? (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[10px] uppercase tracking-widest bg-[#c5a059]/10 text-[#c5a059] border border-[#c5a059]/30 px-4 py-2 hover:bg-[#c5a059] hover:text-bg transition-colors"
+                >
+                  Request Payment (WhatsApp)
+                </a>
+              ) : null;
+            })()}
             <button
                onClick={() => handleUpdatePayment('confirmed')}
                className="text-[10px] uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 px-4 py-2 hover:bg-emerald-500 hover:text-white transition-colors"
