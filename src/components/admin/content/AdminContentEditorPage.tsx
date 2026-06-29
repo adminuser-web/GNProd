@@ -93,6 +93,181 @@ function BrandIdentityForm({ data, onChange }: { data: any; onChange: (path: str
   );
 }
 
+function HomeForm({ data, onChange }: { data: any; onChange: (path: string[], value: any) => void }) {
+  const d = data || {};
+  const hero = d.hero || {};
+  return (
+    <div className="space-y-6">
+      <Card title="Hero" desc="The main banner at the top of the homepage.">
+        <Field label="Headline" value={hero.headline} onChange={(v: string) => onChange(['hero', 'headline'], v)} />
+        <Field label="Subheadline" textarea value={hero.subheadline} onChange={(v: string) => onChange(['hero', 'subheadline'], v)} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Primary Button Label" value={hero.primaryCtaLabel} onChange={(v: string) => onChange(['hero', 'primaryCtaLabel'], v)} />
+          <Field label="Primary Button Link" value={hero.primaryCtaLink} onChange={(v: string) => onChange(['hero', 'primaryCtaLink'], v)} />
+          <Field label="Secondary Button Label" value={hero.secondaryCtaLabel} onChange={(v: string) => onChange(['hero', 'secondaryCtaLabel'], v)} />
+          <Field label="Secondary Button Link" value={hero.secondaryCtaLink} onChange={(v: string) => onChange(['hero', 'secondaryCtaLink'], v)} />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Background Image</label>
+          <p className="text-[10px] text-muted mb-2">Shown behind the hero. 1600×900 recommended.</p>
+          <ImageUpload specKey="heroImage" value={hero.bgImageUrl} onChange={(v) => onChange(['hero', 'bgImageUrl'], v)} storagePath="content/home/hero" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Background Video (optional)</label>
+          <p className="text-[10px] text-muted mb-2">Plays behind the hero on desktop; overrides the image when set. MP4 recommended.</p>
+          <ImageUpload specKey="heroVideo" supportThemes={false} value={hero.videoUrl} onChange={(v) => onChange(['hero', 'videoUrl'], v)} storagePath="content/home/hero-video" />
+        </div>
+      </Card>
+      <Card title="Featured Section" desc="Intro shown above the series on the homepage.">
+        <Field label="Heading" value={d.featured?.heading} onChange={(v: string) => onChange(['featured', 'heading'], v)} />
+        <Field label="Copy" textarea value={d.featured?.copy} onChange={(v: string) => onChange(['featured', 'copy'], v)} />
+      </Card>
+    </div>
+  );
+}
+
+function SeoForm({ data, onChange }: { data: any; onChange: (path: string[], value: any) => void }) {
+  const d = data || {};
+  return (
+    <div className="space-y-6">
+      <Card title="Search & Social" desc="How your site appears in browser tabs, search results and shared links.">
+        <Field label="Page Title" value={d.defaultTitle} onChange={(v: string) => onChange(['defaultTitle'], v)} help="Shown in the browser tab and search results." />
+        <Field label="Meta Description" textarea value={d.defaultDescription} onChange={(v: string) => onChange(['defaultDescription'], v)} help="~150 characters, shown under the title in search results." />
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Default Share Image</label>
+          <p className="text-[10px] text-muted mb-2">Used when your site is shared on social media. 1200×630 recommended.</p>
+          <ImageUpload specKey="contentImage" value={d.defaultOgImage} onChange={(v) => onChange(['defaultOgImage'], v)} storagePath="content/seo" />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function PhilosophyForm({ data, onChange }: { data: any; onChange: (path: string[], value: any) => void }) {
+  const d = data || {};
+  return (
+    <div className="space-y-6">
+      <Card title="Philosophy / About" desc="The about page heading and body copy.">
+        <Field label="Heading" value={d.heading} onChange={(v: string) => onChange(['heading'], v)} />
+        <Field label="Body" textarea value={d.copy} onChange={(v: string) => onChange(['copy'], v)} />
+      </Card>
+    </div>
+  );
+}
+
+function ContactForm({ data, onChange }: { data: any; onChange: (path: string[], value: any) => void }) {
+  const d = data || {};
+  const faqs: any[] = d.faqs || [];
+  const setFaqs = (next: any[]) => onChange(['faqs'], next);
+  return (
+    <div className="space-y-6">
+      <Card title="Contact Page" desc="Intro shown at the top of the contact page.">
+        <Field label="Heading" value={d.heading} onChange={(v: string) => onChange(['heading'], v)} />
+        <Field label="Intro" textarea value={d.intro} onChange={(v: string) => onChange(['intro'], v)} />
+      </Card>
+      <Card title="FAQs" desc="Questions and answers shown on the contact page.">
+        {faqs.map((f, i) => (
+          <div key={i} className="relative border border-[#c5a059]/10 p-3 space-y-3">
+            <button type="button" onClick={() => setFaqs(faqs.filter((_, j) => j !== i))} className="absolute right-2 top-2 text-red-400 text-[10px] uppercase tracking-widest hover:text-red-300">Remove</button>
+            <Field label={`Question ${i + 1}`} value={f.question} onChange={(v: string) => setFaqs(faqs.map((x, j) => (j === i ? { ...x, question: v } : x)))} />
+            <Field label="Answer" textarea value={f.answer} onChange={(v: string) => setFaqs(faqs.map((x, j) => (j === i ? { ...x, answer: v } : x)))} />
+          </div>
+        ))}
+        <button type="button" onClick={() => setFaqs([...faqs, { question: '', answer: '' }])} className="text-[#c5a059] text-[10px] font-bold uppercase tracking-widest hover:text-white">+ Add FAQ</button>
+      </Card>
+    </div>
+  );
+}
+
+function FooterForm({ data, onChange }: { data: any; onChange: (path: string[], value: any) => void }) {
+  const d = data || {};
+  const columns: any[] = d.columns || [];
+  const setColumns = (next: any[]) => onChange(['columns'], next);
+  const updateCol = (i: number, patch: any) => setColumns(columns.map((c, j) => (j === i ? { ...c, ...patch } : c)));
+  return (
+    <div className="space-y-6">
+      <Card title="Footer Columns" desc="Link columns shown in the site footer.">
+        {columns.map((col, i) => {
+          const links: any[] = col.links || [];
+          const setLinks = (next: any[]) => updateCol(i, { links: next });
+          return (
+            <div key={i} className="relative border border-[#c5a059]/10 p-3 space-y-3">
+              <button type="button" onClick={() => setColumns(columns.filter((_, j) => j !== i))} className="absolute right-2 top-2 text-red-400 text-[10px] uppercase tracking-widest hover:text-red-300">Remove Column</button>
+              <Field label="Column Title" value={col.title} onChange={(v: string) => updateCol(i, { title: v })} />
+              {links.map((lnk, k) => (
+                <div key={k} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                  <Field label="Label" value={lnk.label} onChange={(v: string) => setLinks(links.map((x, m) => (m === k ? { ...x, label: v } : x)))} />
+                  <Field label="URL" value={lnk.url} onChange={(v: string) => setLinks(links.map((x, m) => (m === k ? { ...x, url: v } : x)))} />
+                  <button type="button" onClick={() => setLinks(links.filter((_, m) => m !== k))} className="text-red-400 text-sm pb-2 px-1">×</button>
+                </div>
+              ))}
+              <button type="button" onClick={() => setLinks([...links, { label: '', url: '' }])} className="text-[#c5a059] text-[10px] uppercase tracking-widest hover:text-white">+ Add Link</button>
+            </div>
+          );
+        })}
+        <button type="button" onClick={() => setColumns([...columns, { title: '', links: [] }])} className="text-[#c5a059] text-[10px] font-bold uppercase tracking-widest hover:text-white">+ Add Column</button>
+      </Card>
+      <Card title="Bottom Bar" desc="Copyright line at the very bottom (the year auto-updates).">
+        <Field label="Copyright Text" value={d.bottomCopy} onChange={(v: string) => onChange(['bottomCopy'], v)} />
+      </Card>
+    </div>
+  );
+}
+
+function LegalForm({ data, onChange }: { data: any; onChange: (path: string[], value: any) => void }) {
+  const d = data || {};
+  const sections: Array<[string, string]> = [['privacy', 'Privacy Policy'], ['terms', 'Terms of Service'], ['returns', 'Returns & Refunds']];
+  return (
+    <div className="space-y-6">
+      {sections.map(([key, label]) => (
+        <Card key={key} title={label}>
+          <Field label="Title" value={d[key]?.title} onChange={(v: string) => onChange([key, 'title'], v)} />
+          <Field label="Body" textarea value={d[key]?.body} onChange={(v: string) => onChange([key, 'body'], v)} />
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function ReviewsForm({ data, onChange }: { data: any; onChange: (path: string[], value: any) => void }) {
+  const d = data || {};
+  const reviews: any[] = d.reviews || [];
+  const setReviews = (next: any[]) => onChange(['reviews'], next);
+  const update = (i: number, patch: any) => setReviews(reviews.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  return (
+    <div className="space-y-6">
+      <Card title="Customer Reviews" desc="Testimonials shown on the site.">
+        {reviews.map((r, i) => (
+          <div key={i} className="relative border border-[#c5a059]/10 p-3 space-y-3">
+            <button type="button" onClick={() => setReviews(reviews.filter((_, j) => j !== i))} className="absolute right-2 top-2 text-red-400 text-[10px] uppercase tracking-widest hover:text-red-300">Remove</button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Name" value={r.name} onChange={(v: string) => update(i, { name: v })} />
+              <Field label="Rating (1–5)" type="number" value={r.rating} onChange={(v: string) => update(i, { rating: Number(v) || 0 })} />
+            </div>
+            <Field label="Review" textarea value={r.text} onChange={(v: string) => update(i, { text: v })} />
+            <label className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-content/70 cursor-pointer select-none">
+              <input type="checkbox" checked={!!r.verified} onChange={(e) => update(i, { verified: e.target.checked })} className="accent-[#c5a059] w-3.5 h-3.5" />
+              Verified purchase
+            </label>
+          </div>
+        ))}
+        <button type="button" onClick={() => setReviews([...reviews, { name: '', rating: 5, text: '', verified: false }])} className="text-[#c5a059] text-[10px] font-bold uppercase tracking-widest hover:text-white">+ Add Review</button>
+      </Card>
+    </div>
+  );
+}
+
+const SECTION_FORMS: Record<string, React.ComponentType<{ data: any; onChange: (path: string[], value: any) => void }>> = {
+  brand: BrandIdentityForm,
+  home: HomeForm,
+  seo: SeoForm,
+  philosophy: PhilosophyForm,
+  contact: ContactForm,
+  footer: FooterForm,
+  legal: LegalForm,
+  reviews: ReviewsForm,
+};
+
 export function AdminContentEditorPage() {
   const { contentMap, refresh, loading: ctxLoading } = useContentContext();
   const [activeArea, setActiveArea] = useState<keyof SiteContentMap>('brand');
@@ -379,13 +554,16 @@ export function AdminContentEditorPage() {
             )}
           </div>
 
-          {activeArea === 'brand' ? (
-            <BrandIdentityForm data={editorData} onChange={handleChange} />
-          ) : (
-            <div className="space-y-2">
-              {Object.entries(editorData).map(([key, value]) => renderField(key, value, [key]))}
-            </div>
-          )}
+          {(() => {
+            const FormComp = SECTION_FORMS[activeArea];
+            return FormComp ? (
+              <FormComp data={editorData} onChange={handleChange} />
+            ) : (
+              <div className="space-y-2">
+                {Object.entries(editorData).map(([key, value]) => renderField(key, value, [key]))}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
