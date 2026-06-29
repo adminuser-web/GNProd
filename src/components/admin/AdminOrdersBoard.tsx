@@ -17,14 +17,20 @@ import { useAllOrders } from '../../features/orders/hooks/useOrders';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ImageUpload } from './ImageUpload';
+import { PageHeader, EmptyState } from './ui';
 
 const DATE_RANGES = ['All Time', 'Today', 'Last 7 Days', 'Last 30 Days', 'This Month'];
 
 function isNewOrder(createdAt: any) {
-  if (!createdAt?.toDate) return false;
-  const curr = new Date().getTime();
-  const orderTime = createdAt.toDate().getTime();
-  return (curr - orderTime) < 24 * 60 * 60 * 1000;
+  if (!createdAt) return false;
+  // Timestamps are ISO strings now; tolerate legacy Firestore .toDate().
+  const orderTime = typeof createdAt === 'string'
+    ? new Date(createdAt).getTime()
+    : createdAt?.toDate ? createdAt.toDate().getTime()
+    : createdAt?.seconds ? createdAt.seconds * 1000
+    : NaN;
+  if (Number.isNaN(orderTime)) return false;
+  return (new Date().getTime() - orderTime) < 24 * 60 * 60 * 1000;
 }
 
 function StatusBadge({ status, type = 'order' }: { status: string, type?: 'order' | 'payment' }) {
@@ -355,27 +361,24 @@ export function AdminOrdersBoard() {
     <div className="w-full h-full flex flex-col space-y-6">
       
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-[#c5a059]/10 pb-6 shrink-0">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <ShoppingBag className="w-8 h-8 text-[#c5a059]" />
-            <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content">Sales & Orders</h1>
-          </div>
-          <p className="text-muted tracking-widest uppercase text-[10px]">
-            Showing {filteredOrders.length} results
-          </p>
-        </div>
-        
-        <div className="flex bg-surface border border-[#c5a059]/30 items-center px-3 py-1.5 shrink-0 flex-1 sm:flex-none">
-           <Calendar className="w-4 h-4 text-[#c5a059] mr-2" />
-           <select 
-             value={dateRange}
-             onChange={e => setDateRange(e.target.value)}
-             className="bg-transparent text-[10px] uppercase tracking-widest text-content focus:outline-none cursor-pointer py-1 w-full"
-           >
-             {DATE_RANGES.map(dr => <option key={dr} value={dr}>{dr}</option>)}
-           </select>
-        </div>
+      <div className="shrink-0">
+        <PageHeader
+          eyebrow="Commerce"
+          title="Sales & Orders"
+          description={`Showing ${filteredOrders.length} ${filteredOrders.length === 1 ? 'result' : 'results'}`}
+          actions={
+            <div className="flex bg-surface border border-[#c5a059]/20 items-center px-3 py-1.5 rounded-sm">
+              <Calendar className="w-4 h-4 text-[#c5a059] mr-2 shrink-0" />
+              <select
+                value={dateRange}
+                onChange={e => setDateRange(e.target.value)}
+                className="bg-transparent text-[10px] uppercase tracking-widest text-content focus:outline-none cursor-pointer py-1"
+              >
+                {DATE_RANGES.map(dr => <option key={dr} value={dr}>{dr}</option>)}
+              </select>
+            </div>
+          }
+        />
       </div>
 
       {/* FILTERS ROW */}
@@ -444,10 +447,8 @@ export function AdminOrdersBoard() {
              ))}
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="p-16 text-center text-muted border border-[#c5a059]/10 border-dashed bg-surface/30 flex flex-col items-center justify-center">
-            <ShoppingBag className="w-12 h-12 text-[#c5a059]/20 mb-4" />
-            <p className="text-sm font-bold uppercase tracking-widest text-content mb-2">No Orders Found</p>
-            <p className="text-xs uppercase tracking-widest">Adjust your filters to see more results.</p>
+          <div className="border border-[#c5a059]/10 border-dashed bg-surface/30">
+            <EmptyState icon={ShoppingBag} title="No orders found" description="Adjust your search or filters to see more results." />
           </div>
         ) : (
           <div className="flex w-full flex-col mt-2">

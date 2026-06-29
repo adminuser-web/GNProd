@@ -83,7 +83,10 @@ supabase/migrations/2026062800000{1..8}_*.sql  # versioned schema (source of tru
 - Homepage (hero: headline/sub/CTAs/**bg image + video**, featured), SEO (title/description/**share image**), Philosophy, Contact (intro + **FAQs** add/remove), Footer (**columns + links** add/remove + copyright), Legal (privacy/terms/returns), Reviews (**list** add/remove).
 - The old generic `renderField` recursive editor remains only as a fallback (no area uses it now).
 
-**NEXT — user's stated goal: redesign the ENTIRE admin portal** (cleaner, simpler, fewer options) across: Dashboard, Sales/Orders, Customers, Support, Products, Enquiries, Audit Log, AdminLayout. Not started. Apply the same clean Card/Field/section language used in the Content Studio. Note: admin pages are login-gated, so they can't be rendered in the preview tool — validate via the user.
+**Admin portal revamp — IN PROGRESS.**
+- **Phase 1 (shipped to `main`, ffa1f65):** new shared kit `src/components/admin/ui.tsx` (`PageHeader`, `Card`, `Field`, `StatCard`, `SectionLabel`, `StatusPill`, `EmptyState`, `SearchInput`, `Segmented`); AdminLayout sidebar grouped into Overview / Commerce / Customers / Content & System (one `NavItem`, badges preserved); Dashboard (AdminPage) uses shared StatCard/PageHeader/Segmented.
+- **Phase 2 (on `develop`, pending validation):** standardized headers + empty states across Audit, Enquiries, Products, Orders, Customers, Support using the kit. Fixed legacy date bugs: Enquiries `createdAt.toDate()`→`fmtDate()` (was showing N/A), `isNewOrder` in Orders board now tolerates ISO strings. Big pages (Orders/Customers/Support) were standardized surgically (header/empty/date) — bespoke filter rows + local StatusBadge/StatusPill left intact to limit risk (login-gated, no preview).
+- **Still latent:** `AdminCustomersPage` Customer360 sorts orders/builds via `createdAt?.toMillis` — falls back to a raw string for ISO timestamps (sort order only, not visible N/A). `AdminRecordList.tsx` is dead code (flagged for deletion). Admin pages are login-gated → validate via the user, not the preview tool.
 
 ---
 

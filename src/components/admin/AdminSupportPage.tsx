@@ -9,6 +9,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { orderService } from '../../features/orders/services/orderService';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
+import { PageHeader, EmptyState } from './ui';
 
 function StatusPill({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -441,12 +442,11 @@ export function AdminSupportPage() {
 
   return (
     <div className="w-full animate-fade-in pb-16 space-y-6 md:space-y-8 min-h-screen">
-       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 border-b border-[#c5a059]/10 pb-6">
-          <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content">Support Hub</h1>
-              <p className="text-muted tracking-widest uppercase text-[10px] mt-2">Manage customer queries, returns, and warranties</p>
-          </div>
-          
+       <PageHeader
+          eyebrow="Customer Care"
+          title="Support Hub"
+          description="Manage customer queries, returns, and warranties."
+          actions={
           <div className="flex flex-col lg:flex-row w-full xl:w-auto gap-4 shrink-0">
               <div className="flex items-center gap-4 w-full lg:w-auto overflow-x-auto hide-scrollbar pb-2 lg:pb-0">
                   <div className="relative w-full lg:w-40 shrink-0">
@@ -525,7 +525,8 @@ export function AdminSupportPage() {
                 />
               </div>
           </div>
-       </div>
+          }
+       />
 
        {loading ? (
          <div className="space-y-4">
@@ -540,10 +541,8 @@ export function AdminSupportPage() {
              ))}
          </div>
        ) : filteredTickets.length === 0 ? (
-           <div className="bg-surface border border-[#c5a059]/10 p-16 text-center shadow-lg">
-              <MessageSquare className="w-10 h-10 text-[#c5a059]/30 mx-auto mb-4" />
-              <p className="text-content font-bold uppercase tracking-[0.1em] text-lg mb-2">No Requests Found</p>
-              <p className="text-muted tracking-widest uppercase text-[10px]">Try adjusting your search or filters to see more results.</p>
+           <div className="bg-surface border border-[#c5a059]/10">
+              <EmptyState icon={MessageSquare} title="No requests found" description="Try adjusting your search or filters to see more results." />
            </div>
        ) : (
            <div className="flex flex-col w-full">
