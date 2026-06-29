@@ -12,6 +12,8 @@ import {
   Tag,
   Share2,
   Info,
+  CheckCircle2,
+  ChevronRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -239,6 +241,72 @@ function LineChart({
   );
 }
 
+function ActionQueue({
+  newOrders,
+  paymentsToVerify,
+  openSupport,
+}: {
+  newOrders: number;
+  paymentsToVerify: number;
+  openSupport: number;
+}) {
+  const items = [
+    {
+      label: "New orders to confirm",
+      count: newOrders,
+      icon: ShoppingBag,
+      to: "/admin/orders?status=Order Placed",
+    },
+    {
+      label: "Payments to verify",
+      count: paymentsToVerify,
+      icon: IndianRupee,
+      to: "/admin/orders?payment=pending",
+    },
+    {
+      label: "Open support requests",
+      count: openSupport,
+      icon: LifeBuoy,
+      to: "/admin/support?status=open",
+    },
+  ].filter((i) => i.count > 0);
+
+  return (
+    <div className="bg-surface border border-[#c5a059]/20 shadow-sm">
+      <div className="px-5 py-4 border-b border-[#c5a059]/10">
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#c5a059]">Needs your attention</h3>
+      </div>
+      {items.length === 0 ? (
+        <div className="flex items-center gap-3 px-5 py-6">
+          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+          <p className="text-sm text-content tracking-wide">All caught up — no orders, payments, or requests waiting.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#c5a059]/10">
+          {items.map((i) => (
+            <Link
+              key={i.label}
+              to={i.to}
+              className="group flex items-center justify-between gap-3 px-5 py-4 hover:bg-[#c5a059]/5 transition-colors"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full border border-[#c5a059]/30 flex items-center justify-center shrink-0">
+                  <i.icon className="w-4 h-4 text-[#c5a059]" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-lg font-bold text-content leading-none">{i.count}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted mt-1 truncate">{i.label}</div>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted group-hover:text-[#c5a059] group-hover:translate-x-0.5 transition-all shrink-0" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AdminPage() {
   const { orders, loading: oLoading } = useAllOrders();
   const { tickets, loading: tLoading } = useAllTickets();
@@ -298,6 +366,19 @@ export function AdminPage() {
 
     const openSupportRequests = tickets.filter((t) =>
       ["open", "under_review"].includes(t.status || "open"),
+    );
+
+    // Action queue: things the owner should act on today (not period-bound).
+    const newOrdersToConfirm = orders.filter(
+      (o) =>
+        o.status !== "Cancelled" &&
+        mapLegacyStatus(o.status || "Order Placed") === "Order Placed",
+    );
+    const paymentsToVerify = orders.filter(
+      (o) =>
+        o.status !== "Cancelled" &&
+        ((o.payment?.status as string) === "submitted" ||
+          (o.payment?.status as string) === "processing"),
     );
 
     const newCustomersCount = customers.filter((c) => {
@@ -486,6 +567,8 @@ export function AdminPage() {
       todaysOrders: todaysOrders.length,
       thisMonthSales,
       pendingPaymentsAmt,
+      newOrdersToConfirm: newOrdersToConfirm.length,
+      paymentsToVerify: paymentsToVerify.length,
       openSupportRequests: openSupportRequests.length,
       newCustomersCount,
       savedBuildsCount: savedBuildsPeriod.length,
@@ -554,6 +637,14 @@ export function AdminPage() {
               ]}
             />
           }
+        />
+      </RevealSection>
+
+      <RevealSection delay={25}>
+        <ActionQueue
+          newOrders={m.newOrdersToConfirm}
+          paymentsToVerify={m.paymentsToVerify}
+          openSupport={m.openSupportRequests}
         />
       </RevealSection>
 

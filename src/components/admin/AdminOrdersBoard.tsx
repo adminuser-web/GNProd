@@ -202,7 +202,7 @@ export function AdminOrdersBoard() {
   
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'All');
   const [paymentFilter, setPaymentFilter] = useState<string>(
     searchParams.get('payment') === 'pending' ? 'Pending' : 'All'
   );

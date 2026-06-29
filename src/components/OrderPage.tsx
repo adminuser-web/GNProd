@@ -7,9 +7,11 @@ import { clsx } from 'clsx';
 import { GoldButton } from './GoldButton';
 import { LazyImage } from './LazyImage';
 import { orderService } from '../features/orders/services/orderService';
+import { supabase } from '../lib/supabase';
 import { ChevronDown, ChevronUp, Trash2, Plus, Minus, ShieldCheck, Lock, Hammer } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../data/locations';
+import { HowItWorks } from './HowItWorks';
 
 export function OrderPage() {
   const { state: { items }, itemsWithPricing, grandTotal, subtotal, clearOrder, discountCode, setDiscountCode, discountsApplied, removeFromOrder: removeItem, updateQuantity: setQuantity } = useOrder();
@@ -136,7 +138,7 @@ export function OrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate() || !user) {
+    if (!validate()) {
       toast.error("Please complete the required details.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -148,6 +150,19 @@ export function OrderPage() {
     const receiptNumber = Math.floor(10000000 + Math.random() * 90000000).toString();
 
     try {
+      // Guests can order without an explicit login. We silently create an
+      // anonymous Supabase session so the order has an owner (orders RLS
+      // requires user_id = auth.uid()). Their email/phone is captured on the
+      // order regardless, so the team can follow up on WhatsApp.
+      let uid = user?.uid;
+      if (!uid) {
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (error || !data?.user) {
+          throw new Error('GUEST_AUTH_UNAVAILABLE');
+        }
+        uid = data.user.id;
+      }
+
       const countryName = COUNTRIES.find(c => c.code === formData.country)?.name || formData.country;
       const stateName = STATES_BY_COUNTRY[formData.country]?.find(s => s.code === formData.state)?.name || formData.state;
 
@@ -183,7 +198,7 @@ export function OrderPage() {
       }));
 
       const orderData = {
-        userId: user.uid,
+        userId: uid,
         status: 'Order Placed' as const,
         receiptNumber,
         totalPrice: grandTotal,
@@ -206,7 +221,7 @@ export function OrderPage() {
         timeline: [{
           status: 'Order Placed' as const,
           timestamp: new Date(),
-          changedBy: user.uid,
+          changedBy: uid,
           note: 'Order placed'
         }],
         customer: {
@@ -248,9 +263,13 @@ export function OrderPage() {
 
       clearOrder();
       navigate('/order/confirmed', { state: { orderId, receiptNumber, message, url } });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating order:", error);
-      setSubmitError("Failed to create order. Please try again or contact support.");
+      if (error?.message === 'GUEST_AUTH_UNAVAILABLE') {
+        setSubmitError("Guest checkout is temporarily unavailable. Please sign in to place your order.");
+      } else {
+        setSubmitError("Failed to create order. Please try again or contact support.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -270,17 +289,20 @@ export function OrderPage() {
           
           {/* LEFT: FORM OR LOGIN PROMPT */}
           <div className="xl:col-span-7 space-y-12 pb-12 xl:pb-24">
-            {!user ? (
-              <div className="bg-surface border border-[#c5a059]/20 p-8 text-center flex flex-col items-center justify-center min-h-[400px]">
-                <h2 className="text-2xl font-bold tracking-tight text-content mb-4">Sign in to checkout</h2>
-                <p className="text-muted/80 mb-8 max-w-sm mx-auto text-[13px] leading-relaxed">Log in to pre-fill your details and track your custom build progress in your dashboard.</p>
-                <GoldButton as={Link} to="/login" state={{ from: '/order' }} variant="solid" className="w-full sm:w-auto">
-                  Sign In / Create Account
-                </GoldButton>
-              </div>
-            ) : (
-              <form id="checkout-form" onSubmit={handleSubmit} className="space-y-16">
-                
+            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-16">
+
+                {!user && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-[#c5a059]/5 border border-[#c5a059]/20 px-4 py-3 -mb-8">
+                    <p className="text-[11px] text-content/80 tracking-wide">Checking out as a guest — no account needed.</p>
+                    <Link to="/login" state={{ from: '/order' }} className="text-[11px] font-bold uppercase tracking-widest text-[#c5a059] hover:underline">
+                      Sign in to prefill
+                    </Link>
+                  </div>
+                )}
+
+                {/* How it works */}
+                <HowItWorks />
+
                 {/* Contact Section */}
                 <section>
                   <div className="flex items-center gap-4 mb-8">
@@ -398,9 +420,8 @@ export function OrderPage() {
                     </div>
                   </div>
                 </section>
-                
+
               </form>
-            )}
 
             {/* Desktop Trust Row */}
             <div className="hidden xl:grid grid-cols-3 gap-8 pt-12 border-t border-[#c5a059]/20">
@@ -553,25 +574,20 @@ export function OrderPage() {
                   </div>
                 )}
 
-                {user ? (
-                  <GoldButton 
-                    as="button"
-                    type="submit" 
-                    form="checkout-form"
-                    isLoading={isSubmitting}
-                    variant="solid"
-                    onClick={() => {
-                        setIsMobileSummaryOpen(false);
-                    }}
-                    className="w-full"
-                  >
-                    PLACE ORDER
-                  </GoldButton>
-                ) : (
-                  <button disabled className="w-full bg-line/50 text-muted tracking-[0.3em] font-bold text-xs uppercase h-14 flex items-center justify-center cursor-not-allowed border border-line">
-                    LOGIN REQUIRED
-                  </button>
-                )}
+                <GoldButton
+                  as="button"
+                  type="submit"
+                  form="checkout-form"
+                  isLoading={isSubmitting}
+                  variant="solid"
+                  onClick={() => {
+                      setIsMobileSummaryOpen(false);
+                  }}
+                  className="w-full"
+                >
+                  PLACE ORDER
+                </GoldButton>
+                <p className="text-[9px] text-muted text-center tracking-widest uppercase mt-3">No payment now — pay via UPI after WhatsApp confirmation</p>
               </div>
             </div>
           </div>
