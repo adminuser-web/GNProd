@@ -1,119 +1,73 @@
-import { collection, doc, getDocs, orderBy, query, setDoc } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
-import { Product } from '../../../types';
-import { seedProducts as seedLibProducts } from '../../../lib/seedProducts';
-import { PUBLISHED_PRODUCTS } from '../../../types';
+import { supabase } from '../../../lib/supabase';
+import { Product, PUBLISHED_PRODUCTS } from '../../../types';
 import { auditService } from '../../audit/services/auditService';
 
+// The catalog is stored as documents: one row per series, with the full nested
+// Product object in `data` (matches the app's model).
 export const productService = {
   async fetchProducts(): Promise<Product[]> {
-    const q = query(collection(db, 'products'), orderBy('sortOrder'));
-    const querySnapshot = await getDocs(q);
-    
-    if (!querySnapshot.empty) {
-      let products = querySnapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id,
-        subSeries: doc.data().subSeries || []
-      })) as Product[];
-
-      // General deduplication based on slug
-      const slugsSeen = new Set<string>();
-      const trueDuplicates: Product[] = [];
-      const distinctProducts: Product[] = [];
-      
-      for (const p of products) {
-        if (slugsSeen.has(p.slug)) {
-          trueDuplicates.push(p);
-        } else {
-          slugsSeen.add(p.slug);
-          distinctProducts.push(p);
-        }
-      }
-      
-      products = distinctProducts;
-
-      if (trueDuplicates.length > 0) {
-        // Fire and forget delete using deleteDoc
-        import('firebase/firestore').then(({ deleteDoc }) => {
-          trueDuplicates.forEach(dup => {
-            deleteDoc(doc(db, 'products', dup.id)).catch(err => {
-              console.error(`Failed to delete duplicate product ${dup.id}:`, err);
-            });
-          });
-        });
-      }
-
-      // Migration for old customization group IDs
-      const KEY_MAP: Record<string, string> = {
-        batSize: 'bat-size',
-        toeShape: 'toe-shape',
-        gripColor: 'grip-color',
-        gripColour: 'grip-color',
-        handleShape: 'handle-shape',
-        weightProfile: 'weight-profile',
-        edgeProfile: 'edge-profile',
-        sweetSpot: 'sweet-spot',
-        preKnocked: 'pre-knocked'
-      };
-
-      for (const product of products) {
-        let needsUpdate = false;
-        
-        // Customization migration
-        if (product.customizationGroups) {
-          product.customizationGroups.forEach(group => {
-            if (KEY_MAP[group.id]) {
-              group.id = KEY_MAP[group.id];
-              needsUpdate = true;
-            }
-          });
-        }
-
-        // SubSeries migration
-        if (!product.subSeries || product.subSeries.length === 0) {
-          const defaultProduct = PUBLISHED_PRODUCTS.find(p => p.slug === product.slug);
-          if (defaultProduct && defaultProduct.subSeries && defaultProduct.subSeries.length > 0) {
-            product.subSeries = defaultProduct.subSeries;
-            needsUpdate = true;
-          }
-        }
-
-        if (needsUpdate) {
-          // Fire and forget migration self-heal; not an admin edit, so don't audit.
-          productService.updateProduct(product.slug, product, { audit: false }).catch(err => {
-            console.error(`Failed to migrate product ${product.slug}:`, err);
-          });
-        }
-      }
-
-      return products;
-    }
-    
-    return [];
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('sort_order');
+    if (error) throw error;
+    return (data ?? []).map((r: any) => ({ ...(r.data as Product), id: r.id }));
   },
 
-  async isCollectionEmpty(): Promise<boolean> {
-    const snap = await getDocs(collection(db, 'products'));
-    return snap.empty;
-  },
+  async updateProduct(slug: string, productData: Partial<Product>, opts?: { audit?: boolean }): Promise<void> {
+    // Editors send partial updates (e.g. { subSeries }); merge into the existing
+    // document so other fields are preserved.
+    const { data: existing } = await supabase
+      .from('products')
+      .select('data')
+      .eq('id', slug)
+      .maybeSingle();
 
-  async updateProduct(slug: keyof Product | string, productData: Partial<Product>, opts?: { audit?: boolean }): Promise<void> {
-    const cleanData = JSON.parse(JSON.stringify(productData));
-    await setDoc(doc(db, 'products', slug as string), cleanData, { merge: true });
-    // Skip auditing the fetch-time self-heal; audit only real admin saves.
+    const merged: any = { ...(existing?.data ?? {}), ...productData, slug };
+
+    const { error } = await supabase.from('products').upsert({
+      id: slug,
+      slug,
+      sort_order: merged.sortOrder ?? 0,
+      data: merged,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw error;
+
     if (opts?.audit !== false) {
       await auditService.writeAudit({
         action: 'product_updated',
         entityType: 'product',
-        entityId: slug as string,
+        entityId: slug,
         after: { fields: Object.keys(productData || {}) },
       });
     }
   },
 
-  async seedProducts(force = false): Promise<void> {
-    await seedLibProducts(force);
-  }
-};
+  async isCollectionEmpty(): Promise<boolean> {
+    const { count, error } = await supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true });
+    if (error) throw error;
+    return (count ?? 0) === 0;
+  },
 
+  /** Seed the catalog from the bundled defaults (admin-only via RLS). */
+  async seedProducts(force = false): Promise<void> {
+    if (!force) {
+      const { count } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true });
+      if ((count ?? 0) > 0) return;
+    }
+    const rows = (PUBLISHED_PRODUCTS as any[]).map((p) => ({
+      id: p.slug,
+      slug: p.slug,
+      sort_order: p.sortOrder ?? 0,
+      data: p,
+      updated_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase.from('products').upsert(rows);
+    if (error) throw error;
+  },
+};
