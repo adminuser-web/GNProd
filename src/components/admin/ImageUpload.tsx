@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, Check, AlertTriangle, Info } from 'lucide-react';
 import { UPLOAD_SPECS, UploadSpecKey } from '../../config/uploadSpecs';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../lib/firebase';
+import { uploadToStorage } from '../../lib/storage';
 import { clsx } from 'clsx';
 import { ThemedImage } from '../../types';
 
@@ -126,35 +125,23 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
     img.src = URL.createObjectURL(pendingFile);
   };
 
-  const overrideAndUpload = (file: File) => {
+  const overrideAndUpload = async (file: File) => {
     setIsUploading(true);
-    setProgress(0);
-
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-    const fullPath = `${storagePath}/${Date.now()}-${safeName}`;
-    const storageRef = ref(storage, fullPath);
-    
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setProgress(p);
-      },
-      (error) => {
-        console.error("Upload failed", error);
-        setValidationMsg({ type: 'error', text: error.message });
-        setIsUploading(false);
-      },
-      async () => {
-        const url = await getDownloadURL(uploadTask.snapshot.ref);
-        onChange(url, file);
-        setIsUploading(false);
-        setPendingFile(null);
-        setPendingPreviewUrl(null);
-      }
-    );
+    setProgress(30);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+      const fullPath = `${storagePath}/${Date.now()}-${safeName}`;
+      const url = await uploadToStorage(fullPath, file);
+      setProgress(100);
+      onChange(url, file);
+      setIsUploading(false);
+      setPendingFile(null);
+      setPendingPreviewUrl(null);
+    } catch (error: any) {
+      console.error('Upload failed', error);
+      setValidationMsg({ type: 'error', text: error.message || 'Upload failed' });
+      setIsUploading(false);
+    }
   };
 
   const isVideoField = specKey === 'heroVideo';

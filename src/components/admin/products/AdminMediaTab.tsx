@@ -5,8 +5,7 @@ import {
   ProductSubSeries,
 } from "../../../features/products/types";
 import { Upload, Trash2, Plus, GripVertical } from "lucide-react";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { storage } from "../../../lib/firebase";
+import { uploadToStorage } from "../../../lib/storage";
 import { ImageUpload } from "../ImageUpload";
 
 interface Props {
@@ -32,36 +31,26 @@ export function AdminMediaTab({ series, subSeries, updateSubSeries }: Props) {
       return setUploadError("Only image files are allowed.");
 
     const fileId = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "")}`;
-    const storageRef = ref(
-      storage,
-      `products/${series.slug}/${subSeries.slug}/${fileId}`,
-    );
-    const uploadTask = uploadBytesResumable(storageRef, file, {
-      contentType: file.type,
-    });
-
-    setUploadProgress((prev) => ({ ...prev, [progressKey]: 0 }));
+    setUploadProgress((prev) => ({ ...prev, [progressKey]: 30 }));
     setUploadError("");
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) =>
-        setUploadProgress((prev) => ({
-          ...prev,
-          [progressKey]:
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
-        })),
-      (error) => setUploadError(error.message),
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+    (async () => {
+      try {
+        const downloadURL = await uploadToStorage(
+          `products/${series.slug}/${subSeries.slug}/${fileId}`,
+          file,
+        );
         setter(downloadURL);
+      } catch (error: any) {
+        setUploadError(error.message || "Upload failed");
+      } finally {
         setUploadProgress((prev) => {
           const next = { ...prev };
           delete next[progressKey];
           return next;
         });
-      },
-    );
+      }
+    })();
   };
 
   const updateMedia = (field: string, value: any) => {

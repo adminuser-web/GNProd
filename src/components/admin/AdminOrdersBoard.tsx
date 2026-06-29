@@ -1,6 +1,4 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { storage } from '../../lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ticketService } from '../../features/support/services/ticketService';
 import { useAuth } from '../../context/AuthContext';
 import { clsx } from 'clsx';

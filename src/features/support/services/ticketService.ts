@@ -1,5 +1,4 @@
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../../lib/firebase';
+import { uploadToStorage } from '../../../lib/storage';
 import { supabase } from '../../../lib/supabase';
 import { SupportTicket, SupportTicketMessage, TicketAttachment } from '../../../types';
 import { notificationService } from '../../notifications/services/notificationService';
@@ -17,13 +16,10 @@ async function fetchTicketRow(ticketId: string): Promise<any | null> {
 }
 
 export const ticketService = {
-  // NOTE: attachment upload still uses Firebase Storage; migrated in Phase 4.
   async uploadAttachment(file: File, userId: string, ticketId: string): Promise<TicketAttachment> {
-    if (!storage) throw new Error('Firebase storage not initialized');
-    const fileName = `${Date.now()}_${file.name}`;
-    const storageRef = ref(storage, `support/${userId}/${ticketId}/${fileName}`);
-    const snapshot = await uploadBytesResumable(storageRef, file);
-    const url = await getDownloadURL(snapshot.ref);
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+    const path = `support/${userId}/${ticketId}/${Date.now()}_${safeName}`;
+    const url = await uploadToStorage(path, file);
     return { name: file.name, url, contentType: file.type };
   },
 

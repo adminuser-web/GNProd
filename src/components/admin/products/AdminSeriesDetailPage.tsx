@@ -8,8 +8,7 @@ import { useProducts } from '../../../context/ProductsContext';
 import { productService } from '../../../features/products/services/productService';
 import { ProductSubSeries, ProductSeries } from '../../../features/products/types';
 import { Product } from '../../../types';
-import { storage } from '../../../lib/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { uploadToStorage } from '../../../lib/storage';
 import { toast } from 'sonner';
 
 import { ImageUpload } from '../ImageUpload';
@@ -72,21 +71,19 @@ export function AdminSeriesDetailPage() {
     if (!file.type.startsWith('image/')) return setUploadError('Only image files are allowed.');
     
     const fileId = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '')}`;
-    const storageRef = ref(storage, `products/${formData.slug}/${fileId}`);
-    const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
-    
-    setUploadProgress(0);
+    setUploadProgress(30);
     setUploadError('');
 
-    uploadTask.on('state_changed', 
-      (snapshot) => setUploadProgress((snapshot.bytesTransferred / snapshot.totalBytes) * 100), 
-      (error) => setUploadError(error.message), 
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+    (async () => {
+      try {
+        const downloadURL = await uploadToStorage(`products/${formData.slug}/${fileId}`, file);
         setNewProductImage(downloadURL);
+      } catch (error: any) {
+        setUploadError(error.message || 'Upload failed');
+      } finally {
         setUploadProgress(null);
       }
-    );
+    })();
   };
 
   const generateSku = () => {

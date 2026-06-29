@@ -6,8 +6,7 @@ import {
   CustomizationGroup,
 } from "../../../features/products/types";
 import { ChevronUp, ChevronDown, Plus, Trash2, Upload } from "lucide-react";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { storage } from "../../../lib/firebase";
+import { uploadToStorage } from "../../../lib/storage";
 import { CUSTOMIZATION_TYPES } from "../../../config/productOptions";
 import { ImageUpload } from "../ImageUpload";
 
@@ -326,33 +325,25 @@ export function AdminCustomizationsTab({
     const file = e.target.files?.[0];
     if (!file) return;
     const fileId = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "")}`;
-    const storageRef = ref(
-      storage,
-      `products/${series.slug}/${subSeries.slug}/${fileId}`,
-    );
-    const uploadTask = uploadBytesResumable(storageRef, file, {
-      contentType: file.type,
-    });
-    setUploadProgress((prev) => ({ ...prev, [progressKey]: 0 }));
-    uploadTask.on(
-      "state_changed",
-      (snapshot) =>
-        setUploadProgress((prev) => ({
-          ...prev,
-          [progressKey]:
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
-        })),
-      (err) => setUploadError(err.message),
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+    setUploadProgress((prev) => ({ ...prev, [progressKey]: 30 }));
+
+    (async () => {
+      try {
+        const downloadURL = await uploadToStorage(
+          `products/${series.slug}/${subSeries.slug}/${fileId}`,
+          file,
+        );
         setter(downloadURL);
+      } catch (err: any) {
+        setUploadError(err.message || "Upload failed");
+      } finally {
         setUploadProgress((prev) => {
           const next = { ...prev };
           delete next[progressKey];
           return next;
         });
-      },
-    );
+      }
+    })();
   };
 
   const updateGroups = (newGroups: CustomizationGroup[]) => {
