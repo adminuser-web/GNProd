@@ -458,8 +458,8 @@ export function AdminOrdersBoard() {
               <div className="col-span-2">Series / Product</div>
               <div className="col-span-1 text-right">Amount</div>
               <div className="col-span-2 text-center">Payment</div>
-              <div className="col-span-2 text-center">Status</div>
-              <div className="col-span-1 text-right">Actions</div>
+              <div className="col-span-1 text-center">Status</div>
+              <div className="col-span-2 text-right">Actions</div>
             </div>
 
             {/* List Body */}
@@ -488,7 +488,7 @@ export function AdminOrdersBoard() {
                          </span>
                          <span className="text-[10px] text-muted tracking-widest uppercase flex items-center">
                            <Clock className="w-3 h-3 mr-1 inline opacity-50" />
-                           {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'N/A'}
+                           {(() => { const d = order.createdAt?.toDate ? order.createdAt.toDate() : (order.createdAt ? new Date(order.createdAt) : null); return d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'N/A'; })()}
                          </span>
                        </div>
                        <div className="lg:hidden flex flex-col items-end gap-1">
@@ -533,25 +533,25 @@ export function AdminOrdersBoard() {
                     </div>
 
                     {/* Order Status */}
-                    <div className="col-span-2 w-full hidden lg:flex flex-col items-center justify-center">
+                    <div className="col-span-1 w-full hidden lg:flex flex-col items-center justify-center">
                        <StatusBadge status={mappedStatus} type="order" />
                        <span className="text-[8px] uppercase tracking-widest text-[#c5a059]/50 mt-1.5">{order.orderSource || 'website'}</span>
                     </div>
 
                     {/* Actions Menu */}
-                    <div className="col-span-1 w-full flex lg:justify-end border-t border-[#c5a059]/10 pt-4 lg:pt-0 lg:border-0 mt-2 lg:mt-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                      <div className="flex gap-2 w-full lg:w-auto" onClick={e => e.stopPropagation()}>
+                    <div className="col-span-2 w-full flex lg:justify-end border-t border-[#c5a059]/10 pt-4 lg:pt-0 lg:border-0 mt-2 lg:mt-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-2 w-full" onClick={e => e.stopPropagation()}>
                         <select
                           value={mappedStatus}
                           onChange={(e) => handleStatusChange(order, e.target.value)}
-                          className="w-full lg:w-auto bg-bg text-[9px] font-bold uppercase tracking-widest p-1.5 focus:outline-none focus:border-[#c5a059] border border-[#c5a059]/30 text-content cursor-pointer"
+                          className="flex-1 min-w-0 bg-bg text-[9px] font-bold uppercase tracking-widest p-1.5 focus:outline-none focus:border-[#c5a059] border border-[#c5a059]/30 text-content cursor-pointer"
                         >
                           {!validTransitions.includes(mappedStatus) && (
                             <option value={mappedStatus} disabled>{mappedStatus}</option>
                           )}
                           {validTransitions.map((s: string) => <option key={s} value={s}>{s}</option>)}
                         </select>
-                        <button className="px-2 border border-[#c5a059]/30 hover:bg-[#c5a059]/10 text-content transition-colors bg-bg hidden lg:flex items-center justify-center">
+                        <button className="px-2 shrink-0 border border-[#c5a059]/30 hover:bg-[#c5a059]/10 text-content transition-colors bg-bg hidden lg:flex items-center justify-center">
                           <MoreVertical className="w-3 h-3" />
                         </button>
                       </div>

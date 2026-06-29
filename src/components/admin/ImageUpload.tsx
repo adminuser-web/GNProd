@@ -34,19 +34,19 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
   const [canUpload, setCanUpload] = useState(false);
   const [needsCanvasResize, setNeedsCanvasResize] = useState(false);
 
-  const validateFile = (file: File): Promise<boolean> => {
+  const validateFile = (file: File): Promise<{ ok: boolean; needsResize: boolean }> => {
     return new Promise((resolve) => {
       setValidationMsg(null);
       setNeedsCanvasResize(false);
-      
+
       if (file.size > spec.maxBytes) {
         setValidationMsg({ type: 'error', text: `File too large. Max ${formatSize(spec.maxBytes)}.` });
-        resolve(false);
+        resolve({ ok: false, needsResize: false });
         return;
       }
 
       if (file.type.startsWith('video/')) {
-        resolve(true);
+        resolve({ ok: true, needsResize: false });
         return;
       }
 
@@ -56,7 +56,7 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
       }
 
       if (!file.type.startsWith('image/')) {
-        resolve(true);
+        resolve({ ok: true, needsResize: false });
         return;
       }
 
@@ -64,24 +64,26 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
       img.onload = () => {
         const width = img.naturalWidth;
         const height = img.naturalHeight;
-        
+
         const aspect = width / height;
         const recommendedAspect = spec.recommendedWidth / spec.recommendedHeight;
         const aspectDiff = Math.abs(aspect - recommendedAspect);
-        
+        let needsResize = false;
+
         if (width > spec.recommendedWidth * 1.5 || height > spec.recommendedHeight * 1.5) {
            setValidationMsg({ type: 'warn', text: `Large dimensions (${width}x${height}). Consider scaling it down.` });
            setNeedsCanvasResize(true);
+           needsResize = true;
         } else if (aspectDiff > 0.2 && spec.aspectLabel !== 'Any') {
            setValidationMsg({ type: 'warn', text: `Aspect ratio offset. Recommended: ${spec.aspectLabel}.` });
         } else if (!isPngRequired) {
            setValidationMsg({ type: 'ok', text: `Looks good (${width}x${height}, ${formatSize(file.size)})` });
         }
-        resolve(true);
+        resolve({ ok: true, needsResize });
       };
       img.onerror = () => {
         setValidationMsg({ type: 'error', text: 'Invalid image file.' });
-        resolve(false);
+        resolve({ ok: false, needsResize: false });
       }
       img.src = URL.createObjectURL(file);
     });
@@ -90,12 +92,17 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     setPendingFile(file);
     setPendingPreviewUrl(URL.createObjectURL(file));
-    
-    const canProceed = await validateFile(file);
-    setCanUpload(canProceed);
+
+    const { ok, needsResize } = await validateFile(file);
+    setCanUpload(ok);
+    // Auto-upload valid images immediately so the URL is set without a second
+    // click. Oversized images still wait so the user can choose to compress.
+    if (ok && !needsResize) {
+      overrideAndUpload(file);
+    }
   };
 
   const resizeAndUpload = () => {
