@@ -64,3 +64,58 @@ supabase secrets set \
 - The webhook verifies the HMAC signature against the **raw** body before trusting anything.
 - Only the service role can write `orders.payment.status = 'confirmed'` and `payment_events`.
 - Keep all secrets in `supabase secrets` — they are git-ignored and never reach the browser bundle.
+
+---
+
+# Transactional email (Resend) — `send-email`
+
+One function, triggered by a **Database Webhook on `orders`** (INSERT + UPDATE).
+Every order path writes to `orders`, so this covers storefront checkout, admin
+status changes, AND the Razorpay payment webhook with no scattered calls.
+
+Emails: order placed (customer) + new-order alert (owner); payment confirmed;
+shipped (with tracking if present); delivered/completed; cancelled.
+
+## One-time setup (when your Resend account is ready)
+
+### 1. Resend account + sender
+- Create a [Resend](https://resend.com) account.
+- **Verify your domain** (Resend → Domains → add DNS records SPF/DKIM at your registrar) so you can send from e.g. `orders@grainood.com`.
+  - *For testing before DNS is done*, leave `EMAIL_FROM` unset — it falls back to Resend's `onboarding@resend.dev` sandbox sender (only delivers to your own verified address).
+- Get an **API key** (Resend → API Keys).
+
+### 2. Deploy
+```bash
+supabase functions deploy send-email --no-verify-jwt
+```
+
+### 3. Secrets
+```bash
+supabase secrets set \
+  RESEND_API_KEY=re_xxx \
+  EMAIL_FROM="Grainood <orders@grainood.com>" \
+  EMAIL_REPLY_TO=support@grainood.com \
+  OWNER_EMAIL=you@grainood.com \
+  EMAIL_WEBHOOK_SECRET=some_strong_random_string \
+  SITE_URL=https://grainood.com \
+  BRAND_NAME=GRAINOOD
+```
+
+### 4. Create the Database Webhook
+Supabase Dashboard → **Database → Webhooks → Create a new hook**:
+- Table: `public.orders`
+- Events: **Insert** and **Update**
+- Type: **HTTP Request** → POST → URL `https://<project-ref>.functions.supabase.co/send-email`
+- HTTP Headers: add **`x-webhook-secret`** = the same `EMAIL_WEBHOOK_SECRET`
+
+(That secret header is the function's auth, since the URL is public.)
+
+### 5. Test
+- Place a test order → you should get the confirmation + an owner alert.
+- Change an order to **Shipped / Delivered / Cancelled** in the admin → matching email.
+- Confirm a payment (manual or via Razorpay test) → payment-received email.
+
+## Notes
+- Templates live in `_shared/emailTemplates.ts`; the shared shell + Resend client in `_shared/email.ts`.
+- The function returns **200 even on send failure** (errors in the body) so the DB webhook doesn't retry and double-send. Check function logs for failures.
+- Guests: the recipient email is read from the order's `data.customer.email` (captured at checkout), not from auth — so guest orders email correctly.
