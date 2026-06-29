@@ -1,21 +1,5 @@
-import {
-  collection,
-  doc,
-  setDoc,
-  getDocs,
-  query,
-  orderBy,
-  where,
-  limit,
-  startAfter,
-  serverTimestamp,
-  QueryConstraint,
-  QueryDocumentSnapshot,
-} from 'firebase/firestore';
-import { db, auth } from '../../../lib/firebase';
+import { supabase } from '../../../lib/supabase';
 import { AuditLog } from '../types';
-
-const COLLECTION = 'auditLogs';
 
 export type AuditAction = AuditLog['action'];
 
@@ -34,13 +18,28 @@ export interface AuditQuery {
   action?: AuditAction;
   entityType?: string;
   pageSize?: number;
-  cursor?: QueryDocumentSnapshot | null;
+  /** Opaque offset cursor (rows already consumed). */
+  cursor?: number | null;
 }
 
 export interface AuditPage {
   logs: AuditLog[];
-  cursor: QueryDocumentSnapshot | null;
+  cursor: number | null;
   hasMore: boolean;
+}
+
+function rowToAudit(r: any): AuditLog {
+  return {
+    id: r.id,
+    actorUserId: r.actor_user_id,
+    actorName: r.actor_name ?? undefined,
+    action: r.action,
+    entityType: r.entity_type,
+    entityId: r.entity_id,
+    before: r.before ?? undefined,
+    after: r.after ?? undefined,
+    createdAt: r.created_at,
+  };
 }
 
 export const auditService = {
@@ -50,42 +49,49 @@ export const auditService = {
    */
   async writeAudit(input: WriteAuditInput): Promise<void> {
     try {
-      const user = auth.currentUser;
-      const id = doc(collection(db, COLLECTION)).id;
-      await setDoc(doc(db, COLLECTION, id), {
-        id,
-        actorUserId: input.actorUserId || user?.uid || 'system',
-        actorName: input.actorName || user?.displayName || user?.email || 'Unknown',
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('audit_logs').insert({
+        actor_user_id: input.actorUserId ?? user?.id ?? null,
+        actor_name:
+          input.actorName ??
+          (user?.user_metadata?.full_name as string) ??
+          user?.email ??
+          'Unknown',
         action: input.action,
-        entityType: input.entityType,
-        entityId: input.entityId,
+        entity_type: input.entityType,
+        entity_id: input.entityId,
         before: input.before ?? null,
         after: input.after ?? null,
-        createdAt: serverTimestamp(),
       });
+      if (error) throw error;
     } catch (e) {
       console.error('auditService.writeAudit failed', e);
     }
   },
 
   /** Paginated, optionally filtered, newest-first. Read-only admin viewer. */
-  async getAuditLogs({ action, entityType, pageSize = 25, cursor = null }: AuditQuery = {}): Promise<AuditPage> {
-    const constraints: QueryConstraint[] = [];
-    if (action) constraints.push(where('action', '==', action));
-    if (entityType) constraints.push(where('entityType', '==', entityType));
-    constraints.push(orderBy('createdAt', 'desc'));
-    if (cursor) constraints.push(startAfter(cursor));
-    // Fetch one extra to detect whether another page exists.
-    constraints.push(limit(pageSize + 1));
+  async getAuditLogs({ action, entityType, pageSize = 25, cursor = 0 }: AuditQuery = {}): Promise<AuditPage> {
+    const from = cursor ?? 0;
+    // Fetch one extra row to detect whether another page exists.
+    const to = from + pageSize;
+    let q = supabase
+      .from('audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+    if (action) q = q.eq('action', action);
+    if (entityType) q = q.eq('entity_type', entityType);
 
-    const snap = await getDocs(query(collection(db, COLLECTION), ...constraints));
-    const docs = snap.docs;
-    const hasMore = docs.length > pageSize;
-    const pageDocs = hasMore ? docs.slice(0, pageSize) : docs;
+    const { data, error } = await q;
+    if (error) throw error;
+
+    const rows = data ?? [];
+    const hasMore = rows.length > pageSize;
+    const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
 
     return {
-      logs: pageDocs.map((d) => d.data() as AuditLog),
-      cursor: pageDocs.length ? pageDocs[pageDocs.length - 1] : null,
+      logs: pageRows.map(rowToAudit),
+      cursor: from + pageRows.length,
       hasMore,
     };
   },

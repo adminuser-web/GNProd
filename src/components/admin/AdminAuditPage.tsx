@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { ScrollText, RotateCcw, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
 import { auditService, AuditAction } from '../../features/audit/services/auditService';
@@ -20,6 +19,7 @@ const ACTION_LABELS: Record<AuditAction, string> = {
 const ACTIONS = Object.keys(ACTION_LABELS) as AuditAction[];
 
 function formatTimestamp(createdAt: any): string {
+  if (typeof createdAt === 'string') return new Date(createdAt).toLocaleString();
   if (createdAt?.toDate) return createdAt.toDate().toLocaleString();
   if (createdAt?.seconds) return new Date(createdAt.seconds * 1000).toLocaleString();
   return 'Pending…';
@@ -30,7 +30,7 @@ export function AdminAuditPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState<AuditAction | 'all'>('all');
-  const [cursor, setCursor] = useState<QueryDocumentSnapshot | null>(null);
+  const [cursor, setCursor] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
