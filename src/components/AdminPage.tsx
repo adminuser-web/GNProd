@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import { RevealSection } from "./Reveal";
-import { clsx } from "clsx";
 import {
   IndianRupee,
   ShoppingBag,
@@ -12,8 +11,6 @@ import {
   Layers,
   Tag,
   Share2,
-  Activity,
-  Box,
   Info,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -23,6 +20,7 @@ import { useAllOrders } from "../features/orders/hooks/useOrders";
 import { useAllTickets } from "../features/support/hooks/useTickets";
 import { useCustomers } from "../features/crm/hooks/useCustomers";
 import { Skeleton } from "./Skeleton";
+import { PageHeader, StatCard, Segmented } from "./admin/ui";
 
 function useAllSavedBuilds() {
   const [builds, setBuilds] = useState<any[]>([]);
@@ -47,71 +45,6 @@ const orderTotal = (o: any) =>
 const orderDate = (o: any) =>
   o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt || 0);
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
-
-function StatCard({
-  label,
-  value,
-  subLabel,
-  icon: Icon,
-  alert = false,
-  to,
-}: {
-  label: string;
-  value: string | number;
-  subLabel: React.ReactNode;
-  icon: any;
-  alert?: boolean;
-  to?: string;
-}) {
-  const content = (
-    <div
-      className={clsx(
-        "bg-surface border p-6 shadow-sm h-full transition-all flex flex-col justify-between",
-        alert
-          ? "border-red-500/20 hover:border-red-500/40"
-          : "border-[#c5a059]/20 hover:border-[#c5a059]/40",
-      )}
-    >
-      <div>
-        <div className="flex justify-between items-start mb-4">
-          <span
-            className={clsx(
-              "text-[10px] uppercase tracking-widest",
-              alert ? "text-red-400" : "text-muted",
-              to && "group-hover:text-premium-gold-text transition-colors",
-            )}
-          >
-            {label}
-          </span>
-          <Icon
-            className={clsx(
-              "w-4 h-4 shrink-0",
-              alert ? "text-red-500" : "text-[#c5a059]",
-            )}
-          />
-        </div>
-        <div
-          className={clsx(
-            "text-xl md:text-2xl font-bold tracking-wider mb-1",
-            alert ? "text-red-500" : "text-content",
-          )}
-        >
-          {value}
-        </div>
-      </div>
-      <div className="text-[10px] lg:text-xs text-muted/80 uppercase tracking-widest mt-2 block">
-        {subLabel}
-      </div>
-    </div>
-  );
-  if (to)
-    return (
-      <Link to={to} className="block h-full group min-h-[44px]">
-        {content}
-      </Link>
-    );
-  return content;
-}
 
 // --- Charts ---
 
@@ -607,32 +540,21 @@ export function AdminPage() {
   return (
     <div className="pb-16 space-y-6 md:space-y-8 font-sans">
       <RevealSection>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 border-b border-[#c5a059]/10 pb-6">
-          <div>
-            <p className="text-[11px] tracking-[0.4em] uppercase text-premium-gold-text mb-2">
-              Metrics & Reports
-            </p>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content">
-              Performance Dashboard
-            </h1>
-          </div>
-          <div className="flex bg-surface border border-[#c5a059]/20 p-1 rounded-sm">
-            {(["30d", "90d", "12m"] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={clsx(
-                  "px-4 py-2 text-[10px] font-bold tracking-widest uppercase transition-colors rounded-sm",
-                  period === p
-                    ? "bg-[#c5a059] text-bg"
-                    : "text-muted hover:text-content",
-                )}
-              >
-                {p === "12m" ? "1 Year" : p === "90d" ? "90 Days" : "30 Days"}
-              </button>
-            ))}
-          </div>
-        </div>
+        <PageHeader
+          eyebrow="Metrics & Reports"
+          title="Performance Dashboard"
+          actions={
+            <Segmented<"30d" | "90d" | "12m">
+              value={period}
+              onChange={setPeriod}
+              options={[
+                { value: "30d", label: "30 Days" },
+                { value: "90d", label: "90 Days" },
+                { value: "12m", label: "1 Year" },
+              ]}
+            />
+          }
+        />
       </RevealSection>
 
       <RevealSection delay={50}>
