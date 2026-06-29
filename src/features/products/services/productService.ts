@@ -11,7 +11,11 @@ export const productService = {
       .select('*')
       .order('sort_order');
     if (error) throw error;
-    return (data ?? []).map((r: any) => ({ ...(r.data as Product), id: r.id }));
+    // Ignore rows without a `data` document (e.g. pre-migration schema) so the
+    // context falls back to bundled products instead of rendering broken objects.
+    return (data ?? [])
+      .filter((r: any) => r.data && typeof r.data === 'object')
+      .map((r: any) => ({ ...(r.data as Product), id: r.id }));
   },
 
   async updateProduct(slug: string, productData: Partial<Product>, opts?: { audit?: boolean }): Promise<void> {
