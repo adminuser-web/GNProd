@@ -38,6 +38,7 @@ export type ThemedImage = string | { light?: string; dark?: string };
 export interface BrandContent {
   brandName: string;
   logoUrl: ThemedImage;
+  faviconUrl?: string;
   tagline: string;
   contact: { phone: string; whatsapp: string; email: string; instagram: string; };
   store: { address: string; hours: string; mapLink: string; };
@@ -106,6 +107,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentMap = {
   brand: {
     brandName: "GRAINOOD",
     logoUrl: "",
+    faviconUrl: "/favicon.svg",
     tagline: "Handcrafted English Willow",
     contact: {
       phone: "+91 89395 68005",

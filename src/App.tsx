@@ -52,6 +52,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProductsProvider } from './context/ProductsContext';
 import { ContentProvider } from './context/ContentContext';
+import { SiteMeta } from './components/SiteMeta';
 import { OrderDrawer } from './components/OrderDrawer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -81,7 +82,8 @@ export default function App() {
             <AuthProvider>
               <ProductsProvider>
                 <Router>
-                  <Toaster 
+                  <SiteMeta />
+                  <Toaster
                     position="bottom-right" 
                     style={{ zIndex: 'var(--z-toast)' }}
                     toastOptions={{
