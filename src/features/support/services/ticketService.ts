@@ -1,152 +1,132 @@
-import { collection, doc, query, where, orderBy, onSnapshot, getDoc, updateDoc, setDoc, addDoc, serverTimestamp, limit } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../../lib/firebase';
+import { storage } from '../../../lib/firebase';
+import { supabase } from '../../../lib/supabase';
 import { SupportTicket, SupportTicketMessage, TicketAttachment } from '../../../types';
 import { notificationService } from '../../notifications/services/notificationService';
 import { auditService } from '../../audit/services/auditService';
 
+// tickets rows: { id, user_id, status, data (full SupportTicket), notes[] }.
+function rowToTicket(r: any): SupportTicket {
+  return { ...(r.data as any), id: r.id, status: r.status } as SupportTicket;
+}
+
+async function fetchTicketRow(ticketId: string): Promise<any | null> {
+  const { data, error } = await supabase.from('tickets').select('*').eq('id', ticketId).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export const ticketService = {
+  // NOTE: attachment upload still uses Firebase Storage; migrated in Phase 4.
   async uploadAttachment(file: File, userId: string, ticketId: string): Promise<TicketAttachment> {
-    if (!storage) throw new Error("Firebase storage not initialized");
+    if (!storage) throw new Error('Firebase storage not initialized');
     const fileName = `${Date.now()}_${file.name}`;
     const storageRef = ref(storage, `support/${userId}/${ticketId}/${fileName}`);
     const snapshot = await uploadBytesResumable(storageRef, file);
     const url = await getDownloadURL(snapshot.ref);
-    return {
-      name: file.name,
-      url,
-      contentType: file.type
-    };
+    return { name: file.name, url, contentType: file.type };
   },
 
-  // Subscriptions
+  // "Subscriptions" — fetch-on-call (no-op unsubscribe).
   subscribeToAllTickets(callback: (tickets: SupportTicket[]) => void) {
-    const q = query(
-      collection(db, 'tickets'),
-      orderBy('createdAt', 'desc'),
-      limit(500)
-    );
-    return onSnapshot(q, (snapshot) => {
-      const tickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as SupportTicket);
-      callback(tickets);
-    }, (error) => {
-      console.error("Error in subscribeToAllTickets:", error);
-    });
+    supabase.from('tickets').select('*').order('created_at', { ascending: false }).limit(500)
+      .then(({ data, error }) => {
+        if (error) { console.error('subscribeToAllTickets', error); return; }
+        callback((data ?? []).map(rowToTicket));
+      });
+    return () => {};
   },
 
   subscribeToOpenTickets(callback: (tickets: SupportTicket[]) => void) {
-    const q = query(
-      collection(db, 'tickets'),
-      where('status', '==', 'open'),
-      orderBy('createdAt', 'desc'),
-      limit(500)
-    );
-    return onSnapshot(q, (snapshot) => {
-      const tickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as SupportTicket);
-      callback(tickets);
-    }, (error) => {
-      console.error("Error in subscribeToOpenTickets:", error);
-    });
+    supabase.from('tickets').select('*').eq('status', 'open').order('created_at', { ascending: false }).limit(500)
+      .then(({ data, error }) => {
+        if (error) { console.error('subscribeToOpenTickets', error); return; }
+        callback((data ?? []).map(rowToTicket));
+      });
+    return () => {};
   },
 
   subscribeToUserTickets(userId: string, callback: (tickets: SupportTicket[]) => void) {
-    const q = query(
-      collection(db, 'tickets'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
-    return onSnapshot(q, (snapshot) => {
-      const tickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as SupportTicket);
-      callback(tickets);
-    }, (error) => {
-      console.error("Error in subscribeToUserTickets:", error);
-    });
+    supabase.from('tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) { console.error('subscribeToUserTickets', error); return; }
+        callback((data ?? []).map(rowToTicket));
+      });
+    return () => {};
   },
 
-  // Mutations
   async createTicket(ticketData: Omit<SupportTicket, 'id' | 'createdAt' | 'updatedAt'>) {
-    const docRef = await addDoc(collection(db, 'tickets'), {
-      ...ticketData,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
+    const td: any = ticketData;
+    const { data, error } = await supabase
+      .from('tickets')
+      .insert({ user_id: td.userId ?? null, status: td.status ?? 'open', data: ticketData })
+      .select('id')
+      .single();
+    if (error) throw error;
 
     try {
       await notificationService.createNotification({
-        userId: ticketData.userId,
+        userId: td.userId,
         roleTarget: 'admin',
         type: 'new_support_request',
         title: 'New Support Request',
-        message: `${ticketData.customerName} submitted a new support request regarding ${ticketData.subject}.`,
-        link: '/admin/support'
-      });
+        message: `${td.customerName} submitted a new support request regarding ${td.subject}.`,
+        link: '/admin/support',
+      } as any);
     } catch (e) {
-      console.error("Error creating notification for support request", e);
+      console.error('Error creating notification for support request', e);
     }
 
-    return docRef;
+    return { id: data!.id };
   },
 
   async addAdminReply(ticketId: string, messages: SupportTicketMessage[]) {
-    const ticketRef = doc(db, 'tickets', ticketId);
-    await updateDoc(ticketRef, {
-      messages,
-      updatedAt: serverTimestamp()
-    });
-
+    const row = await fetchTicketRow(ticketId);
+    if (!row) throw new Error('Ticket not found');
+    const newData = { ...(row.data as any), messages };
+    const { error } = await supabase.from('tickets').update({ data: newData }).eq('id', ticketId);
+    if (error) throw error;
     try {
-      const snap = await getDoc(ticketRef);
-      if (snap.exists()) {
-         const ticket = snap.data();
-         await notificationService.createNotification({
-            userId: ticket.userId,
-            roleTarget: 'customer',
-            type: 'support_reply',
-            title: 'Support Update',
-            message: `Admin has replied to your request: ${ticket.subject}`,
-            link: `/my-requests`
-         });
-      }
+      await notificationService.createNotification({
+        userId: row.data?.userId,
+        roleTarget: 'customer',
+        type: 'support_reply',
+        title: 'Support Update',
+        message: `Admin has replied to your request: ${row.data?.subject}`,
+        link: `/my-requests`,
+      } as any);
     } catch (e) {
-      console.error("Error creating notification for admin reply", e);
+      console.error('Error creating notification for admin reply', e);
     }
   },
 
   async addCustomerReply(ticketId: string, messages: SupportTicketMessage[]) {
-    const ticketRef = doc(db, 'tickets', ticketId);
-    await updateDoc(ticketRef, {
-      messages,
-      updatedAt: serverTimestamp()
-    });
-
+    const row = await fetchTicketRow(ticketId);
+    if (!row) throw new Error('Ticket not found');
+    const newData = { ...(row.data as any), messages };
+    const { error } = await supabase.from('tickets').update({ data: newData }).eq('id', ticketId);
+    if (error) throw error;
     try {
-      const snap = await getDoc(ticketRef);
-      if (snap.exists()) {
-         const ticket = snap.data();
-         await notificationService.createNotification({
-            userId: ticket.userId,
-            roleTarget: 'admin',
-            type: 'support_reply',
-            title: 'Customer Reply',
-            message: `${ticket.customerName} has replied to request: ${ticket.subject}`,
-            link: '/admin/support'
-         });
-      }
+      await notificationService.createNotification({
+        userId: row.data?.userId,
+        roleTarget: 'admin',
+        type: 'support_reply',
+        title: 'Customer Reply',
+        message: `${row.data?.customerName} has replied to request: ${row.data?.subject}`,
+        link: '/admin/support',
+      } as any);
     } catch (e) {
-      console.error("Error creating notification for customer reply", e);
+      console.error('Error creating notification for customer reply', e);
     }
   },
 
   async updateTicketStatus(ticketId: string, status: string, messages?: SupportTicketMessage[]) {
-    const ticketRef = doc(db, 'tickets', ticketId);
-    const updates: any = {
-      status,
-      updatedAt: serverTimestamp()
-    };
-    if (messages) {
-      updates.messages = messages;
-    }
-    await updateDoc(ticketRef, updates);
+    const row = await fetchTicketRow(ticketId);
+    if (!row) throw new Error('Ticket not found');
+    const newData: any = { ...(row.data as any), status };
+    if (messages) newData.messages = messages;
+    const { error } = await supabase.from('tickets').update({ status, data: newData }).eq('id', ticketId);
+    if (error) throw error;
 
     await auditService.writeAudit({
       action: 'support_status_updated',
@@ -156,48 +136,43 @@ export const ticketService = {
     });
 
     try {
-      const snap = await getDoc(ticketRef);
-      if (snap.exists() && status === 'closed') {
-         const ticket = snap.data();
-         await notificationService.createNotification({
-            userId: ticket.userId,
-            roleTarget: 'customer',
-            type: 'support_reply',
-            title: 'Support Request Closed',
-            message: `Your request regarding ${ticket.subject} has been closed by admin.`,
-            link: `/my-requests`
-         });
-      } else if (snap.exists() && messages?.length) {
-         const ticket = snap.data();
-         await notificationService.createNotification({
-            userId: ticket.userId,
-            roleTarget: 'customer',
-            type: 'support_reply',
-            title: 'Support Update',
-            message: `Admin has replied and updated the status of your request: ${ticket.subject}`,
-            link: `/my-requests`
-         });
+      const t: any = row.data;
+      if (status === 'closed') {
+        await notificationService.createNotification({
+          userId: t.userId, roleTarget: 'customer', type: 'support_reply',
+          title: 'Support Request Closed',
+          message: `Your request regarding ${t.subject} has been closed by admin.`,
+          link: `/my-requests`,
+        } as any);
+      } else if (messages?.length) {
+        await notificationService.createNotification({
+          userId: t.userId, roleTarget: 'customer', type: 'support_reply',
+          title: 'Support Update',
+          message: `Admin has replied and updated the status of your request: ${t.subject}`,
+          link: `/my-requests`,
+        } as any);
       }
     } catch (e) {
-      console.error("Error creating notification for ticket status update", e);
+      console.error('Error creating notification for ticket status update', e);
     }
   },
 
   async addInternalNote(ticketId: string, text: string, createdBy: string) {
-    return await addDoc(collection(db, 'tickets', ticketId, 'notes'), {
-      text,
-      createdBy,
-      createdAt: serverTimestamp()
-    });
+    const row = await fetchTicketRow(ticketId);
+    if (!row) throw new Error('Ticket not found');
+    const note = { id: crypto.randomUUID(), text, createdBy, createdAt: new Date().toISOString() };
+    const notes = [...(row.notes ?? []), note];
+    const { error } = await supabase.from('tickets').update({ notes }).eq('id', ticketId);
+    if (error) throw error;
+    return note;
   },
 
   subscribeToTicketNotes(ticketId: string, callback: (notes: any[]) => void) {
-    const q = query(collection(db, 'tickets', ticketId, 'notes'), orderBy('createdAt', 'asc'));
-    return onSnapshot(q, (snapshot) => {
-      const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      callback(notes);
-    }, (error) => {
-      console.error("Error fetching notes:", error);
-    });
-  }
+    supabase.from('tickets').select('notes').eq('id', ticketId).maybeSingle()
+      .then(({ data, error }) => {
+        if (error) { console.error('subscribeToTicketNotes', error); return; }
+        callback((data?.notes as any[]) ?? []);
+      });
+    return () => {};
+  },
 };
