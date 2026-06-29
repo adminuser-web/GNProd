@@ -1,6 +1,6 @@
 # CLAUDE_CONTEXT.md
 
-> Session restore file. Last updated after the Supabase migration + Content Studio v1 work.
+> Session restore file. Last updated after the Supabase migration + full Content Studio (all sections shipped to main).
 > Working dir: `/Users/sailokesh/Documents/Grainood 2.0`
 
 ---
@@ -70,20 +70,20 @@ supabase/migrations/2026062800000{1..8}_*.sql  # versioned schema (source of tru
 ```
 
 ### Git state
-- Branch **`develop`** = working branch, HEAD `2554680` (Content Studio v1).
-- **`main`** = production (Vercel deploys it), `79e52f5`. **`develop` is AHEAD of `main`** by the Content Studio commit (`2554680`) — not yet shipped.
+- Branch **`develop`** = working branch, HEAD `e69539e` (full Content Studio).
+- **`main`** = production (Vercel deploys it), `a0d06d4`. **`develop` and `main` are IN SYNC** (Content Studio fully shipped).
 - Workflow: build on `develop` → merge to `main` to publish (deploy gate). When merging, local `main` often lags `origin/main`; reconcile with `git checkout main && git reset --hard origin/main && git merge develop && git push origin main`.
 
 ---
 
 ## In Progress
 
-**Content Studio redesign** (user wants a clean, powerful CMS; "too many options" in the old generic editor). Rolling out **section-by-section** (user's choice).
-- ✅ **Brand & Identity section** built as a purpose-built form: name, tagline, **logo** (themed, with toggle), **favicon** (single), contact, store, social. Logo now renders in the header; favicon/title/description apply live via `SiteMeta`.
-- ⏳ **Remaining sections still use the OLD generic JSON-key editor** (the `renderField` recursive renderer in `AdminContentEditorPage.tsx`): **Homepage/Hero, Footer, Contact, Philosophy, Legal, Reviews**. These need converting to the same purpose-built `Card`/`Field` style as Brand & Identity.
-- The user's larger goal: **redesign the entire admin portal** (cleaner, simpler) — content page is just the first piece.
+**Content Studio redesign — ✅ COMPLETE & SHIPPED to `main`.** All 8 sections in `AdminContentEditorPage.tsx` are now purpose-built `Card`/`Field` forms (registry `SECTION_FORMS`), no more raw JSON keys:
+- Brand & Identity (name, tagline, **logo**, **favicon**, contact, store, social) — logo renders in header; favicon/title/description apply live via `SiteMeta`.
+- Homepage (hero: headline/sub/CTAs/**bg image + video**, featured), SEO (title/description/**share image**), Philosophy, Contact (intro + **FAQs** add/remove), Footer (**columns + links** add/remove + copyright), Legal (privacy/terms/returns), Reviews (**list** add/remove).
+- The old generic `renderField` recursive editor remains only as a fallback (no area uses it now).
 
-**Pending decision:** merge the Content Studio v1 to `main` now (so logo/favicon are usable) vs. batch a few more sections first. (Currently unmerged on `develop`.)
+**NEXT — user's stated goal: redesign the ENTIRE admin portal** (cleaner, simpler, fewer options) across: Dashboard, Sales/Orders, Customers, Support, Products, Enquiries, Audit Log, AdminLayout. Not started. Apply the same clean Card/Field/section language used in the Content Studio. Note: admin pages are login-gated, so they can't be rendered in the preview tool — validate via the user.
 
 ---
 
@@ -124,9 +124,9 @@ supabase/migrations/2026062800000{1..8}_*.sql  # versioned schema (source of tru
 
 ## Next Steps
 
-**To resume the Content Studio:** convert the remaining sections in `src/components/admin/content/AdminContentEditorPage.tsx` from the generic `renderField` to purpose-built forms using the existing `Card` + `Field` helpers (already defined at top of that file). Order: **Homepage/Hero → Footer → Contact → Philosophy → Legal → Reviews**. Pattern: a `<XForm data={editorData} onChange={handleChange} />` component, rendered conditionally like the existing `activeArea === 'brand' ? <BrandIdentityForm/> : …`. `handleChange(path: string[], value)` updates nested editorData; `handleSave` persists via `contentService.updateArea`.
+**Content Studio is done.** The next task is the **broader admin-portal redesign** (user's goal: "clean and simple, fewer options"). Suggested approach: reuse the Content Studio's visual language — `Card`/`Field` helpers (currently local to `AdminContentEditorPage.tsx`; consider extracting to a shared `src/components/admin/ui/` module), section headers with description, sticky save bars, restrained option density. Start with the highest-traffic admin pages (Dashboard, Sales/Orders, Products) and simplify each. Confirm scope/priority with the user before a big build (they prefer phase-wise with approval for large changes).
 
-Then: broader admin-portal redesign (user's stated goal), and decide when to **merge `develop` → `main`**.
+Each admin change: keep `lint`/`test`/`build` green, commit to `develop`, merge to `main` to ship (the deploy gate). Admin pages can't be rendered in the preview tool (login-gated) — rely on lint/build + the user's validation.
 
 ### Commands to get back to this state
 ```bash
