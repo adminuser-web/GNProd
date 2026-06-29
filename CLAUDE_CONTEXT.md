@@ -86,7 +86,7 @@ supabase/migrations/2026062800000{1..8}_*.sql  # versioned schema (source of tru
 **Admin portal revamp — IN PROGRESS.**
 - **Phase 1 (shipped to `main`, ffa1f65):** new shared kit `src/components/admin/ui.tsx` (`PageHeader`, `Card`, `Field`, `StatCard`, `SectionLabel`, `StatusPill`, `EmptyState`, `SearchInput`, `Segmented`); AdminLayout sidebar grouped into Overview / Commerce / Customers / Content & System (one `NavItem`, badges preserved); Dashboard (AdminPage) uses shared StatCard/PageHeader/Segmented.
 - **Phase 2 (on `develop`, pending validation):** standardized headers + empty states across Audit, Enquiries, Products, Orders, Customers, Support using the kit. Fixed legacy date bugs: Enquiries `createdAt.toDate()`→`fmtDate()` (was showing N/A), `isNewOrder` in Orders board now tolerates ISO strings. Big pages (Orders/Customers/Support) were standardized surgically (header/empty/date) — bespoke filter rows + local StatusBadge/StatusPill left intact to limit risk (login-gated, no preview).
-- **Still latent:** `AdminCustomersPage` Customer360 sorts orders/builds via `createdAt?.toMillis` — falls back to a raw string for ISO timestamps (sort order only, not visible N/A). `AdminRecordList.tsx` is dead code (flagged for deletion). Admin pages are login-gated → validate via the user, not the preview tool.
+- **Notes:** `AdminCustomersPage` Customer360 renders dates via `new Date(createdAt?.toMillis ? toMillis() : createdAt || 0)` — display-only and ISO-safe (`new Date(isoString)` parses fine), so NOT a bug. `AdminRecordList.tsx` is dead code (flagged for deletion). Admin pages are login-gated → validate via the user, not the preview tool.
 
 ---
 
