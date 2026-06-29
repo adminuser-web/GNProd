@@ -5,6 +5,7 @@ import { useOrder } from '../context/OrderContext';
 import { clsx } from 'clsx';
 import { GoldButton } from './GoldButton';
 import { LazyImage } from './LazyImage';
+import { HowItWorks } from './HowItWorks';
 
 export function OrderDrawer() {
   const { state: { items }, isDrawerOpen, closeDrawer, updateQuantity, removeFromOrder, grandTotal, updateItem, itemsWithPricing } = useOrder();
@@ -187,11 +188,12 @@ export function OrderDrawer() {
 
         {items.length > 0 && (
           <div className="p-6 border-t border-[#c5a059]/20 bg-surface">
+            <HowItWorks variant="compact" className="mb-5" />
             <div className="flex justify-between items-center mb-6">
               <span className="text-content font-bold tracking-widest uppercase text-xs">Total</span>
               <span className="text-content font-bold tracking-widest text-lg">₹{grandTotal.toLocaleString('en-IN')}</span>
             </div>
-            <GoldButton 
+            <GoldButton
               as={Link}
               to="/order"
               onClick={closeDrawer}

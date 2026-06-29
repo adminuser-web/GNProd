@@ -90,6 +90,14 @@ supabase/migrations/2026062800000{1..8}_*.sql  # versioned schema (source of tru
 
 ---
 
+## Owner-flow improvements (on `develop`, pending ship)
+Round 3 — customer + owner flow polish (scope the user approved):
+- **`HowItWorks` component** (`src/components/HowItWorks.tsx`): 3-step Place → Confirm on WhatsApp → Pay via UPI explainer. `variant="full"` on ProductPage + checkout; `variant="compact"` in the cart drawer. Makes the pay-later model clear early.
+- **Guest checkout** (`OrderPage.tsx`): removed the login wall — form always shows; on submit, guests get a silent **`supabase.auth.signInAnonymously()`** session so the order satisfies orders RLS (`user_id = auth.uid()`). Their email/phone is captured on the order regardless. **Graceful fallback**: if anonymous sign-ins are disabled, shows "Please sign in to place your order" (no crash). ⚠️ **ACTION NEEDED (user):** enable **Anonymous Sign-ins** in Supabase → Authentication → Providers for guest checkout to actually work. Verified disabled as of this round.
+- **Dashboard Action Queue** (`AdminPage.tsx`): `ActionQueue` worklist at top — New orders to confirm (`status === 'Order Placed'`), Payments to verify (`payment.status submitted/processing`), Open support. Links to filtered boards. AdminOrdersBoard now reads `?status=` param (not just `?payment=`).
+- **ProductPage buy box reordered** (`ProductPage.tsx`, `@ts-nocheck`): primary **ADD TO CART** now leads, ENQUIRE secondary, SAVE/SHARE demoted to subtle text actions; compact HowItWorks strip added. Mobile sticky CTA already existed.
+- Not done this round (deferred): #6/#7 WhatsApp-customer button + one-click Confirm Payment on order detail; bundle code-splitting.
+
 ## Known Issues & Bugs
 
 - **Bundle size:** main chunk 766 kB > Vite's 500 kB warning. Not addressed (candidate: `manualChunks`). Non-blocking.

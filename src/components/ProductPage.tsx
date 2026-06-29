@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { buildService } from '../features/builds/services/buildService';
 import { SPEC_TO_CUSTOMIZATION_MAP, ALWAYS_FIXED_SPECS } from '../config/attributeMap';
 import { EnquiryDrawer } from './EnquiryDrawer';
+import { HowItWorks } from './HowItWorks';
 
 export function ProductPage() {
   const { seriesSlug, subSeriesSlug, slug } = useParams<{ seriesSlug?: string, subSeriesSlug?: string, slug?: string }>();
@@ -791,67 +792,73 @@ export function ProductPage() {
                     </div>
                   )}
 
-                  <div className="flex gap-2 w-full pt-2">
-                    <button 
-                      onClick={handleSaveBuild}
-                      disabled={isSavingBuild || !allRequiredSelected}
-                      className="flex-1 py-3 text-[10px] tracking-[0.1em] md:tracking-widest uppercase border border-[#c5a059]/40 hover:bg-[#c5a059] hover:text-bg transition-colors disabled:opacity-50 text-content"
-                    >
-                      {isSavingBuild ? 'SAVING...' : 'SAVE TO GARAGE'}
-                    </button>
-                    <button 
-                      onClick={handleShareBuild}
-                      className="flex-1 py-3 text-[10px] tracking-[0.1em] md:tracking-widest uppercase border border-[#c5a059]/40 hover:bg-[#c5a059] hover:text-bg transition-colors text-content"
-                    >
-                      SHARE BUILD
-                    </button>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2 w-full pt-1">
+                  {/* Primary action — the one thing we want buyers to do */}
+                  <div className="flex flex-col gap-2 w-full pt-2">
                     {isAdded ? (
                       <GoldButton
-                      disabled
-                      variant="solid"
-                      className="w-full flex justify-center items-center gap-2"
-                    >
-                      <Check size={18} /> ADDED ✓
-                    </GoldButton>
-                  ) : (
-                    <GoldButton
-                      onClick={handleAddToCart}
-                      variant="solid"
-                      className="w-full"
-                      disabled={!allRequiredSelected}
-                    >
-                      ADD TO CART
-                    </GoldButton>
-                  )}
-                  
-                  <GoldButton
-                    onClick={() => {
-                      setEnquiryDrawerType('product_enquiry');
-                      setIsEnquiryDrawerOpen(true);
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    ENQUIRE ABOUT THIS BUILD
-                  </GoldButton>
+                        disabled
+                        variant="solid"
+                        className="w-full flex justify-center items-center gap-2"
+                      >
+                        <Check size={18} /> ADDED ✓
+                      </GoldButton>
+                    ) : (
+                      <GoldButton
+                        onClick={handleAddToCart}
+                        variant="solid"
+                        className="w-full"
+                        disabled={!allRequiredSelected}
+                      >
+                        ADD TO CART
+                      </GoldButton>
+                    )}
 
-                  {(baseProduct?.slug === 'immortal' || baseProduct?.slug === 'eternal') && (
                     <GoldButton
                       onClick={() => {
-                        setEnquiryDrawerType('cleft_selection');
+                        setEnquiryDrawerType('product_enquiry');
                         setIsEnquiryDrawerOpen(true);
                       }}
                       variant="outline"
                       className="w-full"
                     >
-                      REQUEST CLEFT SELECTION
+                      ENQUIRE ABOUT THIS BUILD
                     </GoldButton>
-                  )}
-                </div>
-                
+
+                    {(baseProduct?.slug === 'immortal' || baseProduct?.slug === 'eternal') && (
+                      <GoldButton
+                        onClick={() => {
+                          setEnquiryDrawerType('cleft_selection');
+                          setIsEnquiryDrawerOpen(true);
+                        }}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        REQUEST CLEFT SELECTION
+                      </GoldButton>
+                    )}
+                  </div>
+
+                  {/* Pay-later reassurance */}
+                  <HowItWorks variant="compact" className="mt-4" />
+
+                  {/* Secondary actions — subordinate to Add to Cart */}
+                  <div className="flex items-center gap-1 w-full pt-3">
+                    <button
+                      onClick={handleSaveBuild}
+                      disabled={isSavingBuild || !allRequiredSelected}
+                      className="flex-1 py-2.5 text-[10px] tracking-[0.1em] md:tracking-widest uppercase text-muted hover:text-[#c5a059] transition-colors disabled:opacity-50"
+                    >
+                      {isSavingBuild ? 'SAVING…' : 'SAVE TO GARAGE'}
+                    </button>
+                    <span className="w-px h-4 bg-[#c5a059]/20" />
+                    <button
+                      onClick={handleShareBuild}
+                      className="flex-1 py-2.5 text-[10px] tracking-[0.1em] md:tracking-widest uppercase text-muted hover:text-[#c5a059] transition-colors"
+                    >
+                      SHARE BUILD
+                    </button>
+                  </div>
+
                 <div className="text-center mt-6 flex flex-col gap-2">
                     <a href={whatsappUrl} target="_blank" rel="noreferrer" className="text-muted hover:text-premium-gold-text text-[11px] tracking-[0.2em] uppercase transition-colors inline-block border-b border-transparent hover:border-[#c5a059] focus-visible:outline-none focus-visible:text-premium-gold-text">
                       CONFIRM SPECS ON WHATSAPP
