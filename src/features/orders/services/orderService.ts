@@ -202,18 +202,7 @@ export const orderService = {
       data: orderData,
     });
     if (error) throw error;
-
-    try {
-      await notificationService.createNotification({
-        userId: od.userId || 'system',
-        roleTarget: 'admin',
-        type: 'order_created',
-        title: 'New Order Received',
-        message: `${od.customerInfo?.name || od.shippingDetails?.name || 'Customer'} placed a new order.`,
-        link: `/admin/orders/${orderId}`,
-      });
-    } catch (e) {
-      console.error('Failed to create admin notification', e);
-    }
+    // The admin "new order" notification is created server-side by the
+    // `orders_notify_admin` DB trigger (PII-free, RLS-independent).
   },
 };

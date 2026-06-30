@@ -129,8 +129,9 @@ export function ContactPage() {
         type: 'general',
         source: 'contact'
       });
-    } catch (err) {
-      console.error("Failed to submit enquiry to firestore", err);
+    } catch {
+      // Sanitized: no PII / no provider internals in logs.
+      console.error('enquiry_submit_failed');
     }
     
     const message = `ENQUIRY from ${formData.name} (${formData.phone} / ${formData.email}):\n\n${formData.message}`;

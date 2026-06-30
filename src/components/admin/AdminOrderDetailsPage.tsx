@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { orderService } from '../../features/orders/services/orderService';
 import { OrderRecord } from '../../types';
-import { ShoppingBag, User, DollarSign, Factory, Truck, Shield, Wrench, ArrowLeft, RefreshCw, FileText, ClipboardList, Activity } from 'lucide-react';
+import { ShoppingBag, User, DollarSign, Factory, Truck, Shield, Wrench, ArrowLeft, RefreshCw, FileText, ClipboardList, Activity, Mail, Upload, X, ExternalLink } from 'lucide-react';
 import { GoldButton } from '../GoldButton';
 
 import { ticketService } from '../../features/support/services/ticketService';
@@ -11,6 +11,8 @@ import { ORDER_STATUSES, OrderStatus, ALLOWED_TRANSITIONS, mapLegacyStatus } fro
 import { FEATURES } from '../../config/features';
 import { useContent } from '../../context/ContentContext';
 import { buildUpiUri } from '../../lib/upi';
+import { sendOrderEmail, OrderEmailTemplate } from '../../features/orders/services/orderEmailService';
+import { uploadPrivate, getSignedUrl, PAYMENT_PROOFS_BUCKET } from '../../lib/storage';
 
 import { toast } from 'sonner';
 
@@ -35,6 +37,14 @@ export function AdminOrderDetailsPage() {
 
   const [shippingData, setShippingData] = useState({ courierName: '', trackingNumber: '', trackingUrl: '', notes: '', estimatedDeliveryAt: '' });
   const [shippingSaving, setShippingSaving] = useState(false);
+
+  // Payment-by-email + proof
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailTemplate, setEmailTemplate] = useState<OrderEmailTemplate>('payment_request');
+  const [paymentLink, setPaymentLink] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [proofUploading, setProofUploading] = useState(false);
+  const [proofUrl, setProofUrl] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -133,6 +143,75 @@ export function AdminOrderDetailsPage() {
     }
   };
 
+  const openEmailModal = (tpl: OrderEmailTemplate) => {
+    setEmailTemplate(tpl);
+    setPaymentLink('');
+    setShowEmailModal(true);
+  };
+
+  const handleSendEmail = async () => {
+    if (!id) return;
+    if (emailTemplate === 'payment_request') {
+      let valid = false;
+      try { valid = new URL(paymentLink).protocol === 'https:'; } catch { valid = false; }
+      if (!valid) { toast.error('Enter a valid https payment link'); return; }
+    }
+    setSendingEmail(true);
+    try {
+      await sendOrderEmail(id, emailTemplate, emailTemplate === 'payment_request' ? paymentLink : undefined);
+      toast.success('Email sent to the customer');
+      setShowEmailModal(false);
+    } catch {
+      // Generic — no PII in the toast.
+      toast.error('Could not send the email. Please try again.');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  // Upload proof to the PRIVATE bucket, confirm payment, advance to Processing.
+  const handleUploadProof = async (file: File | null) => {
+    if (!id || !file) return;
+    setProofUploading(true);
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${id}/${Date.now()}-${safe}`;
+      await uploadPrivate(PAYMENT_PROOFS_BUCKET, path, file);
+      await orderService.updatePaymentStatus(id, {
+        ...order.payment,
+        status: 'confirmed',
+        method: paymentMethod,
+        reference: paymentRef,
+        notes: paymentNotes,
+        paidAmount: paidAmount ? parseFloat(paidAmount) : (order.totalPrice ?? null),
+        proofPath: path,
+        confirmedBy: user?.email || 'Admin',
+        confirmedAt: new Date().toISOString(),
+      }, user?.email || 'Admin');
+      try {
+        await orderService.updateOrderStatus(id, 'Processing', user?.email || 'Admin', 'Advanced to Processing after payment confirmation');
+      } catch { /* transition may already be past Processing */ }
+      setPaymentStatus('confirmed');
+      const signed = await getSignedUrl(PAYMENT_PROOFS_BUCKET, path).catch(() => '');
+      setProofUrl(signed);
+      toast.success('Proof saved · payment confirmed · order moved to Processing');
+    } catch {
+      toast.error('Upload failed. Please try again.');
+    } finally {
+      setProofUploading(false);
+    }
+  };
+
+  const viewProof = async () => {
+    const path = order?.payment?.proofPath;
+    if (!path) return;
+    try {
+      setProofUrl(await getSignedUrl(PAYMENT_PROOFS_BUCKET, path));
+    } catch {
+      toast.error('Could not load the proof.');
+    }
+  };
+
   const TABS = [
     'Summary', 
     'Customer',
@@ -199,6 +278,14 @@ export function AdminOrderDetailsPage() {
                 </a>
               ) : null;
             })()}
+            {order.payment?.status !== 'confirmed' && (
+              <button
+                onClick={() => openEmailModal('payment_request')}
+                className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest bg-[#c5a059]/10 text-[#c5a059] border border-[#c5a059]/30 px-4 py-2 hover:bg-[#c5a059] hover:text-bg transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5" /> Send Payment Email
+              </button>
+            )}
             <button
                onClick={() => handleUpdatePayment('confirmed')}
                className="text-[10px] uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 px-4 py-2 hover:bg-emerald-500 hover:text-white transition-colors"
@@ -271,7 +358,7 @@ export function AdminOrderDetailsPage() {
                   <p className="text-content">{(order as any).customerInfo?.phone || order.shippingDetails?.phone}</p>
                 </div>
               </div>
-              <Link to={`/admin/customers?userId=${order.userId || ''}&orderId=${order.id}`} className="mt-4 text-[10px] text-[#c5a059] font-bold uppercase tracking-widest border border-[#c5a059]/30 px-4 py-2 hover:bg-[#c5a059]/10 inline-block text-center">
+              <Link to="/admin/customers" state={{ userId: order.userId || '' }} className="mt-4 text-[10px] text-[#c5a059] font-bold uppercase tracking-widest border border-[#c5a059]/30 px-4 py-2 hover:bg-[#c5a059]/10 inline-block text-center">
                  Open Customer 360
               </Link>
             </div>
@@ -321,21 +408,70 @@ export function AdminOrderDetailsPage() {
               </div>
 
               <div className="mt-6 flex gap-4 max-w-sm">
-                <button 
-                  disabled={paymentSaving} 
-                  onClick={() => handleUpdatePayment('confirmed')} 
+                <button
+                  disabled={paymentSaving}
+                  onClick={() => handleUpdatePayment('confirmed')}
                   className="flex-1 text-[10px] border border-emerald-500/50 text-emerald-500 px-4 py-2 uppercase tracking-widest hover:bg-emerald-500/10"
                 >
                   Confirm Payment
                 </button>
-                <button 
-                  disabled={paymentSaving} 
-                  onClick={() => handleUpdatePayment('pending')} 
+                <button
+                  disabled={paymentSaving}
+                  onClick={() => handleUpdatePayment('pending')}
                   className="flex-1 text-[10px] border border-[#c5a059]/50 text-[#c5a059] px-4 py-2 uppercase tracking-widest hover:bg-[#c5a059]/10"
                 >
                   Save as Pending
                 </button>
               </div>
+
+              {/* Payment proof (private bucket, admin-only via signed URL) */}
+              <div className="mt-8 border-t border-[#c5a059]/10 pt-6">
+                <h4 className="text-[10px] text-muted uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Upload className="w-3.5 h-3.5 text-[#c5a059]" /> Payment Proof
+                </h4>
+                <p className="text-[11px] text-muted leading-relaxed mb-3 max-w-md">
+                  Uploading a proof image confirms the payment, records who/when, and moves the order to <span className="text-content">Processing</span>. Proofs are private — visible to admins only.
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className={`inline-flex items-center gap-2 text-[10px] uppercase tracking-widest border border-[#c5a059]/40 px-4 py-2 cursor-pointer transition-colors ${proofUploading ? 'opacity-50' : 'text-[#c5a059] hover:bg-[#c5a059] hover:text-bg'}`}>
+                    <Upload className="w-3.5 h-3.5" />
+                    {proofUploading ? 'Uploading…' : (order.payment?.proofPath ? 'Replace Proof' : 'Upload Proof & Confirm')}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={proofUploading}
+                      className="hidden"
+                      onChange={(e) => handleUploadProof(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  {order.payment?.proofPath && (
+                    <button onClick={viewProof} className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest border border-[#c5a059]/30 text-content px-4 py-2 hover:bg-[#c5a059]/10 transition-colors">
+                      <ExternalLink className="w-3.5 h-3.5" /> View Proof
+                    </button>
+                  )}
+                </div>
+                {proofUrl && (
+                  <div className="mt-4 max-w-xs">
+                    <img src={proofUrl} alt="Payment proof" className="w-full border border-[#c5a059]/20" />
+                    <p className="text-[9px] text-muted uppercase tracking-widest mt-1">Signed link · expires shortly</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment received email */}
+              {order.payment?.status === 'confirmed' && (
+                <div className="mt-8 border-t border-[#c5a059]/10 pt-6">
+                  <h4 className="text-[10px] text-muted uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-[#c5a059]" /> Notify Customer
+                  </h4>
+                  <button
+                    onClick={() => openEmailModal('payment_received')}
+                    className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest border border-[#c5a059]/40 text-[#c5a059] px-4 py-2 hover:bg-[#c5a059] hover:text-bg transition-colors"
+                  >
+                    <Mail className="w-3.5 h-3.5" /> Send "Payment received" email
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -480,6 +616,73 @@ export function AdminOrderDetailsPage() {
           )}
 
        </div>
+
+       {showEmailModal && (
+         <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-bg/90" onClick={() => !sendingEmail && setShowEmailModal(false)} />
+           <div className="relative bg-surface border border-[#c5a059]/30 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+             <div className="flex items-center justify-between px-6 py-4 border-b border-[#c5a059]/10">
+               <h3 className="text-sm font-bold tracking-widest uppercase flex items-center gap-2">
+                 <Mail className="w-4 h-4 text-[#c5a059]" />
+                 {emailTemplate === 'payment_request' ? 'Send Payment Email' : 'Payment Received Email'}
+               </h3>
+               <button onClick={() => !sendingEmail && setShowEmailModal(false)} className="text-muted hover:text-[#c5a059]"><X className="w-5 h-5" /></button>
+             </div>
+
+             <div className="p-6 space-y-5">
+               {/* Preview (admin-visible name + order summary; the email itself is rendered server-side) */}
+               <div className="bg-bg border border-[#c5a059]/15 p-4">
+                 <p className="text-[10px] text-muted uppercase tracking-widest mb-1">To</p>
+                 <p className="text-content font-bold text-sm mb-4">{(order as any).customerInfo?.name || order.shippingDetails?.name || 'Customer'}</p>
+
+                 <p className="text-[10px] text-muted uppercase tracking-widest mb-2">
+                   {emailTemplate === 'payment_request'
+                     ? `Complete your payment — order ${order.receiptNumber || order.id?.slice(0, 12)}`
+                     : `Payment received — order ${order.receiptNumber || order.id?.slice(0, 12)} in processing`}
+                 </p>
+
+                 <div className="divide-y divide-[#c5a059]/10">
+                   {(order.items || []).map((it: any, i: number) => (
+                     <div key={i} className="flex justify-between py-1.5 text-xs">
+                       <span className="text-content">{it.quantity || 1}× {it.productName || it.product?.name || 'Custom bat'}</span>
+                       <span className="text-muted font-mono">₹{Math.round(it.lineTotal ?? (it.unitPrice || it.price || 0) * (it.quantity || 1)).toLocaleString('en-IN')}</span>
+                     </div>
+                   ))}
+                 </div>
+                 <div className="flex justify-between pt-3 mt-2 border-t border-[#c5a059]/20 text-sm font-bold">
+                   <span className="text-content uppercase tracking-widest">Total</span>
+                   <span className="text-[#c5a059]">₹{Math.round((order as any).totalPrice ?? (order as any).pricing?.total ?? 0).toLocaleString('en-IN')}</span>
+                 </div>
+               </div>
+
+               {emailTemplate === 'payment_request' ? (
+                 <div>
+                   <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Payment link (https://…) <span className="text-red-400">*</span></label>
+                   <input
+                     type="url"
+                     value={paymentLink}
+                     onChange={(e) => setPaymentLink(e.target.value)}
+                     placeholder="https://…"
+                     className="w-full bg-bg border border-[#c5a059]/20 px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059]"
+                   />
+                   <p className="text-[10px] text-muted mt-1">Paste the payment link you've prepared. It's inserted into the email's "Pay now" button.</p>
+                 </div>
+               ) : (
+                 <p className="text-[11px] text-muted leading-relaxed">Sends the customer a "payment received — order in processing" confirmation.</p>
+               )}
+
+               <div className="flex gap-3 pt-2">
+                 <button onClick={() => setShowEmailModal(false)} disabled={sendingEmail} className="flex-1 text-[10px] uppercase tracking-widest border border-[#c5a059]/30 text-content px-4 py-2.5 hover:bg-[#c5a059]/10 transition-colors disabled:opacity-50">
+                   Cancel
+                 </button>
+                 <button onClick={handleSendEmail} disabled={sendingEmail} className="flex-1 inline-flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest bg-[#c5a059] text-bg px-4 py-2.5 hover:bg-premium-gold-text transition-colors disabled:opacity-50">
+                   <Mail className="w-3.5 h-3.5" /> {sendingEmail ? 'Sending…' : 'Send Email'}
+                 </button>
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
   );
 }

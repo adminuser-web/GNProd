@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, useLocation, Link } from "react-router-dom";
 import { useCustomers, Customer } from "../../features/crm/hooks/useCustomers";
 import { crmService } from "../../features/crm/services/crmService";
 import { RevealSection } from "../Reveal";
@@ -589,18 +589,21 @@ export function AdminCustomersPage() {
   const { customers, loading } = useCustomers();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
     null,
   );
   const [activeFilter, setActiveFilter] = useState<FilterOption>("all");
 
   useEffect(() => {
-    const userId = searchParams.get("userId");
+    // Prefer router state (no PII/ids in the URL); keep query-string as a
+    // backward-compatible fallback for any old links.
+    const userId = (location.state as { userId?: string } | null)?.userId || searchParams.get("userId");
     if (userId && customers.length > 0 && !selectedCustomerId) {
       const match = customers.find((c) => c.userId === userId);
       if (match) setSelectedCustomerId(match.id);
     }
-  }, [searchParams, customers, selectedCustomerId]);
+  }, [location.state, searchParams, customers, selectedCustomerId]);
 
   if (loading) {
     return (
