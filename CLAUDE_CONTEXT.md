@@ -102,20 +102,13 @@ Round 3 — customer + owner flow polish (scope the user approved):
 **Decision (after solution-arch review): NO payment gateway.** Driver = security/compliance simplicity; manual confirmation is acceptable; India-first, international (PayPal/Wise) later. **Razorpay scaffold was removed** (create-payment-link, razorpay-webhook, _shared/razorpay.ts, payment_events migration deleted). Also rejected the arch's microservices/FastAPI suggestion as over-engineering for a solo-maintained low-volume shop — staying a modular monolith.
 - `src/lib/upi.ts` — `buildUpiUri()` builds `upi://pay?pa=&pn=&am=&cu=INR&tn=` (pure string, no keys); `hasUpiConfigured()`.
 - `src/components/UpiPayBox.tsx` — customer Pay-via-UPI box (amount, QR via `qrcode.react`, copy-UPI-ID, mobile deep-link button, "I've paid → WhatsApp" hand-off). Graceful fallback when no UPI id set. Rendered on `OrderDetailPage` when `payment.status !== 'confirmed'`.
-- Admin `AdminOrderDetailsPage` — "Request Payment (WhatsApp)" button (prefilled msg w/ UPI id + amount + order ref + tap-to-pay link). Existing "Mark Paid" confirms (→ triggers confirmation email via orders DB webhook).
+- Admin `AdminOrderDetailsPage` — "Request Payment (WhatsApp)" button (prefilled msg w/ UPI id + amount + order ref + tap-to-pay link). Existing "Mark Paid" confirms (→ in-app notification via notificationService; no email).
 - UPI config in **brand content** (`brand.payments.upiId`/`upiPayeeName`), editable in admin → Content → Brand → "Payments (UPI)". `OrderPayment`/`PaymentStatus` simplified (pending/submitted/confirmed/failed/refunded; no gateway fields). `paymentGateway` feature flag removed.
 - New dep: `qrcode.react@4`. **ACTION (user):** set the business UPI ID in admin Content → Brand (else customers see the WhatsApp fallback). No deploy/keys needed — UPI is keyless.
 - ⚠️ `UpiPayBox` is on the login-gated order page → verify visually on a real order (lint/build pass; UPI-URI logic preview-tested).
 
-## Transactional email (scaffold on `develop`)
-Transport: **Google Workspace SMTP by default** (free — domain already Google-authenticated, no new DNS), via denomailer in the edge function. Resend HTTP API is an optional fallback (`EMAIL_PROVIDER=resend`). Triggered by a **Supabase Database Webhook on `orders`** (INSERT+UPDATE) → one `send-email` edge function. Covers storefront, admin, and the Razorpay payment webhook because all write to `orders`.
-- SMTP secrets: SMTP_USER (real Workspace user), SMTP_PASS (16-char App Password, needs 2FA), EMAIL_FROM (= `noreply@` **alias of SMTP_USER** — free alias, Google auto-verifies send-as so From isn't rewritten), EMAIL_REPLY_TO, OWNER_EMAIL, EMAIL_WEBHOOK_SECRET, SITE_URL, BRAND_NAME. Defaults SMTP_HOST=smtp.gmail.com, SMTP_PORT=465 (TLS). ~2000/day limit.
-- `_shared/email.ts` `sendEmail()` switches transport on `EMAIL_PROVIDER` (smtp default | resend).
-- `supabase/functions/send-email/` — routes DB-webhook events: INSERT → order-placed (customer) + new-order alert (owner); UPDATE → payment-confirmed (when `data.payment.status` flips to confirmed), Shipped/Delivered/Completed/Cancelled status emails. Shared-secret header `x-webhook-secret`. Returns 200 even on send failure (no retry double-send).
-- `supabase/functions/_shared/email.ts` (Resend client + branded inline-HTML layout/itemsTable/button) + `emailTemplates.ts` (per-event).
-- Recipient email read from `order.data.customer.email` (works for guests).
-- Deploy `--no-verify-jwt`; secrets RESEND_API_KEY, EMAIL_FROM, EMAIL_REPLY_TO, OWNER_EMAIL, EMAIL_WEBHOOK_SECRET, SITE_URL, BRAND_NAME. Full steps + DB-webhook config in `supabase/functions/README.md`.
-- **BLOCKED ON USER:** Resend account + domain DNS (SPF/DKIM) + API key. Testable with `onboarding@resend.dev` sandbox before DNS. No frontend changes needed (DB-driven).
+## Transactional email — REMOVED (user decided against it)
+The whole email system was deleted at the user's request: `supabase/functions/` (send-email + _shared) removed, the deployed `send-email` edge function deleted from Supabase, and all 8 email secrets (incl. the Gmail app password) unset. **There are no edge functions anymore** — `supabase/` holds only migrations. In-app notifications (`notifications` table / `notificationService`) still exist; only email was removed. If a Database Webhook on `orders` → `send-email` was ever created in the dashboard, delete it (it now points at a deleted function).
 
 ## Known Issues & Bugs
 
