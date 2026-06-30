@@ -89,6 +89,13 @@ function BrandIdentityForm({ data, onChange }: { data: any; onChange: (path: str
           <Field label="YouTube" value={d.social?.youtube} onChange={(v: string) => onChange(['social', 'youtube'], v)} />
         </div>
       </Card>
+
+      <Card title="Payments (UPI)" desc="Used to generate the 'Pay via UPI' link & QR on customer orders. Money goes straight to this UPI ID — use a business/current-account UPI.">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="UPI ID (VPA)" value={d.payments?.upiId} onChange={(v: string) => onChange(['payments', 'upiId'], v)} help="e.g. grainood@okhdfc — leave blank to fall back to manual WhatsApp details." />
+          <Field label="Payee Name" value={d.payments?.upiPayeeName} onChange={(v: string) => onChange(['payments', 'upiPayeeName'], v)} help="Name shown in the customer's UPI app." />
+        </div>
+      </Card>
     </div>
   );
 }

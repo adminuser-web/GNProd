@@ -15,6 +15,7 @@ import { EmptyState } from './EmptyState';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import { LazyImage } from './LazyImage';
+import { UpiPayBox } from './UpiPayBox';
 
 function StatusTracker({ status, payment }: { status: string, payment?: any }) {
   if (status && status.toLowerCase() === 'cancelled') {
@@ -396,6 +397,14 @@ export function OrderDetailPage() {
             </div>
           </div>
         </RevealSection>
+
+        {order.payment?.status !== 'confirmed' && order.status !== 'Cancelled' && (
+          <RevealSection delay={75}>
+            <div className="mb-8">
+              <UpiPayBox order={order} />
+            </div>
+          </RevealSection>
+        )}
 
         <RevealSection delay={100}>
           <div className="bg-surface border border-[#c5a059]/10 shadow-sm p-6 md:p-10 mb-8">

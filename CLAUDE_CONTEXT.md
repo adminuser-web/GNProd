@@ -98,6 +98,18 @@ Round 3 — customer + owner flow polish (scope the user approved):
 - **ProductPage buy box reordered** (`ProductPage.tsx`, `@ts-nocheck`): primary **ADD TO CART** now leads, ENQUIRE secondary, SAVE/SHARE demoted to subtle text actions; compact HowItWorks strip added. Mobile sticky CTA already existed.
 - Not done this round (deferred): #6/#7 WhatsApp-customer button + one-click Confirm Payment on order detail; bundle code-splitting.
 
+## Payments — gateway-free UPI (manual confirm) on `develop`
+**Decision (after solution-arch review): NO payment gateway.** Driver = security/compliance simplicity; manual confirmation is acceptable; India-first, international (PayPal/Wise) later. **Razorpay scaffold was removed** (create-payment-link, razorpay-webhook, _shared/razorpay.ts, payment_events migration deleted). Also rejected the arch's microservices/FastAPI suggestion as over-engineering for a solo-maintained low-volume shop — staying a modular monolith.
+- `src/lib/upi.ts` — `buildUpiUri()` builds `upi://pay?pa=&pn=&am=&cu=INR&tn=` (pure string, no keys); `hasUpiConfigured()`.
+- `src/components/UpiPayBox.tsx` — customer Pay-via-UPI box (amount, QR via `qrcode.react`, copy-UPI-ID, mobile deep-link button, "I've paid → WhatsApp" hand-off). Graceful fallback when no UPI id set. Rendered on `OrderDetailPage` when `payment.status !== 'confirmed'`.
+- Admin `AdminOrderDetailsPage` — "Request Payment (WhatsApp)" button (prefilled msg w/ UPI id + amount + order ref + tap-to-pay link). Existing "Mark Paid" confirms (→ in-app notification via notificationService; no email).
+- UPI config in **brand content** (`brand.payments.upiId`/`upiPayeeName`), editable in admin → Content → Brand → "Payments (UPI)". `OrderPayment`/`PaymentStatus` simplified (pending/submitted/confirmed/failed/refunded; no gateway fields). `paymentGateway` feature flag removed.
+- New dep: `qrcode.react@4`. **ACTION (user):** set the business UPI ID in admin Content → Brand (else customers see the WhatsApp fallback). No deploy/keys needed — UPI is keyless.
+- ⚠️ `UpiPayBox` is on the login-gated order page → verify visually on a real order (lint/build pass; UPI-URI logic preview-tested).
+
+## Transactional email — REMOVED (user decided against it)
+The whole email system was deleted at the user's request: `supabase/functions/` (send-email + _shared) removed, the deployed `send-email` edge function deleted from Supabase, and all 8 email secrets (incl. the Gmail app password) unset. **There are no edge functions anymore** — `supabase/` holds only migrations. In-app notifications (`notifications` table / `notificationService`) still exist; only email was removed. If a Database Webhook on `orders` → `send-email` was ever created in the dashboard, delete it (it now points at a deleted function).
+
 ## Known Issues & Bugs
 
 - **Bundle size:** main chunk 766 kB > Vite's 500 kB warning. Not addressed (candidate: `manualChunks`). Non-blocking.

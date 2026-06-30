@@ -18,7 +18,28 @@ export type { OrderStatus } from './lib/orderStatus';
 // Legacy types for compatibility
 export type EnquiryStatus = any;
 export type OrderRecord = any;
-export type OrderPayment = any;
+
+// Payment on an order. Manual UPI / bank collection (no gateway): the customer
+// pays via a UPI link/QR, then we confirm from the bank. Kept permissive
+// ([k: string]: any) so existing loose access sites keep compiling.
+export type PaymentStatus =
+  | 'pending'        // order placed, no payment action yet
+  | 'submitted'      // customer reports paid (UPI ref / proof) — awaiting admin check
+  | 'confirmed'      // payment verified by admin (seen in bank)
+  | 'failed'
+  | 'refunded';
+
+export interface OrderPayment {
+  status: PaymentStatus;
+  paidAmount?: number;
+  method?: string;                 // 'upi' | 'bank_transfer' | 'cash' | ...
+  reference?: string;              // UPI UTR / bank reference
+  notes?: string;
+  proofImageUrl?: string;          // payment screenshot upload
+  confirmedAt?: any;
+  confirmedBy?: string;
+  [k: string]: any;
+}
 export type SupportTicketMessage = any;
 export type TicketAttachment = any;
 export type OrderItemSelection = any;
@@ -43,6 +64,9 @@ export interface BrandContent {
   contact: { phone: string; whatsapp: string; email: string; instagram: string; };
   store: { address: string; hours: string; mapLink: string; };
   social?: { instagram?: string; facebook?: string; youtube?: string; };
+  // Manual UPI collection: the business UPI ID money is paid into, and the
+  // payee name shown in the customer's UPI app. Configured in admin → Content → Brand.
+  payments?: { upiId?: string; upiPayeeName?: string };
 }
 
 export interface HomeContent {
@@ -124,6 +148,10 @@ export const DEFAULT_SITE_CONTENT: SiteContentMap = {
       instagram: "grainood",
       facebook: "",
       youtube: ""
+    },
+    payments: {
+      upiId: "",
+      upiPayeeName: "GRAINOOD"
     }
   },
   home: {
