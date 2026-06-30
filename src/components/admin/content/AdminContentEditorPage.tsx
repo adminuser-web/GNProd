@@ -96,6 +96,10 @@ function BrandIdentityForm({ data, onChange }: { data: any; onChange: (path: str
           <Field label="Payee Name" value={d.payments?.upiPayeeName} onChange={(v: string) => onChange(['payments', 'upiPayeeName'], v)} help="Name shown in the customer's UPI app." />
         </div>
       </Card>
+
+      <Card title="Order Emails" desc="Admin order emails open a pre-filled Gmail draft (you review & send). This sets which signed-in Google account Gmail opens in.">
+        <Field label="Order email sent from (Gmail address)" value={d.orderEmailFrom} onChange={(v: string) => onChange(['orderEmailFrom'], v)} help="e.g. adminuser@grainood.com — Gmail opens this account even if several are signed in." />
+      </Card>
     </div>
   );
 }

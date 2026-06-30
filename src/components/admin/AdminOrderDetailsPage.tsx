@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { orderService } from '../../features/orders/services/orderService';
 import { OrderRecord } from '../../types';
-import { ShoppingBag, User, DollarSign, Factory, Truck, Shield, Wrench, ArrowLeft, RefreshCw, FileText, ClipboardList, Activity, Mail, Upload, X, ExternalLink } from 'lucide-react';
+import { ShoppingBag, User, DollarSign, Factory, Truck, Shield, Wrench, ArrowLeft, RefreshCw, FileText, ClipboardList, Activity, Mail, Upload, X, ExternalLink, Copy, Check } from 'lucide-react';
 import { GoldButton } from '../GoldButton';
 
 import { ticketService } from '../../features/support/services/ticketService';
@@ -11,7 +11,7 @@ import { ORDER_STATUSES, OrderStatus, ALLOWED_TRANSITIONS, mapLegacyStatus } fro
 import { FEATURES } from '../../config/features';
 import { useContent } from '../../context/ContentContext';
 import { buildUpiUri } from '../../lib/upi';
-import { sendOrderEmail, OrderEmailTemplate } from '../../features/orders/services/orderEmailService';
+import { buildOrderEmail, buildGmailComposeUrl, OrderEmailTemplate } from '../../features/orders/emailTemplates';
 import { uploadPrivate, getSignedUrl, PAYMENT_PROOFS_BUCKET } from '../../lib/storage';
 
 import { toast } from 'sonner';
@@ -38,11 +38,12 @@ export function AdminOrderDetailsPage() {
   const [shippingData, setShippingData] = useState({ courierName: '', trackingNumber: '', trackingUrl: '', notes: '', estimatedDeliveryAt: '' });
   const [shippingSaving, setShippingSaving] = useState(false);
 
-  // Payment-by-email + proof
+  // Payment-by-email (opens a Gmail draft) + proof
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailTemplate, setEmailTemplate] = useState<OrderEmailTemplate>('payment_request');
   const [paymentLink, setPaymentLink] = useState('');
-  const [sendingEmail, setSendingEmail] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [proofUploading, setProofUploading] = useState(false);
   const [proofUrl, setProofUrl] = useState('');
 
@@ -146,26 +147,63 @@ export function AdminOrderDetailsPage() {
   const openEmailModal = (tpl: OrderEmailTemplate) => {
     setEmailTemplate(tpl);
     setPaymentLink('');
+    setPopupBlocked(false);
+    setCopied(false);
     setShowEmailModal(true);
   };
 
-  const handleSendEmail = async () => {
+  // Build the draft from the loaded order (admin is authorized to read it).
+  const buildDraft = () => {
+    const summary = {
+      customerName: (order as any).customerInfo?.name || order.shippingDetails?.name || 'there',
+      shortId: order.receiptNumber || (order.id || '').slice(0, 16),
+      items: order.items || [],
+      total: (order as any).totalPrice ?? (order as any).pricing?.total ?? (order as any).grandTotal ?? 0,
+    };
+    const { subject, body } = buildOrderEmail(emailTemplate, summary, {
+      paymentLink: emailTemplate === 'payment_request' ? paymentLink : undefined,
+      brandName: brand?.brandName || 'Grainood',
+    });
+    const to = (order as any).customerInfo?.email || order.shippingDetails?.email || '';
+    return { to, subject, body };
+  };
+
+  // Open a PRE-FILLED Gmail compose window in the configured account. We do NOT
+  // auto-send — the admin reviews and sends from Gmail.
+  const handleOpenGmail = async () => {
     if (!id) return;
     if (emailTemplate === 'payment_request') {
       let valid = false;
       try { valid = new URL(paymentLink).protocol === 'https:'; } catch { valid = false; }
       if (!valid) { toast.error('Enter a valid https payment link'); return; }
     }
-    setSendingEmail(true);
+    const draft = buildDraft();
+    if (!draft.to) { toast.error('This order has no customer email on file.'); return; }
+
+    const sendFrom = brand?.orderEmailFrom || 'adminuser@grainood.com';
+    const url = buildGmailComposeUrl({ sendFrom, to: draft.to, subject: draft.subject, body: draft.body });
+
+    const win = window.open(url, '_blank');
+    if (!win) {
+      // Pop-up blocked → show the draft + a Copy button instead of failing silently.
+      setPopupBlocked(true);
+      toast.error('Pop-up blocked — copy the draft below, or allow pop-ups and retry.');
+      return;
+    }
+    // Record that a draft was prepared (not "sent").
+    try { await orderService.markEmailPrepared(id, emailTemplate); } catch { /* non-blocking */ }
+    toast.success('Gmail draft opened — review and send.');
+    setShowEmailModal(false);
+  };
+
+  const copyDraft = async () => {
+    const draft = buildDraft();
     try {
-      await sendOrderEmail(id, emailTemplate, emailTemplate === 'payment_request' ? paymentLink : undefined);
-      toast.success('Email sent to the customer');
-      setShowEmailModal(false);
+      await navigator.clipboard.writeText(`Subject: ${draft.subject}\n\n${draft.body}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
     } catch {
-      // Generic — no PII in the toast.
-      toast.error('Could not send the email. Please try again.');
-    } finally {
-      setSendingEmail(false);
+      toast.error('Could not copy.');
     }
   };
 
@@ -617,45 +655,28 @@ export function AdminOrderDetailsPage() {
 
        </div>
 
-       {showEmailModal && (
+       {showEmailModal && (() => {
+         const draft = buildDraft();
+         const sendFrom = brand?.orderEmailFrom || 'adminuser@grainood.com';
+         return (
          <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-bg/90" onClick={() => !sendingEmail && setShowEmailModal(false)} />
+           <div className="absolute inset-0 bg-bg/90" onClick={() => setShowEmailModal(false)} />
            <div className="relative bg-surface border border-[#c5a059]/30 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
              <div className="flex items-center justify-between px-6 py-4 border-b border-[#c5a059]/10">
                <h3 className="text-sm font-bold tracking-widest uppercase flex items-center gap-2">
                  <Mail className="w-4 h-4 text-[#c5a059]" />
                  {emailTemplate === 'payment_request' ? 'Send Payment Email' : 'Payment Received Email'}
                </h3>
-               <button onClick={() => !sendingEmail && setShowEmailModal(false)} className="text-muted hover:text-[#c5a059]"><X className="w-5 h-5" /></button>
+               <button onClick={() => setShowEmailModal(false)} className="text-muted hover:text-[#c5a059]"><X className="w-5 h-5" /></button>
              </div>
 
              <div className="p-6 space-y-5">
-               {/* Preview (admin-visible name + order summary; the email itself is rendered server-side) */}
-               <div className="bg-bg border border-[#c5a059]/15 p-4">
-                 <p className="text-[10px] text-muted uppercase tracking-widest mb-1">To</p>
-                 <p className="text-content font-bold text-sm mb-4">{(order as any).customerInfo?.name || order.shippingDetails?.name || 'Customer'}</p>
-
-                 <p className="text-[10px] text-muted uppercase tracking-widest mb-2">
-                   {emailTemplate === 'payment_request'
-                     ? `Complete your payment — order ${order.receiptNumber || order.id?.slice(0, 12)}`
-                     : `Payment received — order ${order.receiptNumber || order.id?.slice(0, 12)} in processing`}
-                 </p>
-
-                 <div className="divide-y divide-[#c5a059]/10">
-                   {(order.items || []).map((it: any, i: number) => (
-                     <div key={i} className="flex justify-between py-1.5 text-xs">
-                       <span className="text-content">{it.quantity || 1}× {it.productName || it.product?.name || 'Custom bat'}</span>
-                       <span className="text-muted font-mono">₹{Math.round(it.lineTotal ?? (it.unitPrice || it.price || 0) * (it.quantity || 1)).toLocaleString('en-IN')}</span>
-                     </div>
-                   ))}
-                 </div>
-                 <div className="flex justify-between pt-3 mt-2 border-t border-[#c5a059]/20 text-sm font-bold">
-                   <span className="text-content uppercase tracking-widest">Total</span>
-                   <span className="text-[#c5a059]">₹{Math.round((order as any).totalPrice ?? (order as any).pricing?.total ?? 0).toLocaleString('en-IN')}</span>
-                 </div>
+               <div className="grid grid-cols-1 gap-2 text-xs">
+                 <div className="flex gap-2"><span className="text-muted uppercase tracking-widest text-[10px] w-16 shrink-0 pt-0.5">From</span><span className="text-content font-mono break-all">{sendFrom}</span></div>
+                 <div className="flex gap-2"><span className="text-muted uppercase tracking-widest text-[10px] w-16 shrink-0 pt-0.5">To</span><span className="text-content font-mono break-all">{draft.to || <span className="text-red-400 normal-case">No email on this order</span>}</span></div>
                </div>
 
-               {emailTemplate === 'payment_request' ? (
+               {emailTemplate === 'payment_request' && (
                  <div>
                    <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Payment link (https://…) <span className="text-red-400">*</span></label>
                    <input
@@ -665,24 +686,41 @@ export function AdminOrderDetailsPage() {
                      placeholder="https://…"
                      className="w-full bg-bg border border-[#c5a059]/20 px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059]"
                    />
-                   <p className="text-[10px] text-muted mt-1">Paste the payment link you've prepared. It's inserted into the email's "Pay now" button.</p>
+                   <p className="text-[10px] text-muted mt-1">Pasted into the email body. The draft updates below.</p>
                  </div>
-               ) : (
-                 <p className="text-[11px] text-muted leading-relaxed">Sends the customer a "payment received — order in processing" confirmation.</p>
+               )}
+
+               {/* Draft preview — exactly what opens in Gmail */}
+               <div>
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Draft preview</p>
+                 <div className="bg-bg border border-[#c5a059]/15 p-4">
+                   <p className="text-xs font-bold text-content mb-2">{draft.subject}</p>
+                   <pre className="text-[11px] text-content/90 whitespace-pre-wrap font-sans leading-relaxed">{draft.body}</pre>
+                 </div>
+               </div>
+
+               {popupBlocked && (
+                 <div className="border border-yellow-500/30 bg-yellow-500/5 p-3">
+                   <p className="text-[11px] text-yellow-500/90 leading-relaxed mb-2">Your browser blocked the Gmail pop-up. Copy the draft and paste it into Gmail, or allow pop-ups and retry.</p>
+                   <button onClick={copyDraft} className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest border border-[#c5a059]/40 text-[#c5a059] px-3 py-1.5 hover:bg-[#c5a059] hover:text-bg transition-colors">
+                     {copied ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy email</>}
+                   </button>
+                 </div>
                )}
 
                <div className="flex gap-3 pt-2">
-                 <button onClick={() => setShowEmailModal(false)} disabled={sendingEmail} className="flex-1 text-[10px] uppercase tracking-widest border border-[#c5a059]/30 text-content px-4 py-2.5 hover:bg-[#c5a059]/10 transition-colors disabled:opacity-50">
+                 <button onClick={() => setShowEmailModal(false)} className="flex-1 text-[10px] uppercase tracking-widest border border-[#c5a059]/30 text-content px-4 py-2.5 hover:bg-[#c5a059]/10 transition-colors">
                    Cancel
                  </button>
-                 <button onClick={handleSendEmail} disabled={sendingEmail} className="flex-1 inline-flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest bg-[#c5a059] text-bg px-4 py-2.5 hover:bg-premium-gold-text transition-colors disabled:opacity-50">
-                   <Mail className="w-3.5 h-3.5" /> {sendingEmail ? 'Sending…' : 'Send Email'}
+                 <button onClick={handleOpenGmail} className="flex-1 inline-flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest bg-[#c5a059] text-bg px-4 py-2.5 hover:bg-premium-gold-text transition-colors">
+                   <ExternalLink className="w-3.5 h-3.5" /> Open Gmail draft
                  </button>
                </div>
              </div>
            </div>
          </div>
-       )}
+         );
+       })()}
     </div>
   );
 }
