@@ -14,3 +14,6 @@ serviceAccountKey.json
 *-firebase-adminsdk-*.json
 *.serviceaccount.json
 gcloud-key.json
+
+# Local deno check artifact (no edge functions in repo)
+deno.lock
