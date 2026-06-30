@@ -17,7 +17,7 @@ import { useAllOrders } from '../../features/orders/hooks/useOrders';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ImageUpload } from './ImageUpload';
-import { PageHeader, EmptyState } from './ui';
+import { PageHeader, EmptyState, Segmented } from './ui';
 
 const DATE_RANGES = ['All Time', 'Today', 'Last 7 Days', 'Last 30 Days', 'This Month'];
 
@@ -207,6 +207,7 @@ export function AdminOrdersBoard() {
     searchParams.get('payment') === 'pending' ? 'Pending' : 'All'
   );
   const [sourceFilter, setSourceFilter] = useState<string>('All');
+  const [view, setView] = useState<'active' | 'cancelled' | 'all'>('active');
   const [dateRange, setDateRange] = useState<string>('All Time');
   
   // Drawer State
@@ -244,6 +245,13 @@ export function AdminOrdersBoard() {
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
     let result = [...orders];
+
+    // View: separate active orders from cancelled ones.
+    if (view === 'active') {
+      result = result.filter(o => mapLegacyStatus(o.status || 'Order Placed') !== 'Cancelled');
+    } else if (view === 'cancelled') {
+      result = result.filter(o => mapLegacyStatus(o.status || 'Order Placed') === 'Cancelled');
+    }
 
     // Date Range Matcher
     if (dateRange !== 'All Time') {
@@ -308,7 +316,12 @@ export function AdminOrdersBoard() {
     });
 
     return result;
-  }, [orders, dateRange, statusFilter, paymentFilter, sourceFilter, searchQuery]);
+  }, [orders, view, dateRange, statusFilter, paymentFilter, sourceFilter, searchQuery]);
+
+  const cancelledCount = useMemo(
+    () => (orders || []).filter(o => mapLegacyStatus(o.status || 'Order Placed') === 'Cancelled').length,
+    [orders],
+  );
 
   const handleStatusChange = async (order: any, status: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -378,6 +391,19 @@ export function AdminOrdersBoard() {
               </select>
             </div>
           }
+        />
+      </div>
+
+      {/* VIEW: Active / Cancelled / All */}
+      <div className="shrink-0">
+        <Segmented<'active' | 'cancelled' | 'all'>
+          value={view}
+          onChange={setView}
+          options={[
+            { value: 'active', label: 'Active' },
+            { value: 'cancelled', label: `Cancelled${cancelledCount ? ` (${cancelledCount})` : ''}` },
+            { value: 'all', label: 'All' },
+          ]}
         />
       </div>
 
