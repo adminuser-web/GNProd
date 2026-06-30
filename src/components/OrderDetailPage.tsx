@@ -7,7 +7,7 @@ import { GoldButton } from './GoldButton';
 import { RevealSection } from './Reveal';
 import { ArrowLeft, X, CheckCircle2, Shield, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
-import { STATUS_TRACKER_STEPS, mapLegacyStatus, ORDER_STATUSES, OrderStatus } from '../lib/orderStatus';
+import { mapLegacyStatus, ORDER_STATUSES, OrderStatus, stageIndex, STAGE_LABELS } from '../lib/orderStatus';
 import { useOrder } from '../context/OrderContext';
 import { useProducts } from '../context/ProductsContext';
 import { Skeleton, SkeletonTextLines } from './Skeleton';
@@ -17,8 +17,9 @@ import { motion } from 'motion/react';
 import { LazyImage } from './LazyImage';
 import { UpiPayBox } from './UpiPayBox';
 
-function StatusTracker({ status, payment }: { status: string, payment?: any }) {
-  if (status && status.toLowerCase() === 'cancelled') {
+function StatusTracker({ status }: { status: string }) {
+  const normalizedStatus = mapLegacyStatus(status || 'Order Placed');
+  if (normalizedStatus === 'Cancelled') {
     return (
       <motion.div initial={{opacity: 0}} animate={{opacity: 1}} className="flex gap-2 items-center">
         <div className="bg-elevated text-red-500 text-[10px] font-bold px-4 py-2 uppercase tracking-wider">
@@ -28,23 +29,9 @@ function StatusTracker({ status, payment }: { status: string, payment?: any }) {
     );
   }
 
-  const normalizedStatus = mapLegacyStatus(status || 'Order Placed');
-  
-  const STEPS = [
-    'Order Placed',
-    payment?.status === 'confirmed' ? 'Payment Confirmed' : 'Payment Pending',
-    'Processing',
-    normalizedStatus === 'Ready for Pickup' ? 'Ready for Pickup' : 'Shipped',
-    normalizedStatus === 'Completed' ? 'Completed' : 'Delivered'
-  ];
-
-  let currentIndex = 0;
-  if (payment?.status === 'confirmed') currentIndex = 1;
-  if (['Processing', 'Ready for Pickup', 'Shipped', 'Delivered', 'Completed'].includes(normalizedStatus)) {
-    if (normalizedStatus === 'Processing') currentIndex = 2;
-    if (['Ready for Pickup', 'Shipped'].includes(normalizedStatus)) currentIndex = 3;
-    if (['Delivered', 'Completed'].includes(normalizedStatus)) currentIndex = 4;
-  }
+  // Unified 4-stage journey: Placed → Processing → Shipped → Delivered.
+  const STEPS = STAGE_LABELS;
+  const currentIndex = Math.max(0, stageIndex(status || 'Order Placed'));
 
   return (
     <div className="relative pt-6 pb-2 px-2">
@@ -408,60 +395,53 @@ export function OrderDetailPage() {
 
         <RevealSection delay={100}>
           <div className="bg-surface border border-[#c5a059]/10 shadow-sm p-6 md:p-10 mb-8">
-             <h2 className="text-[10px] text-muted uppercase tracking-widest mb-8">Status Timeline</h2>
+             <h2 className="text-[10px] text-muted uppercase tracking-widest mb-8">Order Progress</h2>
             <div className="overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 hide-scrollbar">
               <div className="min-w-[400px]">
-                <StatusTracker status={order.status || 'Order Placed'} payment={order.payment} />
+                <StatusTracker status={order.status || 'Order Placed'} />
               </div>
             </div>
-            
-            <div className="mt-8 border-t border-[#c5a059]/10 pt-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-               <div className="w-full grid grid-cols-2 md:grid-cols-5 gap-6 text-sm text-content">
+
+            {order.status === 'Cancelled' ? (
+              <div className="mt-8 border border-red-500/30 bg-red-500/5 p-6">
+                <p className="text-[10px] text-red-400 uppercase tracking-widest font-bold mb-2">Order Cancelled</p>
+                <p className="text-sm text-content leading-relaxed">{order.cancellation?.reason || 'This order has been cancelled.'}</p>
+              </div>
+            ) : (
+              <div className="mt-8 border-t border-[#c5a059]/10 pt-8 space-y-8">
+                {/* Payment */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm text-content">
                   <div>
-                    <p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Payment Status</p>
+                    <p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Payment</p>
                     {order.payment?.status === 'confirmed' ? (
-                       <div className="flex items-center gap-2 text-emerald-500 font-bold uppercase tracking-widest text-[11px]">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Confirmed
-                       </div>
+                      <div className="flex items-center gap-2 text-emerald-500 font-bold uppercase tracking-widest text-[11px]"><CheckCircle2 className="w-3.5 h-3.5" /> Confirmed</div>
                     ) : order.payment?.status === 'submitted' ? (
-                       <div className="flex items-center gap-2 text-blue-400 font-bold uppercase tracking-widest text-[11px]">
-                          In Review
-                       </div>
-                    ) : order.payment?.status === 'failed' ? (
-                       <div className="flex items-center gap-2 text-red-500 font-bold uppercase tracking-widest text-[11px]">
-                          Failed
-                       </div>
-                    ) : order.payment?.status === 'refunded' ? (
-                       <div className="flex items-center gap-2 text-purple-400 font-bold uppercase tracking-widest text-[11px]">
-                          Refunded
-                       </div>
+                      <div className="text-blue-400 font-bold uppercase tracking-widest text-[11px]">In Review</div>
                     ) : (
-                       <div className="flex items-center gap-2 text-yellow-500 font-bold uppercase tracking-widest text-[11px]">
-                          Pending
-                       </div>
+                      <div className="text-yellow-500 font-bold uppercase tracking-widest text-[11px]">Pending</div>
                     )}
                   </div>
-                  <div>
-                    <p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Amount Paid</p>
-                    <p className="font-mono text-[#c5a059] font-bold">₹{(order.payment?.paidAmount || 0).toLocaleString('en-IN')}</p>
+                  <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Amount</p><p className="font-mono text-[#c5a059] font-bold">₹{(order.payment?.paidAmount || orderTotal || 0).toLocaleString('en-IN')}</p></div>
+                  <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Method</p><p className="uppercase tracking-widest text-[11px]">{order.payment?.method || '-'}</p></div>
+                  <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Reference</p><p className="font-mono text-[11px] break-all">{order.payment?.reference || '-'}</p></div>
+                </div>
+
+                {/* Delivery — shown once dispatched */}
+                {order.shipment?.courierName && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm text-content border-t border-[#c5a059]/10 pt-6">
+                    <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Delivery Partner</p><p className="text-[11px]">{order.shipment.courierName}</p></div>
+                    <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Dispatched</p><p className="text-[11px]">{order.shipment.dispatchDate ? new Date(order.shipment.dispatchDate).toLocaleDateString() : '-'}</p></div>
+                    <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Expected</p><p className="text-[11px]">{order.shipment.estimatedDeliveryAt ? new Date(order.shipment.estimatedDeliveryAt).toLocaleDateString() : '-'}</p></div>
+                    <div>
+                      <p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Tracking</p>
+                      {order.shipment.trackingUrl ? (
+                        <a href={order.shipment.trackingUrl} target="_blank" rel="noreferrer" className="text-[11px] text-[#c5a059] border-b border-[#c5a059]/40 hover:text-content">Track package</a>
+                      ) : <p className="text-[11px] font-mono">{order.shipment.trackingNumber || '-'}</p>}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Method</p>
-                    <p className="uppercase tracking-widest text-[11px]">{order.payment?.method || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Reference</p>
-                    <p className="font-mono text-[11px] break-all">{order.payment?.reference || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted uppercase tracking-widest mb-1.5">Date</p>
-                    <p className="font-mono text-[11px]">
-                      {order.payment?.confirmedAt?.toDate ? order.payment.confirmedAt.toDate().toLocaleDateString() : (order.payment?.confirmedAt ? new Date(order.payment.confirmedAt).toLocaleDateString() : '-')}
-                    </p>
-                  </div>
-               </div>
-            </div>
+                )}
+              </div>
+            )}
 
             {order.adminNote && (
               <div className="mt-12 border border-[#c5a059] bg-[#c5a059]/5 p-6">
@@ -580,38 +560,6 @@ export function OrderDetailPage() {
                 </div>
               </div>
 
-              {order.shipment ? (
-                <div className="bg-surface border border-[#c5a059]/10 shadow-sm p-6 md:p-8 flex-1">
-                  <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-content mb-6 border-b border-[#c5a059]/10 pb-4">Shipment</h3>
-                  <div className="space-y-6">
-                    {order.shipment.courierName && (
-                       <div>
-                          <p className="text-[10px] text-muted tracking-widest uppercase mb-1">Courier</p>
-                          <p className="text-sm font-bold tracking-wider text-content uppercase">{order.shipment.courierName}</p>
-                       </div>
-                    )}
-                    {order.shipment.trackingNumber && (
-                       <div>
-                          <p className="text-[10px] text-muted tracking-widest uppercase mb-1">Tracking Number</p>
-                          <p className="text-sm font-mono text-[#c5a059]">{order.shipment.trackingNumber}</p>
-                          {order.shipment.trackingUrl && (
-                             <a href={order.shipment.trackingUrl} target="_blank" rel="noreferrer" className="text-[10px] text-content hover:text-[#c5a059] tracking-[0.2em] uppercase border-b border-[#c5a059]/40 mt-3 inline-block transition-colors pb-0.5">
-                                Track Package
-                             </a>
-                          )}
-                       </div>
-                    )}
-                    {!order.shipment.courierName && !order.shipment.trackingNumber && (
-                       <p className="text-xs text-muted">Shipping details will appear here once updated.</p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-surface border border-[#c5a059]/10 shadow-sm p-6 md:p-8 flex-1">
-                  <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-content mb-6 border-b border-[#c5a059]/10 pb-4">Shipment</h3>
-                  <p className="text-xs text-muted leading-relaxed">Shipping details will appear here once the order is processed.</p>
-                </div>
-              )}
             </div>
           </div>
         </RevealSection>
