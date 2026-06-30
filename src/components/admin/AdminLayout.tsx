@@ -187,9 +187,11 @@ export function AdminLayout() {
   const [newEnquiriesCount, setNewEnquiriesCount] = useState(0);
   const { orders } = useAllOrders();
 
-  const pendingOrdersCount = orders.filter(o => 
-    (o.payment?.status?.toLowerCase() === 'pending' || !o.payment && o.status !== 'Cancelled' && o.status !== 'Delivered')
-  ).length;
+  // Orders needing attention: active (not cancelled/delivered) and not yet paid.
+  const pendingOrdersCount = orders.filter(o => {
+    if (o.status === 'Cancelled' || o.status === 'Delivered') return false;
+    return o.payment?.status !== 'confirmed';
+  }).length;
 
   useEffect(() => {
     if (!isAdmin) return;

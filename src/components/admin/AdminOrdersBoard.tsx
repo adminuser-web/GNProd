@@ -17,7 +17,7 @@ import { useAllOrders } from '../../features/orders/hooks/useOrders';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ImageUpload } from './ImageUpload';
-import { PageHeader, EmptyState } from './ui';
+import { PageHeader, EmptyState, Segmented } from './ui';
 
 const DATE_RANGES = ['All Time', 'Today', 'Last 7 Days', 'Last 30 Days', 'This Month'];
 
@@ -207,6 +207,7 @@ export function AdminOrdersBoard() {
     searchParams.get('payment') === 'pending' ? 'Pending' : 'All'
   );
   const [sourceFilter, setSourceFilter] = useState<string>('All');
+  const [view, setView] = useState<'active' | 'cancelled' | 'all'>('active');
   const [dateRange, setDateRange] = useState<string>('All Time');
   
   // Drawer State
@@ -244,6 +245,13 @@ export function AdminOrdersBoard() {
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
     let result = [...orders];
+
+    // View: separate active orders from cancelled ones.
+    if (view === 'active') {
+      result = result.filter(o => mapLegacyStatus(o.status || 'Order Placed') !== 'Cancelled');
+    } else if (view === 'cancelled') {
+      result = result.filter(o => mapLegacyStatus(o.status || 'Order Placed') === 'Cancelled');
+    }
 
     // Date Range Matcher
     if (dateRange !== 'All Time') {
@@ -308,7 +316,12 @@ export function AdminOrdersBoard() {
     });
 
     return result;
-  }, [orders, dateRange, statusFilter, paymentFilter, sourceFilter, searchQuery]);
+  }, [orders, view, dateRange, statusFilter, paymentFilter, sourceFilter, searchQuery]);
+
+  const cancelledCount = useMemo(
+    () => (orders || []).filter(o => mapLegacyStatus(o.status || 'Order Placed') === 'Cancelled').length,
+    [orders],
+  );
 
   const handleStatusChange = async (order: any, status: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -378,6 +391,19 @@ export function AdminOrdersBoard() {
               </select>
             </div>
           }
+        />
+      </div>
+
+      {/* VIEW: Active / Cancelled / All */}
+      <div className="shrink-0">
+        <Segmented<'active' | 'cancelled' | 'all'>
+          value={view}
+          onChange={setView}
+          options={[
+            { value: 'active', label: 'Active' },
+            { value: 'cancelled', label: `Cancelled${cancelledCount ? ` (${cancelledCount})` : ''}` },
+            { value: 'all', label: 'All' },
+          ]}
         />
       </div>
 
@@ -459,15 +485,13 @@ export function AdminOrdersBoard() {
               <div className="col-span-2">Series / Product</div>
               <div className="col-span-1 text-right">Amount</div>
               <div className="col-span-2 text-center">Payment</div>
-              <div className="col-span-1 text-center">Status</div>
-              <div className="col-span-2 text-right">Actions</div>
+              <div className="col-span-3 text-center">Status</div>
             </div>
 
             {/* List Body */}
             <div className="flex flex-col gap-4 lg:gap-2 relative w-full">
               {filteredOrders.map(order => {
                 const mappedStatus = mapLegacyStatus(order.status || 'Order Placed');
-                const validTransitions = ALLOWED_TRANSITIONS[mappedStatus] || [];
                 const payStatus = order.payment?.status || order.paymentStatus || 'pending';
                 const totalAmt = order.pricing?.total || order.totalPrice || (order as any).grandTotal || 0;
                 
@@ -534,25 +558,9 @@ export function AdminOrdersBoard() {
                     </div>
 
                     {/* Order Status */}
-                    <div className="col-span-1 w-full hidden lg:flex flex-col items-center justify-center">
+                    <div className="col-span-3 w-full hidden lg:flex flex-col items-center justify-center">
                        <StatusBadge status={mappedStatus} type="order" />
                        <span className="text-[8px] uppercase tracking-widest text-[#c5a059]/50 mt-1.5">{order.orderSource || 'website'}</span>
-                    </div>
-
-                    {/* Actions: change status (always visible, no hover reveal) */}
-                    <div className="col-span-2 w-full flex lg:justify-end border-t border-[#c5a059]/10 pt-4 lg:pt-0 lg:border-0 mt-2 lg:mt-0">
-                      <div className="w-full lg:w-auto lg:min-w-[150px]" onClick={e => e.stopPropagation()}>
-                        <select
-                          value={mappedStatus}
-                          onChange={(e) => handleStatusChange(order, e.target.value)}
-                          className="w-full bg-bg text-[9px] font-bold uppercase tracking-widest py-2 px-3 rounded-sm focus:outline-none focus:border-[#c5a059] border border-[#c5a059]/25 hover:border-[#c5a059]/60 text-content cursor-pointer transition-colors"
-                        >
-                          {!validTransitions.includes(mappedStatus) && (
-                            <option value={mappedStatus} disabled>{mappedStatus}</option>
-                          )}
-                          {validTransitions.map((s: string) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </div>
                     </div>
 
                   </Link>
