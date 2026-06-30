@@ -67,6 +67,10 @@ export interface BrandContent {
   // Manual UPI collection: the business UPI ID money is paid into, and the
   // payee name shown in the customer's UPI app. Configured in admin → Content → Brand.
   payments?: { upiId?: string; upiPayeeName?: string };
+  // Gmail account that order emails are composed FROM (admin opens a pre-filled
+  // Gmail draft in this account). `authuser` targets it even with multiple
+  // Google accounts signed in. Configured in admin → Content → Brand.
+  orderEmailFrom?: string;
 }
 
 export interface HomeContent {
@@ -152,7 +156,8 @@ export const DEFAULT_SITE_CONTENT: SiteContentMap = {
     payments: {
       upiId: "",
       upiPayeeName: "GRAINOOD"
-    }
+    },
+    orderEmailFrom: "adminuser@grainood.com"
   },
   home: {
     hero: {
