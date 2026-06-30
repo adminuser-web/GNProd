@@ -131,11 +131,14 @@ export const orderService = {
         newData.receiptNumber = `REC-${Date.now().toString(36).toUpperCase()}`;
         newData.receiptUrl = `/my-orders/${orderId}/receipt`;
       }
-      newData.status = 'Payment Confirmed';
-      newStatusCol = 'Payment Confirmed';
+      // Unified flow: confirming payment moves the order straight into Processing.
+      if (data.status !== 'Delivered' && data.status !== 'Cancelled') {
+        newData.status = 'Processing';
+        newStatusCol = 'Processing';
+      }
       newData.timeline = [
         ...(data.timeline || []),
-        { status: 'Payment Confirmed', timestamp: new Date().toISOString(), changedBy, note: 'Payment marked as confirmed' },
+        { status: newStatusCol, timestamp: new Date().toISOString(), changedBy, note: 'Payment confirmed — order moved to Processing' },
       ];
     }
 
@@ -176,6 +179,37 @@ export const orderService = {
     const newData = { ...data, payment, updatedAt: new Date().toISOString() };
     const { error } = await supabase.from('orders').update({ data: newData }).eq('id', orderId);
     if (error) throw error;
+  },
+
+  // Cancel an order with a customer-visible reason. Blocked once delivered.
+  async cancelOrder(orderId: string, reason: string, changedBy: string) {
+    const row = await fetchOrderRow(orderId);
+    if (!row) throw new Error('Order not found');
+    const data: any = row.data;
+    if (data.status === 'Delivered') throw new Error('Delivered orders cannot be cancelled');
+    if (data.status === 'Cancelled') return;
+
+    const cancellation = { reason: reason.trim(), at: new Date().toISOString(), by: changedBy };
+    const timeline = [
+      ...(data.timeline || []),
+      { status: 'Cancelled', timestamp: new Date().toISOString(), changedBy, note: `Cancelled: ${reason.trim()}` },
+    ];
+    const newData = { ...data, status: 'Cancelled', cancellation, timeline, updatedAt: new Date().toISOString() };
+    const { error } = await supabase.from('orders').update({ data: newData, status: 'Cancelled' }).eq('id', orderId);
+    if (error) throw error;
+
+    await auditService.writeAudit({
+      action: 'order_status_updated', entityType: 'order', entityId: orderId,
+      before: { status: data.status }, after: { status: 'Cancelled' }, actorName: changedBy,
+    });
+    try {
+      await notificationService.createNotification({
+        userId: data.userId, roleTarget: 'customer', type: 'order_status_changed',
+        title: 'Order Cancelled',
+        message: `Your order ${data.receiptNumber || orderId.slice(0, 8)} was cancelled. Reason: ${reason.trim()}`,
+        link: `/my-orders/${orderId}`,
+      });
+    } catch { /* non-blocking */ }
   },
 
   async updateAdminNote(orderId: string, adminNote: string) {

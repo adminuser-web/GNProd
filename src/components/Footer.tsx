@@ -4,10 +4,14 @@ import { Logo } from './Logo';
 import { BRAND } from '../types';
 import { MapPin, Clock, Phone, ArrowRight, ShieldCheck, Hammer, Lock } from 'lucide-react';
 import { useContent } from '../context/ContentContext';
+import { useTheme } from '../context/ThemeContext';
+import { resolveThemedImage } from '../lib/themedImage';
 
 export function Footer() {
   const brandContent = useContent('brand');
   const footerContent = useContent('footer');
+  const { theme } = useTheme();
+  const logoSrc = resolveThemedImage(brandContent?.logoUrl as any, theme);
 
   return (
     <footer className="bg-surface text-content/80 pt-16 pb-8 border-t border-[#c5a059]/20 print-hide">
@@ -17,7 +21,11 @@ export function Footer() {
           {/* Col 1: Brand & Contact Block */}
           <div className="col-span-1 sm:col-span-2 lg:col-span-2">
             <div className="flex items-center gap-4 mb-4">
-              <Logo className="h-10 text-[#c5a059]" />
+              {logoSrc ? (
+                <img src={logoSrc} alt={brandContent?.brandName || 'GRAINOOD'} className="h-10 w-auto object-contain" />
+              ) : (
+                <Logo className="h-10 text-[#c5a059]" />
+              )}
               <h3 className="text-content text-2xl font-bold tracking-widest uppercase">{brandContent?.brandName || "GRAINOOD"}</h3>
             </div>
             <p className="mb-8 max-w-sm text-muted text-[13px] leading-relaxed font-light">
