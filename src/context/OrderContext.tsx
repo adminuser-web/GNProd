@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useReducer, ReactNode, useState, useMemo } from 'react';
 import { Product } from '../types';
-import { computePrice } from '../lib/pricing';
+import { computePrice, DiscountCode } from '../lib/pricing';
 import { usePricingConfig } from '../features/products/hooks/usePricingConfig';
+import { pricingConfigService } from '../features/products/services/pricingConfigService';
 
 export interface OrderItemSelection {
   groupId: string;
@@ -173,7 +174,22 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   };
 
   const [discountCode, setDiscountCode] = useState<string>('');
-  const { rules: globalRules, codes: globalCodes } = usePricingConfig();
+  const { rules: globalRules } = usePricingConfig();
+
+  // Discount codes are no longer fetchable by customers (admin-only). Validate
+  // the entered code server-side via the RPC and feed just that one code to the
+  // pricing engine.
+  const [validatedCodes, setValidatedCodes] = useState<DiscountCode[]>([]);
+  useEffect(() => {
+    const code = discountCode.trim();
+    if (!code) { setValidatedCodes([]); return; }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const result = await pricingConfigService.validateDiscountCode(code);
+      if (!cancelled) setValidatedCodes(result ? [result] : []);
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [discountCode]);
 
   const { subtotal, grandTotal, discountsApplied, itemsWithPricing } = useMemo(() => {
     let orderSubtotal = 0;
@@ -190,7 +206,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
       const res = computePrice(item.product, selMap, {
         rules: globalRules,
-        availableCodes: globalCodes,
+        availableCodes: validatedCodes,
         discountCode
       });
 
@@ -207,7 +223,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     });
 
     return { subtotal: orderSubtotal, grandTotal: orderTotal, discountsApplied: combinedDiscounts, itemsWithPricing };
-  }, [state.items, discountCode, globalRules, globalCodes]);
+  }, [state.items, discountCode, globalRules, validatedCodes]);
 
   const itemCount = state.items.reduce((total, item) => total + item.quantity, 0);
 
