@@ -107,6 +107,13 @@ Round 3 — customer + owner flow polish (scope the user approved):
 - New dep: `qrcode.react@4`. **ACTION (user):** set the business UPI ID in admin Content → Brand (else customers see the WhatsApp fallback). No deploy/keys needed — UPI is keyless.
 - ⚠️ `UpiPayBox` is on the login-gated order page → verify visually on a real order (lint/build pass; UPI-URI logic preview-tested).
 
+## Unified order flow (on `develop`)
+One linear lifecycle across admin + customer — payment, delivery, cancellation all in one place (no separate payment/tracking sections).
+- **4-stage model** (`orderStatus.ts`): `STAGE_FLOW = Placed → Processing → Shipped → Delivered` + `stageIndex()`/`STAGE_LABELS`. Transitions: confirming payment → **Processing**; Processing → Shipped; Shipped → Delivered; **Delivered is terminal**; **Cancel allowed any time before Delivered**.
+- **orderService**: `updatePaymentStatus` confirm now sets status **Processing** (was 'Payment Confirmed'); new **`cancelOrder(id, reason, by)`** stores `order.cancellation {reason,at,by}`, sets Cancelled, customer notification with the reason. Delivery stored in `order.shipment {courierName(=partner), trackingNumber, trackingUrl, dispatchDate, estimatedDeliveryAt}`.
+- **Admin `AdminOrderDetailsPage`** — fully rewritten to ONE panel: stepper + contextual stage action (Send Payment Email → Confirm Payment [proof optional] → delivery form → Mark Shipped → Mark Delivered), Cancel-with-reason modal (until delivered), payment+proof summary (signed URL) once paid, compact customer/items. Tabs removed.
+- **Customer `OrderDetailPage`** — `StatusTracker` now 4-stage; one "Order Progress" card merges payment status + delivery details (partner/dispatch/expected/**Track** link) ; cancellation-reason banner when cancelled; removed the separate payment grid + shipment box. `UpiPayBox` still shown when unpaid.
+
 ## Admin order emails — Gmail compose (no auto-send, NO email provider) on `develop`
 The admin **opens a pre-filled Gmail draft** and sends it themselves — there is **no server-side email** (Resend path fully removed; `supabase/functions/` deleted again — no edge functions in repo). Turnstile for enquiries = deferred follow-up.
 - `src/features/orders/emailTemplates.ts` — `buildOrderEmail(template, order, {paymentLink, brandName})` → `{subject, body}` plain text (concise: item lines + total + link, capped); `buildGmailComposeUrl({sendFrom,to,subject,body})` → `https://mail.google.com/mail/?authuser=<email>&view=cm&fs=1&to=&su=&body=` (all `encodeURIComponent`, `%0A` newlines). Verified in preview (well-formed, ~600 chars).
