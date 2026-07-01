@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 
 import { ImageUpload } from '../ImageUpload';
 import { UploadSpecKey } from '../../../config/uploadSpecs';
+import { AdminAttributesTab } from './AdminAttributesTab';
+import { getAttributes, applySeriesDefaults, deriveAttributes } from '../../../features/products/attributes';
 
 export function AdminSeriesDetailPage() {
   const { seriesSlug } = useParams<{ seriesSlug: string }>();
@@ -114,6 +116,31 @@ export function AdminSeriesDetailPage() {
     const newSlug = ensureUniqueSlug(baseSlug);
     const newId = `${formData.slug}-${newSlug}`;
 
+    const seedSpecs = {
+      willowGrade: gradeLabel,
+      grains: '',
+      weightRange: '2.8-2.10',
+      profile: 'Mid',
+      edges: '38mm',
+      spine: '62mm',
+      handle: 'Short Handle',
+      sweetSpot: 'Mid',
+      finish: 'Natural',
+      pressing: 'Standard',
+      pickupFeel: 'Light',
+      toeProtection: 'Rubber Guard',
+      preKnockedIncluded: false
+    };
+
+    // Seed the new sub-series from the series template: start with default fixed
+    // specs, then gap-fill the full template (active state inherited, since a
+    // brand-new sub-series is a draft until published).
+    const seededAttributes = applySeriesDefaults(
+      deriveAttributes({ specs: seedSpecs }),
+      formData.attributes || [],
+      { activateAdded: true },
+    ).attributes.map((a, i) => ({ ...a, sortOrder: i }));
+
     const newSub: ProductSubSeries = {
       id: newId,
       slug: newSlug,
@@ -133,21 +160,8 @@ export function AdminSeriesDetailPage() {
       estimatedDeliveryDays: formData.estimatedDeliveryDays || 14,
       warrantyMonths: formData.warrantyMonths || 12,
       includedAccessories: formData.includedAccessories || ['Bat Cover'],
-      specs: {
-        willowGrade: gradeLabel,
-        grains: '',
-        weightRange: '2.8-2.10',
-        profile: 'Mid',
-        edges: '38mm',
-        spine: '62mm',
-        handle: 'Short Handle',
-        sweetSpot: 'Mid',
-        finish: 'Natural',
-        pressing: 'Standard',
-        pickupFeel: 'Light',
-        toeProtection: 'Rubber Guard',
-        preKnockedIncluded: false
-      },
+      attributes: seededAttributes,
+      specs: seedSpecs,
       media: {
         primaryImage: newProductImage
       },
@@ -504,6 +518,27 @@ export function AdminSeriesDetailPage() {
            </div>
         </div>
 
+      </div>
+
+      {/* SERIES DEFAULT ATTRIBUTES (template) */}
+      <div className="mt-8 bg-surface border border-[#c5a059]/10 shadow-sm p-6 md:p-8">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-3 mb-6 pb-4 border-b border-[#c5a059]/10">
+          <div>
+            <h2 className="text-xs tracking-[0.2em] uppercase font-bold text-content">Series Default Attributes</h2>
+            <p className="text-sm text-muted mt-1">
+              The standard attribute set for {formData.name}. New products are seeded from this template;
+              existing products can pull in any missing ones via <span className="text-[#c5a059]">Apply Series Defaults</span> on their editor (added inactive, never overwriting).
+            </p>
+          </div>
+          <GoldButton onClick={handleSaveSettings} disabled={saving} variant="solid" className="px-6 py-2 text-[10px] shrink-0">
+            {saving ? 'Saving...' : 'Save Template'}
+          </GoldButton>
+        </div>
+        <AdminAttributesTab
+          attributes={getAttributes(formData)}
+          onChange={(attrs) => updateField('attributes', attrs)}
+          storagePath={`products/${formData.slug}/template/swatches`}
+        />
       </div>
     </div>
   );
