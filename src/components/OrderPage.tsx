@@ -14,7 +14,7 @@ import { COUNTRIES, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../data/locations
 import { HowItWorks } from './HowItWorks';
 
 export function OrderPage() {
-  const { state: { items }, itemsWithPricing, grandTotal, subtotal, clearOrder, discountCode, setDiscountCode, discountsApplied, removeFromOrder: removeItem, updateQuantity: setQuantity } = useOrder();
+  const { state: { items }, itemsWithPricing, grandTotal, subtotal, clearOrder, discountCode, setDiscountCode, codeStatus, discountsApplied, removeFromOrder: removeItem, updateQuantity: setQuantity } = useOrder();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 
@@ -529,9 +529,19 @@ export function OrderPage() {
                       onChange={(e) => setDiscountCode(e.target.value)}
                       className="flex-1 bg-elevated border border-[#c5a059]/20 text-content px-4 py-3 uppercase tracking-wider text-xs focus:outline-none focus:border-[#c5a059]"
                     />
-                    <button className="text-[10px] font-bold uppercase tracking-widest text-bg bg-[#c5a059] px-6 py-2 hover:bg-[#d8cda2] transition-colors">Apply</button>
+                    <button type="button" className="text-[10px] font-bold uppercase tracking-widest text-bg bg-[#c5a059] px-6 py-2 hover:bg-[#d8cda2] transition-colors">Apply</button>
                   </div>
-                  
+
+                  {codeStatus === 'checking' && (
+                    <p className="text-[10px] uppercase tracking-widest text-muted">Checking code…</p>
+                  )}
+                  {codeStatus === 'valid' && (
+                    <p className="text-[10px] uppercase tracking-widest text-[#c5a059]">✓ Code applied</p>
+                  )}
+                  {codeStatus === 'invalid' && (
+                    <p className="text-[10px] uppercase tracking-widest text-red-400">Invalid or expired code</p>
+                  )}
+
                   <div className="flex justify-between text-content/80 text-[11px] tracking-widest uppercase mt-6">
                     <span>Base Subtotal</span>
                     <span>₹{subtotal.toLocaleString('en-IN')}</span>

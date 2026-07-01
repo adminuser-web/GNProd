@@ -110,6 +110,7 @@ interface OrderContextProps {
   closeDrawer: () => void;
   discountCode: string;
   setDiscountCode: (code: string) => void;
+  codeStatus: 'idle' | 'checking' | 'valid' | 'invalid';
   discountsApplied: { label: string; amount: number }[];
   itemsWithPricing: any[];
 }
@@ -180,13 +181,15 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   // the entered code server-side via the RPC and feed just that one code to the
   // pricing engine.
   const [validatedCodes, setValidatedCodes] = useState<DiscountCode[]>([]);
+  const [codeStatus, setCodeStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
   useEffect(() => {
     const code = discountCode.trim();
-    if (!code) { setValidatedCodes([]); return; }
+    if (!code) { setValidatedCodes([]); setCodeStatus('idle'); return; }
+    setCodeStatus('checking');
     let cancelled = false;
     const t = setTimeout(async () => {
       const result = await pricingConfigService.validateDiscountCode(code);
-      if (!cancelled) setValidatedCodes(result ? [result] : []);
+      if (!cancelled) { setValidatedCodes(result ? [result] : []); setCodeStatus(result ? 'valid' : 'invalid'); }
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
   }, [discountCode]);
@@ -250,6 +253,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       closeDrawer,
       discountCode,
       setDiscountCode,
+      codeStatus,
       discountsApplied,
       itemsWithPricing,
     }}>

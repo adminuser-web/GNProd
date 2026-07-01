@@ -4,6 +4,7 @@ import { MessageCircle, Mail, Instagram, Plus, Minus, Check } from 'lucide-react
 import { useLocation } from 'react-router-dom';
 import { useContent } from '../context/ContentContext';
 import { RevealSection } from './Reveal';
+import { osmEmbedUrl } from '../lib/mapEmbed';
 import { clsx } from 'clsx';
 import { GoldButton } from './GoldButton';
 import { enquiryService } from '../features/enquiries/services/enquiryService';
@@ -318,14 +319,14 @@ export function ContactPage() {
                 </div>
                 <div className="aspect-video w-full bg-bg border border-[#c5a059]/20 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-[#c5a059]/10 pointer-events-none z-raised group-hover:bg-transparent transition-colors duration-500"></div>
-                    <iframe 
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(brandContent?.store?.address || '12/42, F Type, 4th Main Road, Sidco Nagar, Villivakkam, Chennai-600049, Tamil Nadu')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                      width="100%" 
-                      height="100%" 
-                      style={{border:0}} 
-                      allowFullScreen={false} 
-                      loading="lazy" 
-                      referrerPolicy="no-referrer-when-downgrade" 
+                    <iframe
+                      title="Map to Grainood store"
+                      src={osmEmbedUrl()}
+                      width="100%"
+                      height="100%"
+                      style={{border:0}}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
                       className="opacity-80 grayscale contrast-125 mix-blend-luminosity hover:opacity-100 hover:grayscale-0 hover:mix-blend-normal transition-all duration-700"
                     />
                 </div>
