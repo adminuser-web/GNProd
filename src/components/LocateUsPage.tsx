@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { MapPin, Clock, Phone, Mail, Navigation, MessageCircle } from 'lucide-react';
 import { RevealSection } from './Reveal';
 import { useContent } from '../context/ContentContext';
+import { osmEmbedUrl } from '../lib/mapEmbed';
 
 export function LocateUsPage() {
   const brandContent = useContent('brand');
@@ -35,17 +36,25 @@ export function LocateUsPage() {
         <RevealSection delay={100} className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           
           {/* Mobile-first: Map on top for small screens */}
-          <div className="lg:order-2 h-[400px] lg:h-auto min-h-[400px] border border-[#c5a059]/20 p-2 bg-surface">
-            <iframe 
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(storeLocation.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-              width="100%" 
-              height="100%" 
-              style={{ border: 0, filter: 'grayscale(100%) contrast(1.2)' }} 
-              allowFullScreen={false} 
-              loading="lazy" 
+          <div className="lg:order-2 h-[400px] lg:h-auto min-h-[400px] border border-[#c5a059]/20 p-2 bg-surface relative">
+            <iframe
+              title={`Map to ${brandContent?.brandName || 'Grainood'} store`}
+              src={osmEmbedUrl()}
+              width="100%"
+              height="100%"
+              style={{ border: 0, filter: 'grayscale(100%) contrast(1.1)' }}
+              loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="w-full h-full object-cover"
+              className="w-full h-full"
             ></iframe>
+            <a
+              href={storeLocation.mapsLink}
+              target="_blank"
+              rel="noreferrer"
+              className="absolute bottom-4 right-4 inline-flex items-center gap-2 bg-bg/90 border border-[#c5a059]/40 text-[#c5a059] px-4 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-[#c5a059] hover:text-bg transition-colors shadow-lg"
+            >
+              <Navigation size={13} /> Open in Google Maps
+            </a>
           </div>
 
           <div className="lg:order-1 space-y-10 order-1">
