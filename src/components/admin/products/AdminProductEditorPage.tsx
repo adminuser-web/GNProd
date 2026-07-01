@@ -18,12 +18,12 @@ import {
   ProductSeries,
   ProductSubSeries,
 } from "../../../features/products/types";
+import { getAttributes } from "../../../features/products/attributes";
 import { FEATURES } from "../../../config/features";
 
 import { AdminDetailsTab } from "./AdminDetailsTab";
-import { AdminSpecsTab } from "./AdminSpecsTab";
+import { AdminAttributesTab } from "./AdminAttributesTab";
 import { AdminMediaTab } from "./AdminMediaTab";
-import { AdminCustomizationsTab } from "./AdminCustomizationsTab";
 import { AdminPricingTab } from "./AdminPricingTab";
 import { AdminSeoTab } from "./AdminSeoTab";
 import { 
@@ -182,7 +182,7 @@ export function AdminProductEditorPage() {
     useState<ProductSubSeries | null>(null);
 
   const [activeTab, setActiveTab] = useState<
-    "details" | "specs" | "media" | "customizations" | "pricing" | "seo"
+    "details" | "attributes" | "media" | "pricing" | "seo"
   >("details");
 
   useEffect(() => {
@@ -280,9 +280,8 @@ export function AdminProductEditorPage() {
 
   const tabs = [
     { id: "details", label: "Details" },
-    { id: "specs", label: "Specs" },
+    { id: "attributes", label: "Attributes" },
     { id: "media", label: "Media Gallery" },
-    { id: "customizations", label: "Customizations" },
     { id: "pricing", label: "Pricing" },
     { id: "seo", label: "SEO" },
   ];
@@ -298,9 +297,10 @@ export function AdminProductEditorPage() {
     if (!activeSubSeries.shortDescription) missing.push("Short Description");
     if (typeof activeSubSeries.estimatedDeliveryDays !== 'number') missing.push("Delivery Estimate");
     if (typeof activeSubSeries.warrantyMonths !== 'number') missing.push("Warranty Months");
-    if (!activeSubSeries.specs || Object.keys(activeSubSeries.specs).length < 6) missing.push("Specs");
+    const attrs = getAttributes(activeSubSeries);
+    if (attrs.filter((a: any) => a.mode === 'fixed').length < 6) missing.push("Specs");
     if (!activeSubSeries.performance || Object.keys(activeSubSeries.performance || {}).length < 3) missing.push("Performance Scores");
-    if (!activeSubSeries.customizationGroups || activeSubSeries.customizationGroups.length === 0) missing.push("Customization Groups");
+    if (attrs.filter((a: any) => a.mode === 'customizable').length === 0) missing.push("Customization Groups");
     return missing;
   };
 
@@ -421,8 +421,8 @@ export function AdminProductEditorPage() {
               updateSubSeries={updateSubSeries}
             />
           )}
-          {activeTab === "specs" && (
-            <AdminSpecsTab
+          {activeTab === "attributes" && (
+            <AdminAttributesTab
               series={series}
               subSeries={activeSubSeries}
               updateSubSeries={updateSubSeries}
@@ -430,13 +430,6 @@ export function AdminProductEditorPage() {
           )}
           {activeTab === "media" && (
             <AdminMediaTab
-              series={series}
-              subSeries={activeSubSeries}
-              updateSubSeries={updateSubSeries}
-            />
-          )}
-          {activeTab === "customizations" && (
-            <AdminCustomizationsTab
               series={series}
               subSeries={activeSubSeries}
               updateSubSeries={updateSubSeries}

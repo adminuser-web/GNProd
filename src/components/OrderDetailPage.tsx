@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import { LazyImage } from './LazyImage';
 import { UpiPayBox } from './UpiPayBox';
+import { getCustomizableAttributes } from '../features/products/attributes';
 
 function StatusTracker({ status }: { status: string }) {
   const normalizedStatus = mapLegacyStatus(status || 'Order Placed');
@@ -107,8 +108,8 @@ export function OrderDetailPage() {
               continue; // preserve text
            }
 
-           const group = matchingProduct.customizationGroups?.find((g: any) => g.id === selection.groupId);
-           const option = group?.options.find((o: any) => o.id === selection.optionId);
+           const group = getCustomizableAttributes(matchingProduct).find((g: any) => g.key === selection.groupId);
+           const option = group?.options?.find((o: any) => o.id === selection.optionId);
 
            if (!group || !option) {
               optionsChanged = true;

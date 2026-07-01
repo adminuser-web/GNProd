@@ -15,11 +15,16 @@ export interface ProductSeries {
 
   // Added base level stats
   performanceMetrics?: BatPerformance;
+
+  /** Unified attribute model — replaces `customizationGroups` (and, on sub-series, `specs`). */
+  attributes?: ProductAttribute[];
+
+  /** @deprecated legacy — migrated into `attributes`; retained for rollback. */
   customizationGroups?: CustomizationGroup[];
 
   createdAt: any;
   updatedAt: any;
-  
+
   grade?: string;
 }
 
@@ -39,6 +44,11 @@ export interface ProductSubSeries {
   status: "draft" | "published" | "out_of_stock";
 
   gradeLabel?: string;
+
+  /** Unified attribute model — replaces `specs` (fixed) + `customizationGroups` (customizable). */
+  attributes?: ProductAttribute[];
+
+  /** @deprecated legacy — migrated into fixed `attributes`; retained for rollback. */
   specs?: BatSpecs;
   media: ProductMedia[];
   seo: SEOFields;
@@ -55,6 +65,7 @@ export interface ProductSubSeries {
   updatedAt: any;
 
   // Legacy UI compat
+  /** @deprecated legacy — migrated into `attributes`; retained for rollback. */
   customizationGroups?: CustomizationGroup[];
   includedAccessories?: string[];
   grade?: string;
@@ -64,6 +75,34 @@ export interface ProductSubSeries {
   seoKeywords?: string[];
 }
 
+/**
+ * Unified product attribute. A single list of these replaces the old
+ * `specs` (fixed facts) + `customizationGroups` (buyer-configurable options)
+ * split. `mode` decides how it renders: `fixed` → spec table; `customizable`
+ * → buy configurator. `key` is a canonical, stable kebab-case identifier that
+ * orders/builds may reference — never rename existing keys.
+ */
+export interface ProductAttribute {
+  id: string;
+  key: string;
+  label: string;
+  mode: "fixed" | "customizable";
+  sortOrder: number;
+  active: boolean;
+
+  // mode === "fixed"
+  fixedValue?: string;
+
+  // mode === "customizable" (reuses the CustomizationOption shape unchanged)
+  required?: boolean;
+  type?: "single_select" | "multi_select" | "text" | "toggle";
+  options?: CustomizationOption[];
+  // text-input config (only when type === "text")
+  maxLength?: number;
+  validationRegex?: string;
+}
+
+/** @deprecated Migrated into fixed `ProductAttribute`s. Kept as migration source + rollback. */
 export interface BatSpecs {
   grainRange?: string;
   weightRange?: string;
@@ -119,6 +158,7 @@ export interface SEOFields {
   keywords: string[];
 }
 
+/** @deprecated Migrated into customizable `ProductAttribute`s. Kept as migration source + rollback. */
 export interface CustomizationGroup {
   id: string;
   name: string;

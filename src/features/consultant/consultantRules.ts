@@ -1,4 +1,5 @@
 import { ProductSubSeries } from '../products/types';
+import { getCustomizableAttributes } from '../products/attributes';
 import { Product } from '../../types';
 
 export type PlayerProfile =
@@ -224,7 +225,7 @@ export function consultBat(
 
       // 5. Customization match (15 points)
       let customScore = 0;
-      const numGroups = subSeries.customizationGroups?.filter(g => g.enabled !== false).length || 0;
+      const numGroups = getCustomizableAttributes(subSeries).length;
       const requiresConsultation = subSeries.consultationRequired || subSeries.whatsappConsultationEnabled;
 
       if (input.customizationPreference === 'Basic setup is enough') {

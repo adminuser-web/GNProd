@@ -16,6 +16,7 @@ import { EmptyState } from './EmptyState';
 import { toast } from 'sonner';
 import { EnquiryDrawer } from './EnquiryDrawer';
 import { LazyImage } from './LazyImage';
+import { getAttributes, getCustomizableAttributes } from '../features/products/attributes';
 
 export function MyBuildsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -188,6 +189,12 @@ export function MyBuildsPage() {
                        price: subSeries.basePrice || baseProduct.price,
                        basePrice: subSeries.basePrice || baseProduct.basePrice,
                        customizationGroups: subSeries.customizationGroups || baseProduct.customizationGroups,
+                       attributes: (() => {
+                          const subAttrs = getAttributes(subSeries);
+                          const subCustom = subAttrs.filter((a: any) => a.mode === 'customizable' && a.active !== false);
+                          const custom = subCustom.length ? subCustom : getCustomizableAttributes(baseProduct);
+                          return [...custom, ...subAttrs.filter((a: any) => a.mode === 'fixed')];
+                       })(),
                     } : baseProduct;
                     const selMap: Record<string, string> = {};
                     if (Array.isArray(build.selections)) {
