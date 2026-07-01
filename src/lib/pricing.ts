@@ -65,8 +65,9 @@ export function computePrice(
     if (selectedOptVal) {
       let opt = options.find(o => o.id === selectedOptVal);
 
-      // Ignore unavailable options
-      if (attr.type !== 'text' && opt && opt.active === false) {
+      // Ignore unavailable options (available is the canonical flag; active is
+      // often unset on real data).
+      if (attr.type !== 'text' && opt && (opt.available === false || opt.active === false)) {
         opt = undefined;
       }
 
