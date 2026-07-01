@@ -119,4 +119,28 @@ describe('pricing — computePrice (attribute model)', () => {
     const r = computePrice(attrProduct, { disabled: 'a', grains: 'anything' });
     expect(r.subtotal).toBe(10000);
   });
+
+  // Regression: real option data uses `available: true` with `active` unset.
+  // Such options must still count/price (never gate on active truthiness).
+  it('prices an option that is available with active unset', () => {
+    const p: any = {
+      price: 10000,
+      attributes: [{
+        id: 'edge', key: 'edge', label: 'Edge', mode: 'customizable', type: 'single_select', active: true, sortOrder: 0,
+        options: [{ id: 'thick', label: 'Thick', priceDelta: 750, available: true }], // no `active`
+      }],
+    };
+    expect(computePrice(p, { edge: 'thick' }).subtotal).toBe(10750);
+  });
+
+  it('skips an option explicitly marked available:false', () => {
+    const p: any = {
+      price: 10000,
+      attributes: [{
+        id: 'edge', key: 'edge', label: 'Edge', mode: 'customizable', type: 'single_select', active: true, sortOrder: 0,
+        options: [{ id: 'thick', label: 'Thick', priceDelta: 750, available: false }],
+      }],
+    };
+    expect(computePrice(p, { edge: 'thick' }).subtotal).toBe(10000);
+  });
 });

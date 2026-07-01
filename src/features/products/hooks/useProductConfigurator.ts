@@ -105,7 +105,10 @@ export function useProductConfigurator(product: Product | undefined) {
       let opt = selVal ? options.find(o => o.id === selVal) : undefined;
       let textValue: string | undefined;
 
-      if (attr.type !== 'text' && opt && !opt.active) {
+      // An option counts as selected unless it's explicitly unavailable.
+      // (`available` is the canonical flag used by the option buttons + init;
+      // `active` is often unset on real data, so never gate on its truthiness.)
+      if (attr.type !== 'text' && opt && (opt.available === false || opt.active === false)) {
         opt = undefined;
       }
 
