@@ -1,9 +1,16 @@
 // @ts-nocheck
-import React from "react";
+import React, { useState } from "react";
 import { ProductAttribute } from "../../../features/products/types";
-import { attributeProvenance } from "../../../features/products/attributes";
-import { ChevronUp, ChevronDown, Plus, Trash2, Sparkles } from "lucide-react";
+import { attributeProvenance, validateAttributes } from "../../../features/products/attributes";
+import { ChevronUp, ChevronDown, Plus, Trash2, Sparkles, GripVertical, AlertCircle } from "lucide-react";
 import { ImageUpload } from "../ImageUpload";
+
+function reorder<T>(list: T[], from: number, to: number): T[] {
+  const next = [...list];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
 
 interface Props {
   /** Resolved attribute list to edit. */
@@ -198,6 +205,28 @@ export function AdminAttributesTab({ attributes, onChange, storagePath, template
     updateAttr(attrIdx, { options: opts });
   };
 
+  // --- Drag-and-drop reorder (desktop). Up/down buttons remain the keyboard +
+  //     touch fallback, so mobile is never blocked. ---
+  const [dragAttr, setDragAttr] = useState<number | null>(null);
+  const [dragOpt, setDragOpt] = useState<{ attr: number; opt: number } | null>(null);
+
+  const dropAttr = (to: number) => {
+    if (dragAttr === null || dragAttr === to) return;
+    commit(reorder(attributes, dragAttr, to));
+    setDragAttr(null);
+  };
+
+  const dropOption = (attrIdx: number, to: number) => {
+    if (!dragOpt || dragOpt.attr !== attrIdx || dragOpt.opt === to) return;
+    updateAttr(attrIdx, { options: reorder(attributes[attrIdx].options || [], dragOpt.opt, to) });
+    setDragOpt(null);
+  };
+
+  // Validation errors, grouped by attribute index for inline display.
+  const errors = validateAttributes(attributes);
+  const errorsByIndex = new Map<number, string[]>();
+  errors.forEach((e) => errorsByIndex.set(e.index, [...(errorsByIndex.get(e.index) || []), e.message]));
+
   return (
     <div className="space-y-8 animate-fade-in relative pb-12">
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-[#c5a059]/10 pb-4 mb-6">
@@ -232,16 +261,42 @@ export function AdminAttributesTab({ attributes, onChange, storagePath, template
         </div>
       </div>
 
+      {errors.length > 0 && (
+        <div className="mb-6 bg-red-500/10 border border-red-500/30 p-3 flex items-start gap-2">
+          <AlertCircle size={14} className="text-red-400 mt-0.5 shrink-0" />
+          <div className="text-[11px] text-red-300 tracking-wide">
+            <span className="font-bold uppercase tracking-widest text-[10px] text-red-400">{errors.length} issue{errors.length > 1 ? "s" : ""} to fix before saving</span>
+            <ul className="mt-1 space-y-0.5 list-disc pl-4">
+              {errors.map((e, i) => <li key={i}>{e.message}</li>)}
+            </ul>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
-        {attributes.map((attr, idx) => (
-          <div key={attr.id || idx} className={`bg-bg border ${attr.active !== false ? "border-[#c5a059]/20" : "border-gray-500/20 opacity-70"} relative group/card`}>
+        {attributes.map((attr, idx) => {
+          const rowErrors = errorsByIndex.get(idx);
+          return (
+          <div
+            key={attr.id || idx}
+            onDragOver={(e) => { if (dragAttr !== null) e.preventDefault(); }}
+            onDrop={() => dropAttr(idx)}
+            className={`bg-bg border ${rowErrors ? "border-red-500/50" : attr.active !== false ? "border-[#c5a059]/20" : "border-gray-500/20 opacity-70"} relative group/card ${dragAttr === idx ? "opacity-50" : ""}`}
+          >
             {attr.active === false && (
               <div className="absolute top-0 right-0 bg-gray-500/20 text-gray-400 text-[8px] font-bold px-3 py-1 uppercase tracking-widest">Hidden</div>
             )}
 
             {/* Header row */}
             <div className="flex bg-surface p-4 border-b border-[#c5a059]/10 items-start gap-4">
-              <div className="flex flex-col gap-1 mt-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+              <div className="flex flex-col items-center gap-1 mt-1">
+                <span
+                  draggable
+                  onDragStart={() => setDragAttr(idx)}
+                  onDragEnd={() => setDragAttr(null)}
+                  title="Drag to reorder"
+                  className="cursor-grab active:cursor-grabbing text-muted/50 hover:text-[#c5a059]"
+                ><GripVertical size={16} /></span>
                 <button disabled={idx === 0} onClick={() => move(idx, -1)} className="text-muted hover:text-[#c5a059] disabled:opacity-30"><ChevronUp size={16} /></button>
                 <button disabled={idx === attributes.length - 1} onClick={() => move(idx, 1)} className="text-muted hover:text-[#c5a059] disabled:opacity-30"><ChevronDown size={16} /></button>
               </div>
@@ -285,6 +340,13 @@ export function AdminAttributesTab({ attributes, onChange, storagePath, template
                 </div>
               </div>
             </div>
+
+            {rowErrors && (
+              <div className="px-4 py-2 pl-[4.5rem] bg-red-500/5 border-b border-red-500/20 flex items-start gap-2">
+                <AlertCircle size={12} className="text-red-400 mt-0.5 shrink-0" />
+                <ul className="text-[10px] text-red-300 space-y-0.5">{rowErrors.map((m, i) => <li key={i}>{m}</li>)}</ul>
+              </div>
+            )}
 
             {/* Fixed body */}
             {attr.mode === "fixed" && (
@@ -333,8 +395,20 @@ export function AdminAttributesTab({ attributes, onChange, storagePath, template
 
                   <div className="space-y-3">
                     {(attr.options || []).map((opt: any, optIdx: number) => (
-                      <div key={opt.id || optIdx} className="flex flex-col lg:flex-row gap-4 p-4 border border-[#c5a059]/10 bg-surface/50 group/opt items-start">
-                        <div className="flex flex-col gap-1 opacity-0 group-hover/opt:opacity-100 transition-opacity">
+                      <div
+                        key={opt.id || optIdx}
+                        onDragOver={(e) => { if (dragOpt && dragOpt.attr === idx) e.preventDefault(); }}
+                        onDrop={() => dropOption(idx, optIdx)}
+                        className={`flex flex-col lg:flex-row gap-4 p-4 border border-[#c5a059]/10 bg-surface/50 group/opt items-start ${dragOpt && dragOpt.attr === idx && dragOpt.opt === optIdx ? "opacity-50" : ""}`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <span
+                            draggable
+                            onDragStart={() => setDragOpt({ attr: idx, opt: optIdx })}
+                            onDragEnd={() => setDragOpt(null)}
+                            title="Drag to reorder"
+                            className="cursor-grab active:cursor-grabbing text-muted/40 hover:text-[#c5a059]"
+                          ><GripVertical size={14} /></span>
                           <button disabled={optIdx === 0} onClick={() => moveOption(idx, optIdx, -1)} className="text-muted hover:text-[#c5a059] disabled:opacity-30"><ChevronUp size={14} /></button>
                           <button disabled={optIdx === (attr.options.length - 1)} onClick={() => moveOption(idx, optIdx, 1)} className="text-muted hover:text-[#c5a059] disabled:opacity-30"><ChevronDown size={14} /></button>
                         </div>
@@ -383,7 +457,8 @@ export function AdminAttributesTab({ attributes, onChange, storagePath, template
               </>
             )}
           </div>
-        ))}
+          );
+        })}
 
         {attributes.length === 0 && (
           <div className="w-full h-32 border border-dashed border-[#c5a059]/20 flex flex-col items-center justify-center gap-2">
