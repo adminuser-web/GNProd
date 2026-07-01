@@ -1,14 +1,21 @@
 // @ts-nocheck
 import React from "react";
-import { ProductSubSeries, ProductAttribute } from "../../../features/products/types";
-import { getAttributes } from "../../../features/products/attributes";
-import { ChevronUp, ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ProductAttribute } from "../../../features/products/types";
+import { attributeProvenance } from "../../../features/products/attributes";
+import { ChevronUp, ChevronDown, Plus, Trash2, Sparkles } from "lucide-react";
 import { ImageUpload } from "../ImageUpload";
 
 interface Props {
-  series: any;
-  subSeries: ProductSubSeries;
-  updateSubSeries: (subSeries: ProductSubSeries) => void;
+  /** Resolved attribute list to edit. */
+  attributes: ProductAttribute[];
+  /** Persist the edited list. */
+  onChange: (attributes: ProductAttribute[]) => void;
+  /** Storage path for option swatch uploads. */
+  storagePath: string;
+  /** Series template — enables "From series default"/"Overridden" badges. */
+  template?: ProductAttribute[];
+  /** When present, shows an "Apply series defaults" button (gap-fill). */
+  onApplyDefaults?: () => void;
 }
 
 // Canonical customizable presets (stable kebab keys — never rename). Used by
@@ -106,14 +113,10 @@ const Checkbox = ({ checked, onChange, label }: any) => (
   </label>
 );
 
-export function AdminAttributesTab({ series, subSeries, updateSubSeries }: Props) {
-  // Fall back to derived attributes so an un-migrated sub-series is editable;
-  // the first edit persists the derived list onto the doc.
-  const attributes: ProductAttribute[] = subSeries.attributes ?? getAttributes(subSeries);
-
+export function AdminAttributesTab({ attributes, onChange, storagePath, template, onApplyDefaults }: Props) {
   const commit = (next: ProductAttribute[]) => {
     // renumber sortOrder to match display order
-    updateSubSeries({ ...subSeries, attributes: next.map((a, i) => ({ ...a, sortOrder: i })) });
+    onChange(next.map((a, i) => ({ ...a, sortOrder: i })));
   };
 
   const updateAttr = (idx: number, patch: Partial<ProductAttribute>) => {
@@ -205,6 +208,11 @@ export function AdminAttributesTab({ series, subSeries, updateSubSeries }: Props
           </p>
         </div>
         <div className="flex flex-wrap gap-3 items-center">
+          {onApplyDefaults && (
+            <button onClick={onApplyDefaults} className="px-4 py-3 border border-[#c5a059]/40 text-[#c5a059] hover:bg-[#c5a059]/10 text-[10px] uppercase tracking-widest font-bold flex items-center gap-2" title="Add any missing attributes from the series template (added inactive)">
+              <Sparkles size={14} /> Apply Series Defaults
+            </button>
+          )}
           <select
             value=""
             onChange={(e) => { if (e.target.value) { addFromLibrary(e.target.value); e.target.value = ""; } }}
@@ -246,7 +254,15 @@ export function AdminAttributesTab({ series, subSeries, updateSubSeries }: Props
                     onChange={(e) => updateAttr(idx, { label: e.target.value })}
                     className="w-full bg-bg border border-[#c5a059]/20 text-sm text-content p-3 focus:outline-none focus:border-[#c5a059] font-bold rounded-none"
                   />
-                  <p className="text-[9px] text-muted/60 mt-1 tracking-wider">key: {attr.key}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-[9px] text-muted/60 tracking-wider">key: {attr.key}</p>
+                    {template && (() => {
+                      const prov = attributeProvenance(attr, template);
+                      if (prov === "series-default") return <span className="text-[8px] uppercase tracking-widest px-1.5 py-0.5 bg-[#c5a059]/10 text-[#c5a059] font-bold">From series default</span>;
+                      if (prov === "overridden") return <span className="text-[8px] uppercase tracking-widest px-1.5 py-0.5 bg-amber-500/10 text-amber-400 font-bold">Overridden</span>;
+                      return <span className="text-[8px] uppercase tracking-widest px-1.5 py-0.5 bg-white/5 text-muted font-bold">Product-specific</span>;
+                    })()}
+                  </div>
                 </div>
 
                 <div>
@@ -351,7 +367,7 @@ export function AdminAttributesTab({ series, subSeries, updateSubSeries }: Props
                               specKey="customizationSwatch"
                               value={opt.imageUrl || ""}
                               onChange={(url) => updateOption(idx, optIdx, { imageUrl: url })}
-                              storagePath={`products/${series.slug}/${subSeries.slug}/swatches`}
+                              storagePath={storagePath}
                             />
                             <Checkbox checked={opt.available !== false} onChange={(v: boolean) => updateOption(idx, optIdx, { available: v })} label="Available" />
                             <button onClick={() => removeOption(idx, optIdx)} className="text-red-500 hover:text-white hover:bg-red-500 w-8 h-8 flex items-center justify-center rounded ml-auto transition-colors"><Trash2 size={14} /></button>

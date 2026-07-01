@@ -18,7 +18,7 @@ import {
   ProductSeries,
   ProductSubSeries,
 } from "../../../features/products/types";
-import { getAttributes } from "../../../features/products/attributes";
+import { getAttributes, applySeriesDefaults } from "../../../features/products/attributes";
 import { FEATURES } from "../../../config/features";
 
 import { AdminDetailsTab } from "./AdminDetailsTab";
@@ -423,9 +423,22 @@ export function AdminProductEditorPage() {
           )}
           {activeTab === "attributes" && (
             <AdminAttributesTab
-              series={series}
-              subSeries={activeSubSeries}
-              updateSubSeries={updateSubSeries}
+              attributes={getAttributes(activeSubSeries)}
+              onChange={(attrs) => updateSubSeries({ ...activeSubSeries, attributes: attrs })}
+              storagePath={`products/${series.slug}/${activeSubSeries.slug}/swatches`}
+              template={series.attributes}
+              onApplyDefaults={() => {
+                const { attributes, added } = applySeriesDefaults(
+                  getAttributes(activeSubSeries),
+                  series.attributes,
+                );
+                if (!added.length) {
+                  toast("Already up to date with series defaults.");
+                  return;
+                }
+                updateSubSeries({ ...activeSubSeries, attributes });
+                toast.success(`Added ${added.length} attribute(s) from series defaults (inactive — enable per option).`);
+              }}
             />
           )}
           {activeTab === "media" && (

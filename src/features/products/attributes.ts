@@ -210,3 +210,71 @@ export function getFixedAttributes(
     .filter((a) => a.mode === "fixed" && a.active !== false)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
+
+// --- Series-level templates (Phase 2) ------------------------------------
+
+export interface ApplyDefaultsResult {
+  attributes: ProductAttribute[];
+  added: string[]; // keys of attributes that were filled in
+}
+
+/**
+ * Gap-fill `current` with any template attribute it doesn't already have
+ * (matched by key). Existing attributes are never overwritten or removed.
+ * By default added attributes are forced INACTIVE so they never change the
+ * storefront until an admin reviews and enables them per product; pass
+ * `activateAdded: true` (e.g. when seeding a brand-new sub-series) to keep the
+ * template's own active state.
+ */
+export function applySeriesDefaults(
+  current: ProductAttribute[],
+  template: ProductAttribute[] | undefined,
+  opts?: { activateAdded?: boolean },
+): ApplyDefaultsResult {
+  const result = [...(current ?? [])];
+  const existing = new Set(result.map((a) => a.key));
+  const added: string[] = [];
+  let sortOrder = result.length;
+  for (const t of template ?? []) {
+    if (!t.key || existing.has(t.key)) continue;
+    const copy: ProductAttribute = JSON.parse(JSON.stringify(t));
+    copy.sortOrder = sortOrder++;
+    copy.active = opts?.activateAdded ? t.active !== false : false;
+    existing.add(t.key);
+    added.push(t.key);
+    result.push(copy);
+  }
+  return { attributes: result, added };
+}
+
+export type AttributeProvenance = "series-default" | "overridden" | "product";
+
+/** Where a sub-series attribute came from, relative to its series template. */
+export function attributeProvenance(
+  attr: ProductAttribute,
+  template: ProductAttribute[] | undefined,
+): AttributeProvenance {
+  const t = (template ?? []).find((x) => x.key === attr.key);
+  if (!t) return "product";
+  // Compare substantive config only — ignore sortOrder and active (admins are
+  // expected to toggle live state per product without it counting as a fork).
+  const norm = (a: ProductAttribute) =>
+    JSON.stringify({
+      label: a.label,
+      mode: a.mode,
+      type: a.type ?? null,
+      required: !!a.required,
+      fixedValue: a.fixedValue ?? null,
+      maxLength: a.maxLength ?? null,
+      validationRegex: a.validationRegex ?? null,
+      options: (a.options ?? []).map((o) => ({
+        id: o.id,
+        label: o.label,
+        priceDelta: o.priceDelta ?? 0,
+        colorHex: o.colorHex ?? null,
+        imageUrl: o.imageUrl ?? null,
+        available: o.available !== false,
+      })),
+    });
+  return norm(attr) === norm(t) ? "series-default" : "overridden";
+}
