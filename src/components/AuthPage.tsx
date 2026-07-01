@@ -52,6 +52,9 @@ export function AuthPage() {
   // MFA challenge step (after a correct password, if the account has TOTP).
   const [mfaStep, setMfaStep] = useState(false);
   const [mfaCode, setMfaCode] = useState('');
+  // True while a sign-in is resolving — blocks the auto-redirect from racing
+  // ahead of the MFA check (auth listener sets `user` before we know the AAL).
+  const [signingIn, setSigningIn] = useState(false);
 
   const { user, profile, signIn, signUp, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -62,8 +65,8 @@ export function AuthPage() {
   }, []);
 
   useEffect(() => {
-    // Hold the redirect while the MFA code step is pending.
-    if (mfaStep) return;
+    // Hold the redirect while an MFA step is pending or a sign-in is resolving.
+    if (mfaStep || signingIn) return;
     if (!authLoading && user && profile) {
       if (!profile.profileCompleted) {
         navigate('/profile/setup', { replace: true });
@@ -71,7 +74,7 @@ export function AuthPage() {
         navigate(location.state?.from || '/my-orders', { replace: true });
       }
     }
-  }, [user, profile, authLoading, navigate, location, mfaStep]);
+  }, [user, profile, authLoading, navigate, location, mfaStep, signingIn]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -103,12 +106,15 @@ export function AuthPage() {
 
     try {
       if (mode === 'signin') {
+        setSigningIn(true); // block auto-redirect until we know if MFA is needed
         const res = await signIn({ email: formData.email, password: formData.password });
         if (res?.mfaRequired) {
           setMfaStep(true);   // hold redirect; ask for the authenticator code
+          setSigningIn(false);
           setLoading(false);
           return;
         }
+        setSigningIn(false);  // no MFA → let the redirect effect run
       } else {
         await signUp({
           fullName: formData.fullName,
@@ -119,6 +125,7 @@ export function AuthPage() {
       }
       // redirect happens in useEffect
     } catch (err: any) {
+      setSigningIn(false);
       setErrorMsg(getErrorMessage(err));
       if (err?.code === 'auth/email-already-in-use') {
         setMode('signin');
