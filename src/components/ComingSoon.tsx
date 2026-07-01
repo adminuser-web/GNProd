@@ -32,11 +32,10 @@ export function ComingSoon() {
       <div className="csm-dust">{Array.from({ length: 5 }).map((_, i) => <i key={i} />)}</div>
 
       <div className="csm-content">
-        {logo ? (
-          <img className="csm-logo" src={logo} alt={brand?.brandName || 'Grainood'} />
-        ) : (
-          <div className="csm-wordmark">{brand?.brandName || 'GRAINOOD'}</div>
-        )}
+        <div className="csm-brand">
+          {logo && <img className="csm-logo" src={logo} alt="" />}
+          <span className="csm-name">{brand?.brandName || 'GRAINOOD'}</span>
+        </div>
         <p className="csm-eyebrow">English Willow · Handcrafted</p>
         <h1 className="csm-title">{headline}</h1>
         <p className="csm-sub">{subtext}</p>
@@ -58,7 +57,6 @@ export function ComingSoon() {
         <div className="csm-halo" />
         <div className="csm-batwrap">
           <img className="csm-bat" src={hero} alt="Grainood English Willow bat" />
-          <div className="csm-sweep" />
         </div>
       </div>
 
@@ -81,8 +79,11 @@ const CSS = `
 @keyframes csm-drift{0%{transform:translateY(0);opacity:0}12%{opacity:.7}92%{opacity:.15}100%{transform:translateY(-100vh);opacity:0}}
 
 .csm-content{position:relative;z-index:3;width:54%;padding:0 5% 0 8%;text-align:left}
-.csm-logo{height:52px;width:auto;margin-bottom:22px;filter:drop-shadow(0 0 12px rgba(197,160,89,.5));animation:csm-pulse 3s ease-in-out infinite}
-.csm-wordmark{font-size:26px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:${GOLD};margin-bottom:22px}
+.csm-brand{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.csm-logo{height:52px;width:auto;filter:drop-shadow(0 0 12px rgba(197,160,89,.5));animation:csm-pulse 3s ease-in-out infinite}
+.csm-name{font-size:clamp(22px,2.4vw,30px);font-weight:800;letter-spacing:.2em;text-transform:uppercase;line-height:1;
+  color:${GOLD};background:linear-gradient(180deg,#e6c780,${GOLD} 55%,#9c7c3e);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  filter:drop-shadow(0 0 14px rgba(197,160,89,.35))}
 @keyframes csm-pulse{0%,100%{filter:drop-shadow(0 0 8px rgba(197,160,89,.35))}50%{filter:drop-shadow(0 0 18px rgba(197,160,89,.8))}}
 .csm-eyebrow{margin:0 0 14px;font-size:11px;letter-spacing:.38em;text-transform:uppercase;color:${GOLD}}
 .csm-title{margin:0 0 16px;font-size:clamp(34px,6vw,64px);font-weight:800;letter-spacing:-.01em;text-transform:uppercase;line-height:1;
@@ -101,28 +102,31 @@ const CSS = `
 @keyframes csm-halo{0%,100%{opacity:.7;transform:scale(.96)}50%{opacity:1;transform:scale(1.05)}}
 .csm-batwrap{position:relative;height:82vh;display:flex;align-items:center;animation:csm-float 6s ease-in-out infinite}
 @keyframes csm-float{0%,100%{transform:translateY(-6px)}50%{transform:translateY(7px)}}
-.csm-bat{height:100%;width:auto;object-fit:contain;
-  filter:drop-shadow(0 0 16px rgba(197,160,89,.55)) drop-shadow(0 0 44px rgba(197,160,89,.32)) drop-shadow(0 18px 26px rgba(0,0,0,.6));
+/* screen blend drops the photo's dark/near-black background so no rectangle
+   shows on the splash — the bat blends into the glow. (Use a black/transparent
+   hero image for the cleanest result.) */
+.csm-bat{height:100%;width:auto;object-fit:contain;mix-blend-mode:screen;
+  filter:drop-shadow(0 0 20px rgba(197,160,89,.5)) drop-shadow(0 0 48px rgba(197,160,89,.3));
   animation:csm-batglow 4.5s ease-in-out infinite}
-@keyframes csm-batglow{0%,100%{filter:drop-shadow(0 0 12px rgba(197,160,89,.4)) drop-shadow(0 0 32px rgba(197,160,89,.22)) drop-shadow(0 18px 26px rgba(0,0,0,.6))}
-  50%{filter:drop-shadow(0 0 24px rgba(197,160,89,.8)) drop-shadow(0 0 60px rgba(197,160,89,.42)) drop-shadow(0 18px 26px rgba(0,0,0,.6))}}
-.csm-sweep{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:0;
-  background:linear-gradient(115deg,transparent 40%,rgba(255,243,210,.5) 50%,transparent 60%);background-size:260% 100%;animation:csm-sweep 6s ease-in-out 1s infinite}
-@keyframes csm-sweep{0%{background-position:150% 0;opacity:0}18%{opacity:.85}42%{background-position:-60% 0;opacity:0}100%{opacity:0}}
+@keyframes csm-batglow{0%,100%{filter:drop-shadow(0 0 14px rgba(197,160,89,.38)) drop-shadow(0 0 34px rgba(197,160,89,.2))}
+  50%{filter:drop-shadow(0 0 26px rgba(197,160,89,.75)) drop-shadow(0 0 64px rgba(197,160,89,.4))}}
 
 .csm-team{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.35);z-index:3;text-decoration:none;transition:color .25s}
 .csm-team:hover{color:${GOLD}}
 
 @media (max-width:768px){
-  .csm-root{flex-direction:column;justify-content:center;text-align:center}
-  .csm-content{width:100%;padding:0 24px;text-align:center;order:2}
+  .csm-root{flex-direction:column;justify-content:flex-start;text-align:center;padding-top:7vh}
+  .csm-stage{order:1;height:40vh;flex:none;width:100%}
+  .csm-batwrap{height:38vh}
+  .csm-halo{width:66vw;height:38vh}
+  .csm-content{width:100%;padding:4vh 24px 0;text-align:center;order:2}
+  .csm-brand{justify-content:center;gap:12px;margin-bottom:18px}
+  .csm-logo{height:44px}
   .csm-content .csm-btns{justify-content:center}
-  .csm-stage{order:1;height:38vh;flex:none;width:100%;margin-top:8vh}
-  .csm-batwrap{height:34vh}
-  .csm-halo{width:60vw;height:34vh}
+  .csm-sub{margin-left:auto;margin-right:auto}
 }
 @media (prefers-reduced-motion: reduce){
-  .csm-dust i,.csm-sweep,.csm-batwrap,.csm-halo,.csm-logo{animation:none}
+  .csm-dust i,.csm-batwrap,.csm-halo,.csm-logo{animation:none}
   .csm-title{animation:none;background-position:0 0}
 }
 `;
