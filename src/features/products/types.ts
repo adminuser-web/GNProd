@@ -43,6 +43,10 @@ export interface ProductSubSeries {
 
   status: "draft" | "published" | "out_of_stock";
 
+  /** Storefront visibility + list ordering (present on real data). */
+  active?: boolean;
+  sortOrder?: number;
+
   gradeLabel?: string;
 
   /** Unified attribute model — replaces `specs` (fixed) + `customizationGroups` (customizable). */
