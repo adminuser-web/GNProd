@@ -125,6 +125,8 @@ export interface MaintenanceContent {
   enabled: boolean;
   headline: string;
   subtext: string;
+  /** Hero image (a bat product shot on a dark background) glowing beside the copy. */
+  heroImage?: string;
   /** Shareable bypass token: /?preview=<secret> unlocks the full site in that browser. */
   bypassSecret: string;
 }
@@ -257,6 +259,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentMap = {
     enabled: false,
     headline: "Launching Soon",
     subtext: "Something special is being crafted. Our handcrafted English Willow collection arrives shortly.",
+    heroImage: "https://ycebmqpayiiejcfukjra.supabase.co/storage/v1/object/public/media/products/debutant/1782887114344-DebutantCover.png",
     bypassSecret: "grainood-preview"
   }
 };
