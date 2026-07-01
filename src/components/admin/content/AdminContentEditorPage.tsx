@@ -535,7 +535,7 @@ export function AdminContentEditorPage() {
     );
   };
 
-  const areas: (keyof SiteContentMap)[] = ['brand', 'home', 'philosophy', 'contact', 'footer', 'legal', 'seo', 'reviews'];
+  const areas: (keyof SiteContentMap)[] = ['brand', 'home', 'philosophy', 'contact', 'footer', 'legal', 'seo', 'reviews', 'maintenance'];
 
   return (
     <div className="max-w-6xl mx-auto">
