@@ -287,6 +287,11 @@ function MaintenanceForm({ data, onChange }: { data: any; onChange: (path: strin
         </label>
         <Field label="Headline" value={d.headline} onChange={(v: string) => onChange(['headline'], v)} />
         <Field label="Subtext" textarea value={d.subtext} onChange={(v: string) => onChange(['subtext'], v)} />
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Hero image</label>
+          <p className="text-[10px] text-muted mb-2">Shown glowing beside the headline. Use a bat product shot on a <strong>black or transparent</strong> background so it blends into the splash.</p>
+          <ImageUpload specKey="heroImage" supportThemes={false} value={d.heroImage} onChange={(v) => onChange(['heroImage'], v)} storagePath="content/maintenance" />
+        </div>
       </Card>
 
       <Card title="Preview Access" desc="Share this link so you or your team can browse the full site while it's hidden. Rotating the secret revokes previously-shared links.">
