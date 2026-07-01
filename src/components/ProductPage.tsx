@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Minus, Plus, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import { Minus, Plus, Check, ChevronUp, ChevronDown, ArrowLeftRight, Star } from 'lucide-react';
 import { BRAND } from '../types';
 import { RevealSection } from './Reveal';
 import { useOrder } from '../context/OrderContext';
@@ -18,6 +18,8 @@ import { buildService } from '../features/builds/services/buildService';
 import { getAttributes, getCustomizableAttributes, getFixedAttributes } from '../features/products/attributes';
 import { EnquiryDrawer } from './EnquiryDrawer';
 import { HowItWorks } from './HowItWorks';
+import { CompareDrawer } from './CompareDrawer';
+import { useContent } from '../context/ContentContext';
 
 export function ProductPage() {
   const { seriesSlug, subSeriesSlug, slug } = useParams<{ seriesSlug?: string, subSeriesSlug?: string, slug?: string }>();
@@ -57,6 +59,8 @@ export function ProductPage() {
       attributes: [...customizable, ...fixed],
       customizationGroups: activeSub.customizationGroups || baseProduct.customizationGroups,
       specs: activeSub.specs || baseProduct.specs,
+      shortDescription: activeSub.shortDescription || baseProduct.shortDescription,
+      longDescription: activeSub.longDescription || baseProduct.longDescription,
       imageUrl: activeSub.media?.primaryImage || baseProduct.imageUrl,
       galleryImages: activeSub.media?.galleryImages || baseProduct.galleryImages,
       subSeriesName: activeSub.name,
@@ -98,6 +102,22 @@ export function ProductPage() {
   const [isSavingBuild, setIsSavingBuild] = useState(false);
   const [isEnquiryDrawerOpen, setIsEnquiryDrawerOpen] = useState(false);
   const [enquiryDrawerType, setEnquiryDrawerType] = useState<any>('product_enquiry');
+  const [compareOpen, setCompareOpen] = useState(false);
+  const specSheetRef = React.useRef<HTMLDivElement>(null);
+
+  const reviewsContent = useContent('reviews');
+  const productReviews = (reviewsContent?.reviews || []).filter(
+    (r: any) => !r.productId || r.productId === product?.id || r.productId === baseProduct?.id
+  );
+  const reviewAvg = productReviews.length
+    ? productReviews.reduce((s: number, r: any) => s + (Number(r.rating) || 0), 0) / productReviews.length
+    : 0;
+
+  const scrollToSpecSheet = () => {
+    setCompareOpen(false);
+    setIsMobileSpecsOpen(true); // ensure the spec sheet is expanded on mobile
+    setTimeout(() => specSheetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  };
 
   useEffect(() => {
     if (product) {
@@ -424,43 +444,17 @@ export function ProductPage() {
         <div className="lg:w-[45%] p-6 md:p-12 lg:p-16 order-2 bg-transparent min-h-[calc(100vh-80px)] pb-32 lg:pb-16 flex flex-col justify-start relative z-raised">
           <div className="max-w-xl">
             <RevealSection delay={0}>
-              {baseProduct?.slug !== 'immortal' && baseProduct?.subSeries && baseProduct.subSeries.length > 0 && (
-                <div className="mb-6">
-                  <div className="text-[10px] text-muted tracking-[0.2em] uppercase mb-4">
+              {baseProduct?.subSeries && baseProduct.subSeries.length > 1 && (
+                <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="text-[10px] text-muted tracking-[0.2em] uppercase">
                     Product Line: <span className="text-[#c5a059] font-bold">{baseProduct?.name}</span>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    {baseProduct.subSeries.map((sub: any) => {
-                      const isActive = sub.slug === activeSubSeriesId || sub.id === activeSubSeriesId;
-                      return (
-                        <Link 
-                          key={sub.id} 
-                          to={`/collection/${baseProduct.slug}/${sub.slug}${window.location.search}`}
-                          className={clsx(
-                            "p-3 lg:p-4 border text-left transition-all duration-300 relative flex flex-col justify-center min-h-[60px]",
-                            isActive 
-                              ? "border-[#c5a059] bg-[#c5a059]/10" 
-                              : "border-[#c5a059]/20 bg-surface/30 hover:border-[#c5a059]/60",
-                            sub.active === false && "opacity-50 cursor-not-allowed"
-                          )}
-                          onClick={(e) => {
-                            if (sub.active === false) e.preventDefault();
-                          }}
-                        >
-                          <div className="flex justify-between items-center w-full">
-                            <div>
-                               <h4 className={clsx("text-xs md:text-sm tracking-widest font-bold uppercase", isActive ? "text-premium-gold-text" : "text-content")}>{sub.name}</h4>
-                               <p className="text-[10px] text-muted mt-1 uppercase tracking-widest">{sub.gradeLabel || sub.grade}</p>
-                            </div>
-                            <div className="text-right">
-                               <p className={clsx("text-sm transition-colors", isActive ? "text-premium-gold-text" : "text-content")}>₹{(sub.basePrice || baseProduct.basePrice).toLocaleString('en-IN')}</p>
-                               {sub.active === false && <p className="text-[10px] text-red-500 uppercase tracking-widest">Unavailable</p>}
-                            </div>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
+                  <button
+                    onClick={() => setCompareOpen(true)}
+                    className="inline-flex items-center gap-2 border border-[#c5a059]/40 text-[#c5a059] px-4 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-[#c5a059]/10 transition-colors"
+                  >
+                    <ArrowLeftRight size={13} /> Compare {baseProduct.subSeries.length} models
+                  </button>
                 </div>
               )}
               
@@ -482,7 +476,13 @@ export function ProductPage() {
                 <span className="text-premium-gold-text text-[10px] tracking-[0.4em] font-bold uppercase">{product.tier || (baseProduct?.slug === 'immortal' ? 'Premium Choice' : '')}</span>
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-content mb-4 text-balance hyphens-none w-full capitalize">{product.name}</h1>
-              <p className="text-muted text-sm tracking-widest uppercase mb-8">{product.tagline}</p>
+              <p className="text-muted text-sm tracking-widest uppercase mb-6">{product.tagline}</p>
+
+              {((product as any).shortDescription || (product as any).longDescription) && (
+                <p className="text-content/70 text-[15px] leading-relaxed mb-8 max-w-prose font-light">
+                  {(product as any).shortDescription || (product as any).longDescription}
+                </p>
+              )}
               
               {product.limitedEdition && product.maxAnnualUnits && (
                 <div className="mb-8 p-3 border border-red-500/30 bg-red-500/5 inline-flex items-center gap-2">
@@ -936,7 +936,7 @@ export function ProductPage() {
               </div>
             </div>
             
-            <div className={clsx("transition-all duration-300 lg:block overflow-hidden", isMobileSpecsOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0 lg:max-h-none lg:opacity-100")}>
+            <div ref={specSheetRef} id="spec-sheet" className={clsx("transition-all duration-300 lg:block overflow-hidden", isMobileSpecsOpen ? "max-h-[3000px] opacity-100" : "max-h-0 opacity-0 lg:max-h-none lg:opacity-100")}>
               <RevealSection className="border-b border-[#c5a059]/20 py-6 mb-4">
                 <div className="flex flex-col gap-2">
                   <span className="text-premium-gold-text text-[10px] tracking-[0.3em] uppercase">Included Accessories</span>
@@ -962,30 +962,15 @@ export function ProductPage() {
                   </RevealSection>
                 ))}
               </div>
-              
-              {baseProduct?.subSeries && baseProduct.subSeries.length > 0 && (
-                <div className="mt-16 pt-8 border-t border-[#c5a059]/20">
-                  <h3 className="text-lg font-bold tracking-widest text-[#c5a059] uppercase mb-6">{baseProduct.name} Comparison</h3>
-                  <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-[#c5a059] scrollbar-track-transparent">
-                    <table className="w-full text-left min-w-[600px] border-collapse">
-                      <thead>
-                        <tr className="border-b border-[#c5a059]/30">
-                          <th className="py-3 px-4 text-[#c5a059] text-[10px] font-bold tracking-[0.2em] uppercase">Model</th>
-                          <th className="py-3 px-4 text-[#c5a059] text-[10px] font-bold tracking-[0.2em] uppercase text-center">Grade</th>
-                          <th className="py-3 px-4 text-[#c5a059] text-[10px] font-bold tracking-[0.2em] uppercase text-right">Price</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-[11px] tracking-wider text-content/80">
-                        {baseProduct.subSeries.map((s: any) => (
-                          <tr key={s.id} className={clsx("border-b border-[#c5a059]/10 hover:bg-surface/50", activeSubSeriesId === s.id && "bg-[#c5a059]/5")}>
-                            <td className="py-3 px-4 uppercase font-bold text-content">{s.name}</td>
-                            <td className="py-3 px-4 text-center uppercase">{s.gradeLabel || s.grade}</td>
-                            <td className="py-3 px-4 text-right">₹{(s.basePrice || baseProduct.basePrice).toLocaleString('en-IN')}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+
+              {baseProduct?.subSeries && baseProduct.subSeries.length > 1 && (
+                <div className="mt-10 pt-8 border-t border-[#c5a059]/20">
+                  <button
+                    onClick={() => setCompareOpen(true)}
+                    className="inline-flex items-center gap-2 border border-[#c5a059]/40 text-[#c5a059] px-5 py-3 text-[10px] uppercase tracking-widest font-bold hover:bg-[#c5a059]/10 transition-colors"
+                  >
+                    <ArrowLeftRight size={13} /> Compare all {baseProduct.subSeries.length} models in {baseProduct.name}
+                  </button>
                 </div>
               )}
             </div>
@@ -1011,50 +996,71 @@ export function ProductPage() {
           </section>
         )}
         
-        {/* REVIEWS & TRUST BADGES */}
+        {/* REVIEWS & CRAFT / CARE */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-16 pb-20">
           <div className="lg:col-span-2 space-y-12">
             <RevealSection>
                <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-content mb-8">Player Reviews</h2>
-               <div className="flex items-center gap-4 mb-10">
-                 <div className="flex gap-1 text-[#c5a059]">
-                   {[1,2,3,4,5].map(star => <svg key={star} className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>)}
-                 </div>
-                 <div className="text-content font-bold tracking-widest text-lg">4.9<span className="text-muted text-sm ml-2">/ 5.0 (24 Reviews)</span></div>
-               </div>
-               
-               <div className="space-y-8">
-                 {[
-                   { name: "Rahul D.", text: "The balance on this bat is phenomenal. Customization was exactly to my specs and the pickup feels much lighter than the actual weight.", title: "Incredible Balance" },
-                   { name: "James M.", text: "Beautiful piece of willow. The grains are perfectly straight and the ping is out of this world straight out of the box.", title: "Outstanding Ping" }
-                 ].map((review, i) => (
-                   <div key={i} className="border-l border-[#c5a059]/30 pl-6">
-                     <div className="flex items-center gap-3 mb-2">
-                       <span className="text-content font-bold text-sm tracking-wider">{review.name}</span>
-                       <span className="text-[9px] bg-green-500/10 text-green-400 px-2 py-0.5 uppercase tracking-widest border border-green-500/20">Verified</span>
+
+               {productReviews.length > 0 ? (
+                 <>
+                   <div className="flex items-center gap-4 mb-10">
+                     <div className="flex gap-1 text-[#c5a059]">
+                       {[1,2,3,4,5].map(star => (
+                         <Star key={star} size={22} className={star <= Math.round(reviewAvg) ? "fill-[#c5a059] text-[#c5a059]" : "text-[#c5a059]/25"} />
+                       ))}
                      </div>
-                     <span className="text-premium-gold-text text-sm font-medium tracking-wide block mb-2">{review.title}</span>
-                     <p className="text-content/70 text-sm leading-relaxed font-light">{review.text}</p>
+                     <div className="text-content font-bold tracking-widest text-lg">
+                       {reviewAvg.toFixed(1)}<span className="text-muted text-sm ml-2">/ 5.0 ({productReviews.length} Review{productReviews.length > 1 ? 's' : ''})</span>
+                     </div>
                    </div>
-                 ))}
-               </div>
+
+                   <div className="space-y-8">
+                     {productReviews.map((review: any, i: number) => (
+                       <div key={i} className="border-l border-[#c5a059]/30 pl-6">
+                         <div className="flex items-center gap-3 mb-2">
+                           <span className="text-content font-bold text-sm tracking-wider">{review.name}</span>
+                           {review.verified && (
+                             <span className="text-[9px] bg-green-500/10 text-green-400 px-2 py-0.5 uppercase tracking-widest border border-green-500/20">Verified</span>
+                           )}
+                         </div>
+                         {typeof review.rating === 'number' && review.rating > 0 && (
+                           <div className="flex gap-0.5 mb-2">
+                             {[1,2,3,4,5].map(s => <Star key={s} size={12} className={s <= Math.round(review.rating) ? "fill-[#c5a059] text-[#c5a059]" : "text-[#c5a059]/20"} />)}
+                           </div>
+                         )}
+                         <p className="text-content/70 text-sm leading-relaxed font-light">{review.text}</p>
+                       </div>
+                     ))}
+                   </div>
+                 </>
+               ) : (
+                 <div className="border border-dashed border-[#c5a059]/25 bg-surface/20 p-10 text-center">
+                   <p className="text-content/80 text-sm tracking-wide mb-2">No reviews yet for this bat.</p>
+                   <p className="text-muted text-xs leading-relaxed max-w-sm mx-auto">Be among the first to own it — every Grainood bat is made to order and hand-finished. Share your experience after delivery.</p>
+                 </div>
+               )}
             </RevealSection>
           </div>
           <div className="lg:col-span-1">
              <RevealSection delay={200} className="border border-[#c5a059]/20 bg-surface/30 p-8 space-y-8 h-full">
                 <div>
-                   <h3 className="text-premium-gold-text text-[10px] font-bold tracking-widest uppercase mb-2">Authentic Willow</h3>
-                   <p className="text-content/70 text-xs leading-loose">Master-crafted from premium English Willow, hand-selected for performance.</p>
+                   <h3 className="text-premium-gold-text text-[10px] font-bold tracking-widest uppercase mb-2">Willow Grade</h3>
+                   <p className="text-content text-sm font-medium mb-1">{(product as any).specs?.willowGrade || (product as any).subSeriesGradeLabel || product.gradeLabel || baseProduct?.gradeLabel || 'Premium English Willow'}</p>
+                   <p className="text-content/60 text-xs leading-loose">100% English Willow, hand-selected for grain structure and ping. Higher grades carry straighter, more numerous grains for a cleaner strike.</p>
                 </div>
                 <div className="h-px bg-line w-full"></div>
                 <div>
-                   <h3 className="text-premium-gold-text text-[10px] font-bold tracking-widest uppercase mb-2">Secure Checkout</h3>
-                   <p className="text-content/70 text-xs leading-loose">State-of-the-art encryption ensures your payment details and data are protected.</p>
+                   <h3 className="text-premium-gold-text text-[10px] font-bold tracking-widest uppercase mb-2">Care & Maintenance</h3>
+                   <p className="text-content/60 text-xs leading-loose">Knock in before match use (unless pre-knocked), oil the face lightly a few times a season, fit an anti-scuff sheet, and store in a cool, dry place away from direct heat.</p>
                 </div>
                 <div className="h-px bg-line w-full"></div>
                 <div>
-                   <h3 className="text-premium-gold-text text-[10px] font-bold tracking-widest uppercase mb-2">Dedicated Support</h3>
-                   <p className="text-content/70 text-xs leading-loose">Our bat consultants are available pre and post purchase for any guidance.</p>
+                   <h3 className="text-premium-gold-text text-[10px] font-bold tracking-widest uppercase mb-2">Delivery & Support</h3>
+                   <p className="text-content/60 text-xs leading-loose">
+                     {product.estimatedDeliveryDays ? `Made to order, typically dispatched in ~${product.estimatedDeliveryDays} days. ` : 'Every bat is made to order. '}
+                     Questions before or after purchase? WhatsApp <a href={`https://wa.me/${BRAND.whatsappNumber}`} target="_blank" rel="noreferrer" className="text-premium-gold-text hover:underline">{BRAND.whatsappDisplay}</a> or email <a href={`mailto:${BRAND.email}`} className="text-premium-gold-text hover:underline">{BRAND.email}</a>.
+                   </p>
                 </div>
              </RevealSection>
           </div>
@@ -1217,6 +1223,14 @@ export function ProductPage() {
           subSeriesSlug: activeSubSeriesId || undefined,
           subSeriesName: (product as any).subSeriesName || undefined
         }}
+      />
+
+      <CompareDrawer
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        series={baseProduct}
+        activeSubId={activeSubSeriesId}
+        onViewSpecSheet={scrollToSpecSheet}
       />
     </div>
   );
