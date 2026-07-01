@@ -28,6 +28,7 @@ const OrderDetailPage = lazy(() => import('./components/OrderDetailPage').then(m
 const ReceiptPage = lazy(() => import('./components/ReceiptPage').then(m => ({ default: m.ReceiptPage })));
 const MyRequestsPage = lazy(() => import('./components/MyRequestsPage').then(m => ({ default: m.MyRequestsPage })));
 const ProfileSetupPage = lazy(() => import('./components/ProfileSetupPage').then(m => ({ default: m.ProfileSetupPage })));
+const SecurityPage = lazy(() => import('./components/SecurityPage').then(m => ({ default: m.SecurityPage })));
 const BatConsultantPage = lazy(() => import('./components/BatConsultantPage').then(m => ({ default: m.BatConsultantPage })));
 const ComparisonPage = lazy(() => import('./components/ComparisonPage').then(m => ({ default: m.ComparisonPage })));
 const LocateUsPage = lazy(() => import('./components/LocateUsPage').then(m => ({ default: m.LocateUsPage })));
@@ -125,6 +126,7 @@ export default function App() {
                       <Route path="/my-orders/:id/receipt" element={<ReceiptPage />} />
                       <Route path="/my-requests" element={<MyRequestsPage />} />
                       <Route path="/profile" element={<ProfileSetupPage isSetup={false} />} />
+                      <Route path="/security" element={<SecurityPage />} />
                       <Route path="/profile/setup" element={<ProfileSetupPage isSetup={true} />} />
                       <Route path="/bat-consultant" element={<BatConsultantPage />} />
                       <Route path="/comparison" element={<ComparisonPage />} />

@@ -248,6 +248,9 @@ export function Navbar() {
                       <button onClick={() => { setAccountDropdownOpen(false); navigate('/profile'); }} className={getDropdownItemClass}>
                         Profile
                       </button>
+                      <button onClick={() => { setAccountDropdownOpen(false); navigate('/security'); }} className={getDropdownItemClass}>
+                        Security (2FA)
+                      </button>
                       {isAdmin && (
                         <button onClick={() => { setAccountDropdownOpen(false); navigate('/admin'); }} className={getDropdownItemClass}>
                           Admin Dashboard

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { isMfaRequired } from '../features/auth/mfa';
 
 // Normalized user shape. Keeps existing `user.uid` consumers working after the
 // Firebase -> Supabase swap (Supabase exposes `id`, not `uid`).
@@ -39,7 +40,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   signUp: (data: any) => Promise<void>;
-  signIn: (data: any) => Promise<void>;
+  signIn: (data: any) => Promise<{ mfaRequired: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -142,6 +143,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async ({ email, password }: any) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    // If the account has a verified TOTP factor, the session is still aal1 and
+    // must be elevated with a code before it counts as fully signed in.
+    const mfaRequired = await isMfaRequired();
+    return { mfaRequired };
   };
 
   const signOut = async () => {
