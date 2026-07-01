@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Edit2, Trash2, Plus, ArrowLeft, Upload, X } from 'lucide-react';
+import { ChevronRight, Edit2, Trash2, Plus, ArrowLeft, Upload, X, Copy } from 'lucide-react';
 import { RevealSection } from '../../Reveal';
 import { GoldButton } from '../../GoldButton';
 import { useProducts } from '../../../context/ProductsContext';
@@ -15,6 +15,7 @@ import { ImageUpload } from '../ImageUpload';
 import { UploadSpecKey } from '../../../config/uploadSpecs';
 import { AdminAttributesTab } from './AdminAttributesTab';
 import { getAttributes, applySeriesDefaults, deriveAttributes } from '../../../features/products/attributes';
+import { buildDuplicateSubSeries } from '../../../features/products/duplicate';
 
 export function AdminSeriesDetailPage() {
   const { seriesSlug } = useParams<{ seriesSlug: string }>();
@@ -198,6 +199,26 @@ export function AdminSeriesDetailPage() {
       toast.success("Status updated.");
     } catch (e: any) {
       toast.error(`Error changing status: ${e.message}`);
+    }
+  };
+
+  const handleDuplicateSubSeries = async (sub: ProductSubSeries) => {
+    if (!confirm(`Duplicate "${sub.name}"? The copy reuses the same images and starts as a draft you can edit.`)) return;
+    const dup = buildDuplicateSubSeries(sub, {
+      seriesSlug: formData.slug,
+      existingSlugs: subSeriesList.map(s => s.slug),
+      existingSkus: subSeriesList.map(s => s.sku).filter(Boolean),
+    });
+    setSaving(true);
+    try {
+      await productService.updateProduct(formData.slug, { subSeries: [...subSeriesList, dup] });
+      await refresh();
+      toast.success(`Duplicated as "${dup.name}" (draft).`);
+      navigate(`/admin/products/${formData.slug}/${dup.slug}`);
+    } catch (e: any) {
+      toast.error(`Error duplicating: ${e.message}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -391,13 +412,21 @@ export function AdminSeriesDetailPage() {
                             >
                                {sub.active ? 'Live' : 'Draft'}
                             </button>
-                            <Link 
+                            <Link
                                to={`/admin/products/${formData.slug}/${sub.slug || sub.id}`}
                                className="w-8 h-8 rounded shrink-0 flex items-center justify-center bg-[#c5a059]/10 text-[#c5a059] hover:bg-[#c5a059] hover:text-bg transition-colors"
                             >
                                <Edit2 size={14} />
                             </Link>
-                            <button 
+                            <button
+                               onClick={() => handleDuplicateSubSeries(sub)}
+                               disabled={saving}
+                               title="Duplicate (reuses images, starts as draft)"
+                               className="w-8 h-8 rounded shrink-0 flex items-center justify-center bg-[#c5a059]/10 text-[#c5a059] hover:bg-[#c5a059] hover:text-bg transition-colors disabled:opacity-40"
+                            >
+                               <Copy size={14} />
+                            </button>
+                            <button
                                onClick={() => handleDeleteSubSeries(sub.id, sub.name)}
                                className="w-8 h-8 rounded shrink-0 flex items-center justify-center bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                             >

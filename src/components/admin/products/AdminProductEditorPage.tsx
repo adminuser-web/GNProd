@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ChevronRight,
   ArrowLeft,
@@ -9,6 +9,7 @@ import {
   Sparkles,
   RefreshCw,
   Eye,
+  Copy,
 } from "lucide-react";
 import { RevealSection } from "../../Reveal";
 import { GoldButton } from "../../GoldButton";
@@ -19,6 +20,7 @@ import {
   ProductSubSeries,
 } from "../../../features/products/types";
 import { getAttributes, applySeriesDefaults } from "../../../features/products/attributes";
+import { buildDuplicateSubSeries } from "../../../features/products/duplicate";
 import { FEATURES } from "../../../config/features";
 
 import { AdminDetailsTab } from "./AdminDetailsTab";
@@ -169,6 +171,7 @@ export function AdminProductEditorPage() {
     productSlug: string;
   }>();
   const { products, refresh, loading } = useProducts();
+  const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -185,11 +188,14 @@ export function AdminProductEditorPage() {
     "details" | "attributes" | "media" | "pricing" | "seo"
   >("details");
 
+  // Load (or reload, when navigating to a different sub-series such as after a
+  // duplicate) the editable copy. Keyed on the resolved id so a save→refresh
+  // (same id, new object identity) never clobbers in-progress edits.
   useEffect(() => {
-    if (originalSubSeries && !activeSubSeries) {
+    if (originalSubSeries && originalSubSeries.id !== activeSubSeries?.id) {
       setActiveSubSeries(JSON.parse(JSON.stringify(originalSubSeries)));
     }
-  }, [originalSubSeries]);
+  }, [originalSubSeries?.id]);
 
   useEffect(() => {
     if (series && activeSubSeries) {
@@ -226,6 +232,31 @@ export function AdminProductEditorPage() {
 
   const updateSubSeries = (updated: ProductSubSeries) => {
     setActiveSubSeries(updated);
+  };
+
+  const handleDuplicate = async () => {
+    if (!series || !activeSubSeries) return;
+    if (hasUnsavedChanges) {
+      toast.error("Save your changes before duplicating.");
+      return;
+    }
+    if (!confirm(`Duplicate "${activeSubSeries.name}"? The copy reuses the same images and starts as a draft.`)) return;
+    const dup = buildDuplicateSubSeries(activeSubSeries, {
+      seriesSlug: series.slug,
+      existingSlugs: (series.subSeries || []).map((s) => s.slug),
+      existingSkus: (series.subSeries || []).map((s) => s.sku).filter(Boolean),
+    });
+    setSaving(true);
+    try {
+      await productService.updateProduct(series.slug, { subSeries: [...(series.subSeries || []), dup] });
+      await refresh();
+      toast.success(`Duplicated as "${dup.name}" (draft).`);
+      navigate(`/admin/products/${series.slug}/${dup.slug}`);
+    } catch (e: any) {
+      toast.error(`Error duplicating: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -357,6 +388,14 @@ export function AdminProductEditorPage() {
             >
                Preview Page
             </Link>
+            <button
+              onClick={handleDuplicate}
+              disabled={saving || hasUnsavedChanges}
+              title={hasUnsavedChanges ? "Save your changes first" : "Duplicate this product (reuses images, starts as draft)"}
+              className="text-[10px] tracking-widest uppercase font-bold text-[#c5a059] hover:text-white transition-colors border border-[#c5a059] px-4 py-3 bg-[#c5a059]/5 hover:bg-[#c5a059]/20 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Copy size={12} /> Duplicate
+            </button>
             <GoldButton
               onClick={handleSave}
               disabled={saving || !hasUnsavedChanges}
