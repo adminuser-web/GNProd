@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { GoldButton } from './GoldButton';
 import { clsx } from 'clsx';
 import { Skeleton } from './Skeleton';
+import { verifyLoginCode } from '../features/auth/mfa';
+import { supabase } from '../lib/supabase';
 
 function FloatingInput({ label, name, type = 'text', value, onChange, error }: any) {
   return (
@@ -47,7 +49,10 @@ export function AuthPage() {
   });
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  
+  // MFA challenge step (after a correct password, if the account has TOTP).
+  const [mfaStep, setMfaStep] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
+
   const { user, profile, signIn, signUp, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const from = location.state?.from || '/my-orders';
@@ -57,6 +62,8 @@ export function AuthPage() {
   }, []);
 
   useEffect(() => {
+    // Hold the redirect while the MFA code step is pending.
+    if (mfaStep) return;
     if (!authLoading && user && profile) {
       if (!profile.profileCompleted) {
         navigate('/profile/setup', { replace: true });
@@ -64,7 +71,7 @@ export function AuthPage() {
         navigate(location.state?.from || '/my-orders', { replace: true });
       }
     }
-  }, [user, profile, authLoading, navigate, location]);
+  }, [user, profile, authLoading, navigate, location, mfaStep]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -96,13 +103,18 @@ export function AuthPage() {
 
     try {
       if (mode === 'signin') {
-        await signIn({ email: formData.email, password: formData.password });
+        const res = await signIn({ email: formData.email, password: formData.password });
+        if (res?.mfaRequired) {
+          setMfaStep(true);   // hold redirect; ask for the authenticator code
+          setLoading(false);
+          return;
+        }
       } else {
-        await signUp({ 
-          fullName: formData.fullName, 
-          phone: formData.phone, 
-          email: formData.email, 
-          password: formData.password 
+        await signUp({
+          fullName: formData.fullName,
+          phone: formData.phone,
+          email: formData.email,
+          password: formData.password
         });
       }
       // redirect happens in useEffect
@@ -115,10 +127,59 @@ export function AuthPage() {
     }
   };
 
+  const handleVerifyMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setLoading(true);
+    try {
+      await verifyLoginCode(mfaCode);
+      setMfaStep(false); // session is now aal2 → redirect effect fires
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Invalid code. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const cancelMfa = async () => {
+    await supabase.auth.signOut();
+    setMfaStep(false);
+    setMfaCode('');
+    setLoading(false);
+  };
+
   if (authLoading) {
     return (
       <div className="pt-32 pb-24 px-6 min-h-[70vh] flex justify-center items-center">
         <Skeleton variant="rectangular" className="w-full max-w-md h-96" />
+      </div>
+    );
+  }
+
+  if (mfaStep) {
+    return (
+      <div className="pt-32 pb-24 px-6 min-h-screen bg-bg flex flex-col items-center justify-center">
+        <div className="w-full max-w-md bg-surface p-8 md:p-12 shadow-sm border border-[#c5a059]/10 relative z-raised">
+          <h2 className="text-center uppercase tracking-[0.2em] text-sm font-bold text-[#c5a059] mb-2">Two-Factor Authentication</h2>
+          <p className="text-center text-xs text-muted mb-8 leading-relaxed">Enter the 6-digit code from your authenticator app.</p>
+          <form onSubmit={handleVerifyMfa} className="space-y-6">
+            <input
+              inputMode="numeric"
+              autoFocus
+              maxLength={6}
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="000000"
+              className="w-full bg-bg border border-[#c5a059]/30 text-center text-2xl tracking-[0.5em] py-3 text-content focus:outline-none focus:border-[#c5a059]"
+            />
+            {errorMsg && <div className="text-red-500 text-xs text-center">{errorMsg}</div>}
+            <GoldButton type="submit" variant="solid" className="w-full" isLoading={loading} disabled={mfaCode.length < 6}>
+              Verify
+            </GoldButton>
+            <button type="button" onClick={cancelMfa} className="w-full text-[10px] uppercase tracking-widest text-muted hover:text-content transition-colors">
+              Cancel
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
