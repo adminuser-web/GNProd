@@ -54,6 +54,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { ProductsProvider } from './context/ProductsContext';
 import { ContentProvider } from './context/ContentContext';
 import { SiteMeta } from './components/SiteMeta';
+import { MaintenanceGate } from './components/MaintenanceGate';
 import { OrderDrawer } from './components/OrderDrawer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -97,6 +98,7 @@ export default function App() {
                   />
                   <ScrollToTop />
                 <BackgroundGraphics />
+                <MaintenanceGate>
                 <div className="relative z-raised flex flex-col min-h-screen bg-transparent">
                   <HideOnAdmin><Navbar /></HideOnAdmin>
                   <HideOnAdmin>
@@ -165,6 +167,7 @@ export default function App() {
                 </main>
                 <HideOnAdmin><Footer /></HideOnAdmin>
               </div>
+                </MaintenanceGate>
             </Router>
             </ProductsProvider>
           </AuthProvider>

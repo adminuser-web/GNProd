@@ -120,6 +120,15 @@ export interface ReviewsContent {
   reviews: Review[];
 }
 
+export interface MaintenanceContent {
+  /** When true, public visitors see the "Launching Soon" splash. */
+  enabled: boolean;
+  headline: string;
+  subtext: string;
+  /** Shareable bypass token: /?preview=<secret> unlocks the full site in that browser. */
+  bypassSecret: string;
+}
+
 export interface SiteContentMap {
   brand: BrandContent;
   home: HomeContent;
@@ -129,6 +138,7 @@ export interface SiteContentMap {
   legal: LegalContent;
   seo: SeoContent;
   reviews: ReviewsContent;
+  maintenance: MaintenanceContent;
 }
 
 export const DEFAULT_SITE_CONTENT: SiteContentMap = {
@@ -241,6 +251,13 @@ export const DEFAULT_SITE_CONTENT: SiteContentMap = {
       { name: "INTERNATIONAL PRO", rating: 5, text: "The pickup on the Immortal is unmatched. I've never felt this kind of balance.", verified: true },
       { name: "FIRST CLASS PLAYER", rating: 5, text: "Absolute destructive power. It pings like nothing I've ever used.", verified: true }
     ]
+  },
+  maintenance: {
+    // Ships OFF so it never blacks out the site until an admin turns it on.
+    enabled: false,
+    headline: "Launching Soon",
+    subtext: "Something special is being crafted. Our handcrafted English Willow collection arrives shortly.",
+    bypassSecret: "grainood-preview"
   }
 };
 
