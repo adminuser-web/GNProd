@@ -1,7 +1,30 @@
 # CLAUDE_CONTEXT.md
 
-> Session restore file. Last updated after the Supabase migration + full Content Studio (all sections shipped to main).
-> Working dir: `/Users/sailokesh/Documents/Grainood 2.0`
+> Session restore file. Working dir: `/Users/sailokesh/Documents/Grainood 2.0`
+> Supabase project ref `ycebmqpayiiejcfukjra`. GitHub `adminuser-web/GNProd`, branches develop (work) / main (prod, Vercel auto-deploy).
+
+---
+
+## ⏱️ RESUME HERE (latest session)
+
+**Git:** `develop` is **ahead of `main`** by several commits that are **NOT yet published** (pending the user finishing MFA testing on localhost). Latest develop HEAD = MFA race fix `a767842`. Publish = merge develop→main once user confirms.
+
+**Unpublished-on-develop work this session (all lint/test/build green):**
+- **Test suite + CI + report** (already on main earlier: commits 62ace1b/4252c1b/53c1b52): `docs/TEST_REPORT.md`; unit suites `src/lib/{orderStatus,pricing,upi,themedImage}.test.ts` + `src/features/orders/emailTemplates.test.ts`; `tests/rls/rls.test.ts` (skips w/o DB env); `e2e/{customer,auth,a11y}.spec.ts` + `playwright.config.ts`; `.github/workflows/ci.yml` (verify + e2e + rls jobs); scripts `test:coverage/test:rls/test:e2e/test:a11y`; deps @vitest/coverage-v8, @playwright/test, @axe-core/playwright. 51 unit tests pass.
+- **Bundle code-split** (`vite.config.ts` manualChunks) — main 771→412 kB. `@google/genai` is an UNUSED dep (not imported anywhere; safe to remove).
+- **discount_codes lockdown** — migration `20260630000002` restricts SELECT to is_admin() + `validate_discount_code(p_code)` RPC (SECURITY DEFINER, granted anon/auth). Client: `pricingConfigService.validateDiscountCode()` + `OrderContext` validates the entered code server-side (debounced) → passes single code to `computePrice`. Degrades gracefully.
+- **Admin MFA (TOTP)** — NEW: `src/features/auth/mfa.ts` (enroll/activate/verify/list/remove/isMfaRequired); `AuthContext.signIn` returns `{mfaRequired}`; `AuthPage` 2-step login (password → 6-digit code) with a `signingIn` guard that prevents the redirect racing the MFA check; `SecurityPage` at `/security` (enrol QR + manual key + verify / remove), linked from account menu as "Security (2FA)". Supabase dashboard TOTP now has app support.
+
+**Verified live (via preview against prod DB):** both `20260630000001` (payment-proofs bucket + admin-notify trigger) AND `20260630000002` (discount lockdown) migrations ARE APPLIED. discount_codes anon SELECT = 0 rows; RPC works. Admin account has 1 verified MFA factor; current session aal2.
+
+**⚠️ Supabase Auth CAPTCHA must stay OFF** — the user had turned on "Enable Captcha protection" (Auth → Attack Protection), which blocked ALL logins (`captcha protection: request disallowed`); our forms have no captcha widget. Keep it OFF until the deferred Turnstile work is built.
+
+**PENDING USER ACTIONS (before publish):**
+1. Testing MFA on localhost: hard-refresh → sign out → sign in → should hit the 2FA code screen (proves the race fix). When confirmed → user says "done".
+2. Set admin content (Admin→Content→Brand): UPI ID + payee, Order-email "sent from" Gmail. (May be partially done.)
+3. Optional: GitHub Actions vars VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY (for CI e2e/rls jobs).
+
+**NEXT after user confirms MFA:** revalidate (lint/test/build) → merge develop→main (publish). Then remaining backlog: **paginate admin Orders/Customers** (deferred — real refactor, touches search/filters/dashboard metrics), remove unused `@google/genai`, build **Turnstile** on public forms (then captcha can be re-enabled), extract checkout validators + tests.
 
 ---
 
@@ -70,9 +93,8 @@ supabase/migrations/2026062800000{1..8}_*.sql  # versioned schema (source of tru
 ```
 
 ### Git state
-- Branch **`develop`** = working branch, HEAD `e69539e` (full Content Studio).
-- **`main`** = production (Vercel deploys it), `a0d06d4`. **`develop` and `main` are IN SYNC** (Content Studio fully shipped).
-- Workflow: build on `develop` → merge to `main` to publish (deploy gate). When merging, local `main` often lags `origin/main`; reconcile with `git checkout main && git reset --hard origin/main && git merge develop && git push origin main`.
+- **See the "⏱️ RESUME HERE" block at the top for the current state.** As of the latest session `develop` is AHEAD of `main` (MFA + backlog fixes pending publish; HEAD `a767842`). Everything below this line is historical context.
+- Workflow: build on `develop` → merge to `main` to publish (deploy gate). Publish command: `git fetch origin && git checkout main && git reset --hard origin/main && git merge develop && git push origin main && git checkout develop`.
 
 ---
 
