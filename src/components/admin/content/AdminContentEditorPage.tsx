@@ -7,6 +7,8 @@ import { GoldButton } from '../../GoldButton';
 
 import { ImageUpload } from '../ImageUpload';
 import { UploadSpecKey } from '../../../config/uploadSpecs';
+import { previewLink } from '../../../lib/maintenance';
+import { toast } from 'sonner';
 
 // Friendly section metadata for the sidebar + header.
 const AREA_META: Record<string, { label: string; desc: string }> = {
@@ -18,6 +20,7 @@ const AREA_META: Record<string, { label: string; desc: string }> = {
   legal: { label: 'Legal', desc: 'Privacy, terms and returns.' },
   seo: { label: 'SEO & Social', desc: 'Browser tab title, description and share image.' },
   reviews: { label: 'Reviews', desc: 'Customer reviews shown on the site.' },
+  maintenance: { label: 'Site Status', desc: 'Launching-soon / maintenance mode and preview access.' },
 };
 
 function Field({ label, help, value, onChange, type = 'text', textarea = false }: any) {
@@ -268,6 +271,39 @@ function ReviewsForm({ data, onChange }: { data: any; onChange: (path: string[],
   );
 }
 
+function MaintenanceForm({ data, onChange }: { data: any; onChange: (path: string[], value: any) => void }) {
+  const d = data || {};
+  const enabled = d.enabled === true;
+  const link = previewLink(d.bypassSecret || '');
+  return (
+    <div className="space-y-6">
+      <Card title="Launching Soon Mode" desc="When ON, public visitors see a 'Launching Soon' splash. /admin and /login stay open; admins and preview-link holders still see the full site.">
+        <label className="flex items-center justify-between gap-4 border border-[#c5a059]/20 p-4 cursor-pointer select-none">
+          <span>
+            <span className={`block text-sm font-bold uppercase tracking-widest ${enabled ? 'text-amber-400' : 'text-emerald-400'}`}>{enabled ? 'Maintenance mode is ON' : 'Site is LIVE'}</span>
+            <span className="block text-[10px] text-muted mt-1">{enabled ? 'The public sees the Launching Soon page.' : 'Everyone sees the full site.'}</span>
+          </span>
+          <input type="checkbox" checked={enabled} onChange={(e) => onChange(['enabled'], e.target.checked)} className="accent-[#c5a059] w-5 h-5 shrink-0" />
+        </label>
+        <Field label="Headline" value={d.headline} onChange={(v: string) => onChange(['headline'], v)} />
+        <Field label="Subtext" textarea value={d.subtext} onChange={(v: string) => onChange(['subtext'], v)} />
+      </Card>
+
+      <Card title="Preview Access" desc="Share this link so you or your team can browse the full site while it's hidden. Rotating the secret revokes previously-shared links.">
+        <Field label="Bypass secret" value={d.bypassSecret} onChange={(v: string) => onChange(['bypassSecret'], v)} help="Used in the preview link. Change it to revoke old links." />
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Shareable preview link</label>
+          <div className="flex gap-2">
+            <input readOnly value={link} onFocus={(e) => e.target.select()} className="flex-1 bg-bg border border-[#c5a059]/20 px-3 py-2 text-xs text-content/80 font-mono" />
+            <button type="button" onClick={() => { navigator.clipboard?.writeText(link); toast.success('Preview link copied'); }} className="border border-[#c5a059]/40 text-[#c5a059] px-4 text-[10px] uppercase tracking-widest font-bold hover:bg-[#c5a059] hover:text-bg transition-colors">Copy</button>
+          </div>
+          <p className="text-[10px] text-muted mt-1.5 leading-relaxed">Opening this link unlocks the full site in that browser (remembered), even while Launching Soon is on. Save your changes first — the link uses the current secret.</p>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 const SECTION_FORMS: Record<string, React.ComponentType<{ data: any; onChange: (path: string[], value: any) => void }>> = {
   brand: BrandIdentityForm,
   home: HomeForm,
@@ -277,6 +313,7 @@ const SECTION_FORMS: Record<string, React.ComponentType<{ data: any; onChange: (
   footer: FooterForm,
   legal: LegalForm,
   reviews: ReviewsForm,
+  maintenance: MaintenanceForm,
 };
 
 export function AdminContentEditorPage() {
