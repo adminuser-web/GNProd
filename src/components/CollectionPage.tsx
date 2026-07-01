@@ -8,6 +8,7 @@ import { ScrimImage } from './ScrimImage';
 import { GoldButton } from './GoldButton';
 import { Skeleton, SkeletonTextLines } from './Skeleton';
 import { EmptyState } from './EmptyState';
+import { getCustomizableAttributes } from '../features/products/attributes';
 
 export function CollectionPage() {
   const { products: PUBLISHED_PRODUCTS, loading, error } = useProducts();
@@ -61,7 +62,7 @@ export function CollectionPage() {
 
       // Customization
       if (filters.customizationLevel !== 'all') {
-        const optionCount = series.customizationGroups?.length || 0;
+        const optionCount = getCustomizableAttributes(series).length;
         if (filters.customizationLevel === 'basic' && optionCount > 5) return false;
         if (filters.customizationLevel === 'advanced' && optionCount <= 5) return false;
       }

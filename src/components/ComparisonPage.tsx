@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { Check, X, ArrowLeft } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Product } from '../types';
+import { getCustomizableAttributes } from '../features/products/attributes';
 
 export function ComparisonPage() {
   const { products } = useProducts();
@@ -29,7 +30,7 @@ export function ComparisonPage() {
     if (spec === 'grains') return p.grains || 'N/A';
     if (spec === 'performance.power') return p.performanceMetrics?.power || 'N/A';
     if (spec === 'performance.pickup') return p.performanceMetrics?.pickup || 'N/A';
-    if (spec === 'customization') return p.customizationGroups ? `${p.customizationGroups.length} options` : 'Standard';
+    if (spec === 'customization') { const n = getCustomizableAttributes(p).length; return n ? `${n} options` : 'Standard'; }
     return '';
   };
 

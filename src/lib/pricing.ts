@@ -1,4 +1,5 @@
 import { Product } from '../types';
+import { getCustomizableAttributes } from '../features/products/attributes';
 
 export interface PricingRule {
   id: string;
@@ -55,43 +56,41 @@ export function computePrice(
 
   let optionsTotal = 0;
 
-  // Compute selected options
-  if (product.customizationGroups) {
-    product.customizationGroups.forEach(group => {
-      // Make sure the group is enabled on the storefront
-      if (!group.active) return;
-      
-      const selectedOptVal = selections[group.id];
-      if (selectedOptVal) {
-        let opt = group.options.find(o => o.id === selectedOptVal);
-        
-        // Ignore unavailable options
-        if (group.type !== 'text' && opt && opt.active === false) {
-          opt = undefined;
-        }
+  // Compute selected options from the unified attribute model (customizable
+  // attributes only; `getCustomizableAttributes` already filters to active).
+  const customizable = getCustomizableAttributes(product);
+  customizable.forEach(attr => {
+    const options = attr.options ?? [];
+    const selectedOptVal = selections[attr.key];
+    if (selectedOptVal) {
+      let opt = options.find(o => o.id === selectedOptVal);
 
-        let displayLabel = "";
-        
-        if (group.type === 'text') {
-          if (selectedOptVal.trim() !== '') {
-            opt = group.options[0]; // Text types use the first option for pricing
-            displayLabel = `${group.label}: "${selectedOptVal}"`;
-          }
-        } else if (opt) {
-          displayLabel = `${group.label}: ${opt.label}`;
-        }
-
-        if (opt && opt.priceDelta > 0) {
-          lineItems.push({
-            label: displayLabel,
-            amount: opt.priceDelta,
-            groupId: group.id
-          });
-          optionsTotal += opt.priceDelta;
-        }
+      // Ignore unavailable options
+      if (attr.type !== 'text' && opt && opt.active === false) {
+        opt = undefined;
       }
-    });
-  }
+
+      let displayLabel = "";
+
+      if (attr.type === 'text') {
+        if (selectedOptVal.trim() !== '') {
+          opt = options[0]; // Text types use the first option for pricing
+          displayLabel = `${attr.label}: "${selectedOptVal}"`;
+        }
+      } else if (opt) {
+        displayLabel = `${attr.label}: ${opt.label}`;
+      }
+
+      if (opt && opt.priceDelta > 0) {
+        lineItems.push({
+          label: displayLabel,
+          amount: opt.priceDelta,
+          groupId: attr.key
+        });
+        optionsTotal += opt.priceDelta;
+      }
+    }
+  });
 
   const subtotal = base + optionsTotal;
   const discounts: DiscountItem[] = [];

@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 
 import { useAuth } from '../context/AuthContext';
 import { buildService } from '../features/builds/services/buildService';
-import { SPEC_TO_CUSTOMIZATION_MAP, ALWAYS_FIXED_SPECS } from '../config/attributeMap';
+import { getAttributes, getCustomizableAttributes, getFixedAttributes } from '../features/products/attributes';
 import { EnquiryDrawer } from './EnquiryDrawer';
 import { HowItWorks } from './HowItWorks';
 
@@ -39,12 +39,22 @@ export function ProductPage() {
     
     // Fallback to first if not found
     const activeSub = list.find(s => s.slug === activeSubSeriesId || s.id === activeSubSeriesId) || list[0];
-    
+
+    // Unified attributes for the active sub-series. Customizable attributes come
+    // from the sub-series when it defines any, else fall back to the series
+    // (mirrors the old `customizationGroups` precedence); fixed attributes are
+    // always the sub-series' own.
+    const subAttrs = getAttributes(activeSub);
+    const subCustomizable = subAttrs.filter((a: any) => a.mode === 'customizable' && a.active !== false);
+    const customizable = subCustomizable.length ? subCustomizable : getCustomizableAttributes(baseProduct);
+    const fixed = subAttrs.filter((a: any) => a.mode === 'fixed');
+
     // Merge specifics
     return {
       ...baseProduct,
       price: activeSub.basePrice || baseProduct.price,
       basePrice: activeSub.basePrice || baseProduct.basePrice,
+      attributes: [...customizable, ...fixed],
       customizationGroups: activeSub.customizationGroups || baseProduct.customizationGroups,
       specs: activeSub.specs || baseProduct.specs,
       imageUrl: activeSub.media?.primaryImage || baseProduct.imageUrl,
@@ -107,7 +117,7 @@ export function ProductPage() {
             // New format { s: [...], q: quantity }
             setQuantity(decoded.q);
             decoded.s.forEach((opt: any) => {
-               const g = (product.customizationGroups || []).find((x: any) => x.id === opt.g);
+               const g = getCustomizableAttributes(product).find((x: any) => x.key === opt.g);
                if (g) {
                   const val = opt.v || opt.o;
                   handleSelection(opt.g, val, g.type);
@@ -121,7 +131,7 @@ export function ProductPage() {
             }
    
             for (const [groupId, val] of Object.entries(decoded)) {
-               const g = (product.customizationGroups || []).find((x: any) => x.id === groupId);
+               const g = getCustomizableAttributes(product).find((x: any) => x.key === groupId);
                if (g) {
                   if (g.type === 'text') {
                      handleSelection(groupId, val as string, 'text');
@@ -593,13 +603,18 @@ export function ProductPage() {
 
             {/* CONFIGURATION OPTIONS */}
             <div className="space-y-10">
-              {(product.customizationGroups || []).filter(g => g.enabled !== false).map((group, gIdx) => {
-                const selectedOptId = selections[group.id];
+              {getCustomizableAttributes(product).map((group, gIdx) => {
+                const options = group.options || [];
+                const selectedOptId = selections[group.key];
+                // Colour swatches vs. button/image grid is inferred from the
+                // option data (colorHex present), since the unified type is
+                // just "single_select"/"multi_select".
+                const isColor = options.some(o => o.colorHex) && !options.some(o => o.imageUrl);
 
                 return (
-                  <RevealSection key={group.id} delay={100 + gIdx * 50} className={clsx("space-y-4", group.type === 'toggle' ? "pt-4 pb-4 border-y border-[#c5a059]/20" : "")}>
+                  <RevealSection key={group.key} delay={100 + gIdx * 50} className={clsx("space-y-4", group.type === 'toggle' ? "pt-4 pb-4 border-y border-[#c5a059]/20" : "")}>
                     {group.type === 'toggle' ? (
-                      group.options.map(opt => {
+                      options.map(opt => {
                         const isSelected = selectedOptId === opt.id;
                         return (
                           <label key={opt.id} className="flex items-center justify-between cursor-pointer group">
@@ -612,7 +627,7 @@ export function ProductPage() {
                               )}
                             </div>
                             <div className="relative">
-                              <input type="checkbox" className="sr-only focus-visible:outline-none" checked={isSelected} onChange={() => handleSelection(group.id, opt.id, group.type)} />
+                              <input type="checkbox" className="sr-only focus-visible:outline-none" checked={isSelected} onChange={() => handleSelection(group.key, opt.id, group.type)} />
                               <div className={clsx("block w-12 h-6 rounded-full transition-colors group-focus-within:ring-2 group-focus-within:ring-[#c5a059] group-focus-within:ring-offset-2 group-focus-within:ring-offset-bg", isSelected ? "bg-[#c5a059]" : "bg-muted")}></div>
                               <div className={clsx("absolute left-1 top-1 bg-bg w-4 h-4 rounded-full transition-transform", isSelected ? "translate-x-6" : "")}></div>
                             </div>
@@ -630,13 +645,13 @@ export function ProductPage() {
                             <span className="text-[9px] text-red-400 uppercase tracking-widest animate-pulse">Required</span>
                           )}
                         </div>
-                        {group.type === 'select' && (
-                          <div className={clsx("gap-4", group.options.some(o => o.imageUrl) ? "grid grid-cols-2 md:grid-cols-3" : (group.options.some(o => o.label.includes('(') || o.description) ? "grid grid-cols-2 sm:grid-cols-3" : "flex flex-wrap"))}>
-                            {group.options.map((opt) => (
+                        {group.type !== 'text' && !isColor && (
+                          <div className={clsx("gap-4", options.some(o => o.imageUrl) ? "grid grid-cols-2 md:grid-cols-3" : (options.some(o => o.label.includes('(') || o.description) ? "grid grid-cols-2 sm:grid-cols-3" : "flex flex-wrap"))}>
+                            {options.map((opt) => (
                               <button
                                 key={opt.id}
                                 disabled={opt.available === false}
-                                onClick={() => handleSelection(group.id, opt.id, group.type)}
+                                onClick={() => handleSelection(group.key, opt.id, group.type)}
                                 className={clsx(
                                   "relative border border-[#c5a059]/30 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059]",
                                   opt.imageUrl ? "p-0 overflow-hidden flex flex-col hover:border-[#c5a059]" : "py-3 px-4 text-[11px] tracking-wider uppercase font-medium hover:border-[#c5a059]",
@@ -673,13 +688,13 @@ export function ProductPage() {
                             ))}
                           </div>
                         )}
-                        {group.type === 'color' && (
+                        {group.type !== 'text' && isColor && (
                           <div className="flex gap-4">
-                            {group.options.map((opt) => (
+                            {options.map((opt) => (
                               <button
                                 key={opt.id}
                                 disabled={opt.available === false}
-                                onClick={() => handleSelection(group.id, opt.id, group.type)}
+                                onClick={() => handleSelection(group.key, opt.id, group.type)}
                                 className={clsx(
                                   "w-10 h-10 rounded-full border-2 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:ring-[#c5a059]",
                                   selectedOptId === opt.id ? "border-[#c5a059] scale-110" : "border-transparent hover:scale-105",
@@ -697,16 +712,16 @@ export function ProductPage() {
                             <input
                               type="text"
                               maxLength={group.maxLength || 12}
-                              value={selections[group.id] || ''}
+                              value={selections[group.key] || ''}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (group.validationRegex) {
                                   if (new RegExp(group.validationRegex).test(val) || val === '') {
-                                    handleSelection(group.id, val, group.type);
+                                    handleSelection(group.key, val, group.type);
                                   }
                                 } else {
                                   const filteredVal = val.replace(/[^A-Za-z0-9 ]/g, '');
-                                  handleSelection(group.id, filteredVal, group.type);
+                                  handleSelection(group.key, filteredVal, group.type);
                                 }
                               }}
                               className="w-full bg-surface border border-[#c5a059]/30 p-3 text-[13px] tracking-wider text-content uppercase focus:outline-none focus:border-[#c5a059] focus:ring-1 focus:ring-[#c5a059]"
@@ -714,11 +729,11 @@ export function ProductPage() {
                             />
                             <div className="flex justify-between items-center mt-2">
                               <p className="text-[10px] text-muted tracking-widest uppercase">
-                                {group.options[0]?.priceDelta > 0 && `(+ ₹${group.options[0].priceDelta.toLocaleString('en-IN')}) `}
+                                {options[0]?.priceDelta > 0 && `(+ ₹${options[0].priceDelta.toLocaleString('en-IN')}) `}
                                 Only letters, numbers, and spaces.
                               </p>
                               <span className="text-[10px] text-muted tracking-widest">
-                                {(selections[group.id] || '').length}/{group.maxLength || 12}
+                                {(selections[group.key] || '').length}/{group.maxLength || 12}
                               </span>
                             </div>
                           </div>
@@ -934,24 +949,14 @@ export function ProductPage() {
               </RevealSection>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-x-12 gap-y-0">
-                {(product as any).specs && Object.entries((product as any).specs)
-                  .filter(([key, value]) => {
-                    if (value === null || value === undefined || value === '') return false;
-                    if (ALWAYS_FIXED_SPECS.includes(key)) return true;
-                    const mappedGroup = SPEC_TO_CUSTOMIZATION_MAP[key];
-                    if (mappedGroup && product.customizationGroups?.some((g: any) => g.id === mappedGroup && g.enabled !== false)) {
-                      return false;
-                    }
-                    return true;
-                  })
-                  .map(([key, value], idx) => (
-                  <RevealSection key={key} delay={idx * 50} className="border-b border-[#c5a059]/20 py-6">
+                {getFixedAttributes(product).map((attr, idx) => (
+                  <RevealSection key={attr.key} delay={idx * 50} className="border-b border-[#c5a059]/20 py-6">
                     <div className="flex flex-col gap-2">
                       <span className="text-premium-gold-text text-[10px] tracking-[0.3em] uppercase">
-                        {key === 'preKnockedIncluded' ? 'Pre-knocked' : key.replace(/([A-Z])/g, ' $1').trim()}
+                        {attr.label}
                       </span>
                       <span className="text-content/80 text-[14px] leading-relaxed font-light">
-                        {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}
+                        {attr.fixedValue}
                       </span>
                     </div>
                   </RevealSection>
