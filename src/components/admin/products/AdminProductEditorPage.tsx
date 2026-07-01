@@ -19,7 +19,7 @@ import {
   ProductSeries,
   ProductSubSeries,
 } from "../../../features/products/types";
-import { getAttributes, applySeriesDefaults } from "../../../features/products/attributes";
+import { getAttributes, applySeriesDefaults, validateAttributes } from "../../../features/products/attributes";
 import { buildDuplicateSubSeries } from "../../../features/products/duplicate";
 import { FEATURES } from "../../../config/features";
 
@@ -271,6 +271,13 @@ export function AdminProductEditorPage() {
       validationError = "Base Price must be a valid number.";
     }
 
+    if (!validationError) {
+      const attrErrors = validateAttributes(getAttributes(activeSubSeries));
+      if (attrErrors.length) {
+        validationError = `Fix ${attrErrors.length} attribute issue(s) in the Attributes tab before saving.`;
+      }
+    }
+
     // Slug and SKU validation across the entire products list
     if (!validationError) {
        for (const p of products) {
@@ -337,6 +344,7 @@ export function AdminProductEditorPage() {
 
   const missingFields = getMissingFields();
   const completionScore = Math.round(((12 - missingFields.length) / 12) * 100);
+  const attrErrors = validateAttributes(getAttributes(activeSubSeries));
 
   return (
     <div className="pb-24 relative">
@@ -373,10 +381,20 @@ export function AdminProductEditorPage() {
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content flex items-center gap-4">
               Editing: {series.name} — {activeSubSeries.name}
-              {hasUnsavedChanges && (
+              {hasUnsavedChanges && attrErrors.length === 0 && (
                 <span className="text-[10px] text-red-400 bg-red-400/10 px-2 py-1 rounded-sm flex items-center gap-1">
                   <AlertCircle size={12} /> Unsaved Changes
                 </span>
+              )}
+              {attrErrors.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("attributes")}
+                  className="text-[10px] text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-1 rounded-sm flex items-center gap-1 hover:bg-red-500/20"
+                  title="Go to Attributes tab"
+                >
+                  <AlertCircle size={12} /> {attrErrors.length} attribute issue{attrErrors.length > 1 ? "s" : ""}
+                </button>
               )}
             </h1>
           </div>
@@ -398,11 +416,11 @@ export function AdminProductEditorPage() {
             </button>
             <GoldButton
               onClick={handleSave}
-              disabled={saving || !hasUnsavedChanges}
+              disabled={saving || !hasUnsavedChanges || attrErrors.length > 0}
               variant="solid"
               className="px-8 py-3 text-[10px]"
             >
-              {saving ? "Saving..." : "Save Product"}
+              {saving ? "Saving..." : attrErrors.length > 0 ? "Fix Issues to Save" : "Save Product"}
             </GoldButton>
           </div>
         </div>

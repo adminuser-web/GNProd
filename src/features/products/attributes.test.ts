@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applySeriesDefaults, attributeProvenance } from './attributes';
+import { applySeriesDefaults, attributeProvenance, validateAttributes } from './attributes';
 
 const t = (over: any) => ({ id: over.key, key: over.key, label: over.key, mode: 'customizable', sortOrder: 0, active: true, options: [], ...over });
 
@@ -49,5 +49,28 @@ describe('attributeProvenance', () => {
   });
   it('product when key not in template', () => {
     expect(attributeProvenance(t({ key: 'sticker' }), template)).toBe('product');
+  });
+});
+
+describe('validateAttributes', () => {
+  it('passes a clean list', () => {
+    expect(validateAttributes([
+      t({ key: 'bat-size', required: true, options: [{ id: 'sh', label: 'SH', priceDelta: 0, available: true }] }),
+      t({ key: 'grains', mode: 'fixed', fixedValue: '10' }),
+    ])).toEqual([]);
+  });
+  it('flags duplicate keys', () => {
+    const errs = validateAttributes([t({ key: 'dup' }), t({ key: 'dup' })]);
+    expect(errs.some(e => /Duplicate key/.test(e.message) && e.index === 1)).toBe(true);
+  });
+  it('flags empty key', () => {
+    expect(validateAttributes([t({ key: '' })]).some(e => /needs a key/.test(e.message))).toBe(true);
+  });
+  it('flags a required customizable attribute with no available option', () => {
+    const errs = validateAttributes([t({ key: 'grip', required: true, options: [{ id: 'a', label: 'A', priceDelta: 0, available: false }] })]);
+    expect(errs.some(e => /at least one available option/.test(e.message))).toBe(true);
+  });
+  it('does not require options for a non-required attribute', () => {
+    expect(validateAttributes([t({ key: 'x', required: false, options: [] })])).toEqual([]);
   });
 });

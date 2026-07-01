@@ -247,6 +247,39 @@ export function applySeriesDefaults(
   return { attributes: result, added };
 }
 
+export interface AttributeError {
+  index: number;
+  key: string;
+  message: string;
+}
+
+/**
+ * Validate an attribute list for the admin editor: no empty or duplicate keys,
+ * and every required customizable attribute has at least one available option.
+ * Returns one error per problem (keyed to the attribute index for inline UI).
+ */
+export function validateAttributes(attributes: ProductAttribute[]): AttributeError[] {
+  const errors: AttributeError[] = [];
+  const seen = new Map<string, number>();
+  (attributes ?? []).forEach((a, index) => {
+    const key = (a.key ?? "").trim();
+    if (!key) {
+      errors.push({ index, key: a.key ?? "", message: "Attribute needs a key." });
+    } else if (seen.has(key)) {
+      errors.push({ index, key, message: `Duplicate key "${key}" — keys must be unique.` });
+    } else {
+      seen.set(key, index);
+    }
+    if (a.mode === "customizable" && a.required) {
+      const available = (a.options ?? []).filter((o) => o.available !== false);
+      if (available.length === 0) {
+        errors.push({ index, key, message: "Required option group needs at least one available option." });
+      }
+    }
+  });
+  return errors;
+}
+
 export type AttributeProvenance = "series-default" | "overridden" | "product";
 
 /** Where a sub-series attribute came from, relative to its series template. */
