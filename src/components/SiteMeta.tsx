@@ -39,6 +39,17 @@ export function SiteMeta() {
         document.head.appendChild(link);
       }
       link.href = fav;
+      // Keep the MIME type in sync with the actual file. The static <link> in
+      // index.html declares type="image/svg+xml"; if the brand favicon is a PNG
+      // (etc.) that stale type makes browsers drop the icon. Infer from the
+      // extension, or remove the attribute so the browser sniffs it.
+      const ext = fav.split('?')[0].split('.').pop()?.toLowerCase();
+      const typeByExt: Record<string, string> = {
+        svg: 'image/svg+xml', png: 'image/png', ico: 'image/x-icon',
+        jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
+      };
+      if (ext && typeByExt[ext]) link.type = typeByExt[ext];
+      else link.removeAttribute('type');
     }
   }, [brand?.faviconUrl, brand?.brandName, brand?.tagline, seo?.defaultTitle, seo?.defaultDescription]);
 
