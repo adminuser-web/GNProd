@@ -399,8 +399,8 @@ export function AdminProductEditorPage() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <Link 
-              to={`/products/${series.slug}`} 
+            <Link
+              to={`/collection/${series.slug}/${activeSubSeries.slug}`}
               target="_blank"
               className="text-[10px] tracking-widest uppercase font-bold text-[#c5a059] hover:text-white transition-colors border border-[#c5a059] px-4 py-3 bg-[#c5a059]/5 hover:bg-[#c5a059]/20"
             >

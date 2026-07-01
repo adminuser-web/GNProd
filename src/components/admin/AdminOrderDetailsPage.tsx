@@ -232,13 +232,16 @@ export function AdminOrderDetailsPage() {
         proofPath, confirmedBy: user?.email || 'Admin', confirmedAt: new Date().toISOString(),
       }, user?.email || 'Admin');
       toast.success('Payment confirmed — order moved to Processing');
-    } catch { toast.error('Could not confirm payment.'); }
+    } catch (e: any) {
+      console.error('confirm payment failed', e);
+      toast.error(`Could not confirm payment: ${e?.message || e?.error_description || 'unknown error'}`);
+    }
     finally { setProofUploading(false); setPaymentSaving(false); }
   };
   const viewProof = async () => {
     if (!order.payment?.proofPath) return;
     try { setProofUrl(await getSignedUrl(PAYMENT_PROOFS_BUCKET, order.payment.proofPath)); }
-    catch { toast.error('Could not load the proof.'); }
+    catch (e: any) { toast.error(`Could not load proof: ${e?.message || 'error'}`); }
   };
 
   // ---- Delivery → Shipped, Delivered, Cancel ----

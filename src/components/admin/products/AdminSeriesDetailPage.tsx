@@ -344,8 +344,8 @@ export function AdminSeriesDetailPage() {
             <p className="text-xs text-premium-gold-text tracking-widest uppercase mt-2">{gradeLabel}</p>
          </div>
          <div className="flex items-center gap-3">
-             <Link 
-               to={`/products/${formData.slug}`} 
+             <Link
+               to={`/collection/${formData.slug}`}
                target="_blank"
                className="text-[10px] tracking-widest uppercase font-bold text-[#c5a059] hover:text-white transition-colors border border-[#c5a059] px-4 py-2 bg-[#c5a059]/5 hover:bg-[#c5a059]/20 flex items-center"
              >
