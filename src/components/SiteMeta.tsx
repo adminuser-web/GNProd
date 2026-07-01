@@ -29,27 +29,33 @@ export function SiteMeta() {
       m.setAttribute('content', seo.defaultDescription);
     }
 
-    // Favicon
+    // Favicon. Safari is finicky: it caches favicons hard and often ignores an
+    // href mutation on the existing <link> (especially the index.html one that
+    // declares type="image/svg+xml"). So REMOVE every existing icon link and
+    // add fresh <link rel="icon"> + <link rel="apple-touch-icon"> elements with
+    // the correct MIME type — Safari is far more likely to pick up new nodes.
     const fav = brand?.faviconUrl ? resolveThemedImage(brand.faviconUrl as any, 'light') : '';
     if (fav) {
-      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      link.href = fav;
-      // Keep the MIME type in sync with the actual file. The static <link> in
-      // index.html declares type="image/svg+xml"; if the brand favicon is a PNG
-      // (etc.) that stale type makes browsers drop the icon. Infer from the
-      // extension, or remove the attribute so the browser sniffs it.
       const ext = fav.split('?')[0].split('.').pop()?.toLowerCase();
       const typeByExt: Record<string, string> = {
         svg: 'image/svg+xml', png: 'image/png', ico: 'image/x-icon',
         jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
       };
-      if (ext && typeByExt[ext]) link.type = typeByExt[ext];
-      else link.removeAttribute('type');
+      const type = ext ? typeByExt[ext] : undefined;
+
+      document
+        .querySelectorAll("link[rel~='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']")
+        .forEach((n) => n.parentElement?.removeChild(n));
+
+      const addIcon = (rel: string) => {
+        const l = document.createElement('link');
+        l.rel = rel;
+        if (type) l.type = type;
+        l.href = fav;
+        document.head.appendChild(l);
+      };
+      addIcon('icon');
+      addIcon('apple-touch-icon');
     }
   }, [brand?.faviconUrl, brand?.brandName, brand?.tagline, seo?.defaultTitle, seo?.defaultDescription]);
 

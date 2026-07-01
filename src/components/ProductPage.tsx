@@ -1119,7 +1119,7 @@ export function ProductPage() {
             className="p-4 flex justify-between items-center w-full focus:outline-none"
           >
             <div className="flex flex-col items-start gap-1">
-              <span className="text-content text-xs font-bold uppercase tracking-widest">Your Build {!isMobileSummaryOpen && <span className="opacity-50 lowercase tracking-normal font-normal">({selectedPairs.filter(p => p.opt).length} items)</span>}</span>
+              <span className="text-content text-xs font-bold uppercase tracking-widest">Your Build {!isMobileSummaryOpen && (() => { const n = selectedPairs.filter(p => p.opt).length; return <span className="opacity-50 lowercase tracking-normal font-normal">({n} {n === 1 ? 'option' : 'options'})</span>; })()}</span>
               {!isMobileSummaryOpen && !allRequiredSelected && (
                  <span className="text-[9px] text-red-400 uppercase tracking-widest">* Missing {missingGroups.length} required</span>
               )}
