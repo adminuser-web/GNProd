@@ -3,9 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { orderService } from '../../features/orders/services/orderService';
 import { OrderRecord } from '../../types';
-import { ArrowLeft, Mail, Upload, X, ExternalLink, Copy, Check, Truck, CheckCircle2, Ban, User, Package } from 'lucide-react';
+import { ArrowLeft, Mail, Upload, X, ExternalLink, Copy, Check, Truck, CheckCircle2, Ban, User, Package, Clock } from 'lucide-react';
 import { ticketService } from '../../features/support/services/ticketService';
 import { mapLegacyStatus, stageIndex, STAGE_LABELS, STATUS_COLORS } from '../../lib/orderStatus';
+import { buildStatusTimeline, formatDuration } from '../../lib/orderTimeline';
 import { useContent } from '../../context/ContentContext';
 import { buildOrderEmail, buildGmailComposeUrl, OrderEmailTemplate } from '../../features/orders/emailTemplates';
 import { uploadPrivate, getSignedUrl, PAYMENT_PROOFS_BUCKET } from '../../lib/storage';
@@ -13,33 +14,83 @@ import { toast } from 'sonner';
 
 const inr = (n: number) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
 
-function Stepper({ stage, cancelled }: { stage: number; cancelled: boolean }) {
-  if (cancelled) {
-    return (
-      <div className="flex items-center gap-2 text-red-400">
-        <Ban className="w-4 h-4" />
-        <span className="text-xs font-bold uppercase tracking-widest">Order Cancelled</span>
-      </div>
-    );
-  }
+const fmtDateTime = (d: Date) =>
+  `${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, ${d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}`;
+
+/** Compact stage progress (Placed → Processing → Shipped → Delivered). */
+function StageProgress({ stage }: { stage: number }) {
   return (
-    <div className="flex items-center w-full">
-      {STAGE_LABELS.map((label, i) => {
-        const done = i <= stage;
-        return (
-          <React.Fragment key={label}>
-            <div className="flex flex-col items-center gap-2 shrink-0">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border ${done ? 'bg-[#c5a059] text-bg border-[#c5a059]' : 'bg-bg text-muted border-[#c5a059]/30'}`}>
-                {i < stage ? <Check className="w-3.5 h-3.5" /> : i + 1}
-              </div>
-              <span className={`text-[9px] uppercase tracking-widest ${done ? 'text-[#c5a059] font-bold' : 'text-muted'}`}>{label}</span>
+    <div className="flex items-center gap-1.5">
+      {STAGE_LABELS.map((label, i) => (
+        <React.Fragment key={label}>
+          <div className="flex flex-col items-center gap-1">
+            <div className={`w-2.5 h-2.5 rounded-full ${i <= stage ? 'bg-[#c5a059]' : 'bg-[#c5a059]/20'}`} />
+            <span className={`text-[8px] uppercase tracking-widest ${i <= stage ? 'text-[#c5a059] font-bold' : 'text-muted'}`}>{label}</span>
+          </div>
+          {i < STAGE_LABELS.length - 1 && <div className={`w-5 sm:w-8 h-px mb-4 ${i < stage ? 'bg-[#c5a059]' : 'bg-[#c5a059]/20'}`} />}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Jira-style status header + vertical timeline showing how long the order has
+ * spent in each status bucket (live for the current one).
+ */
+function StatusTimeline({ order, now }: { order: any; now: number }) {
+  const status = mapLegacyStatus(order.status || 'Order Placed');
+  const stage = stageIndex(order.status || 'Order Placed');
+  const cancelled = status === 'Cancelled';
+  const delivered = status === 'Delivered';
+  const timeline = buildStatusTimeline(order, now);
+  const current = timeline[timeline.length - 1];
+  const totalElapsed = current ? now - timeline[0].start.getTime() : 0;
+
+  return (
+    <div className="bg-surface border border-[#c5a059]/20 p-5 md:p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-[#c5a059]/10">
+        <div className="flex items-center gap-3">
+          <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[status] }} />
+          <div>
+            <div className="text-lg font-bold tracking-widest uppercase" style={{ color: STATUS_COLORS[status] }}>{status}</div>
+            <div className="text-[11px] text-muted mt-0.5 flex items-center gap-1">
+              {cancelled ? 'Order cancelled' : delivered ? 'Complete — no further changes' : (
+                <><Clock className="w-3 h-3" /> In this status for <span className="text-content font-bold">{formatDuration(current.durationMs)}</span></>
+              )}
             </div>
-            {i < STAGE_LABELS.length - 1 && (
-              <div className={`flex-1 h-px mx-1 mb-5 ${i < stage ? 'bg-[#c5a059]' : 'bg-[#c5a059]/20'}`} />
-            )}
-          </React.Fragment>
-        );
-      })}
+          </div>
+        </div>
+        {!cancelled && <StageProgress stage={stage} />}
+      </div>
+
+      {/* Vertical timeline */}
+      <div className="pt-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted">Status Timeline</h3>
+          <span className="text-[10px] text-muted uppercase tracking-widest">Total {formatDuration(totalElapsed)}</span>
+        </div>
+        <ol className="relative">
+          {timeline.map((s, i) => (
+            <li key={i} className="relative pl-8 pb-5 last:pb-0">
+              {i < timeline.length - 1 && <span className="absolute left-[5px] top-3.5 -bottom-1 w-px bg-[#c5a059]/20" />}
+              <span className="absolute left-0 top-1.5 w-[11px] h-[11px] rounded-full border-2"
+                style={{ borderColor: STATUS_COLORS[s.status], backgroundColor: s.isCurrent ? STATUS_COLORS[s.status] : 'transparent' }} />
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-sm font-bold" style={{ color: STATUS_COLORS[s.status] }}>{s.status}</span>
+                  <span className="text-[10px] text-muted">{fmtDateTime(s.start)}</span>
+                </div>
+                <span className={`text-[10px] uppercase tracking-widest px-2 py-0.5 whitespace-nowrap ${s.isCurrent && !cancelled && !delivered ? 'bg-[#c5a059]/15 text-[#c5a059] font-bold' : 'text-muted'}`}>
+                  {s.isCurrent && !cancelled && !delivered ? `${formatDuration(s.durationMs)} · counting` : `${formatDuration(s.durationMs)} in bucket`}
+                </span>
+              </div>
+              {s.note && <p className="text-[11px] text-muted/80 mt-1 leading-relaxed">{s.note}</p>}
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
@@ -62,6 +113,13 @@ export function AdminOrderDetailsPage() {
   const [order, setOrder] = useState<OrderRecord | null>(null);
   const [ticketsCount, setTicketsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(Date.now());
+
+  // Keep the live "time in current status" fresh without spinning the CPU.
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(t);
+  }, []);
 
   // Payment form
   const [paymentMethod, setPaymentMethod] = useState('upi');
@@ -234,8 +292,8 @@ export function AdminOrderDetailsPage() {
         </div>
       </div>
 
-      {/* Stepper */}
-      <div className={card}><Stepper stage={stage} cancelled={cancelled} /></div>
+      {/* Jira-style status + per-bucket timeline */}
+      <StatusTimeline order={order} now={now} />
 
       {/* Cancelled banner */}
       {cancelled && (
