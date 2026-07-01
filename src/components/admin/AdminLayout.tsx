@@ -8,6 +8,8 @@ import { clsx } from 'clsx';
 import { useAllOrders } from '../../features/orders/hooks/useOrders';
 import { FEATURES } from '../../config/features';
 import { Skeleton } from '../Skeleton';
+import { verifyLoginCode } from '../../features/auth/mfa';
+import { toast } from 'sonner';
 
 type AdminLink = { path: string; label: string; icon: any; badge?: 'orders' | 'enquiries' | 'support' };
 
@@ -187,6 +189,42 @@ export function AdminLayout() {
   const [newEnquiriesCount, setNewEnquiriesCount] = useState(0);
   const { orders } = useAllOrders();
 
+  // MFA gate: admins with a verified authenticator MUST be at AAL2 (i.e. have
+  // entered a code this session) before the admin area renders. This closes the
+  // hole where a password-only (aal1) admin session could reach admin pages.
+  const [mfaGate, setMfaGate] = useState<'checking' | 'ok' | 'challenge'>('checking');
+  const [mfaCode, setMfaCode] = useState('');
+  const [verifyingMfa, setVerifyingMfa] = useState(false);
+
+  useEffect(() => {
+    if (loading || !user) return;
+    let active = true;
+    (async () => {
+      const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (!active) return;
+      if (data?.currentLevel === 'aal2') { setMfaGate('ok'); return; }
+      const { data: f } = await supabase.auth.mfa.listFactors();
+      const hasVerified = !!f?.totp?.some((x) => x.status === 'verified');
+      // aal1 + a verified factor → must enter a code; no factor → MFA not set up, allow.
+      setMfaGate(hasVerified ? 'challenge' : 'ok');
+    })();
+    return () => { active = false; };
+  }, [user, loading]);
+
+  const handleVerifyGate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerifyingMfa(true);
+    try {
+      await verifyLoginCode(mfaCode);   // challenge+verify elevates this session to aal2
+      setMfaCode('');
+      setMfaGate('ok');
+    } catch {
+      toast.error('Invalid code. Please try again.');
+    } finally {
+      setVerifyingMfa(false);
+    }
+  };
+
   // Orders needing attention: active (not cancelled/delivered) and not yet paid.
   const pendingOrdersCount = orders.filter(o => {
     if (o.status === 'Cancelled' || o.status === 'Delivered') return false;
@@ -226,6 +264,41 @@ export function AdminLayout() {
         <Link to="/" className="text-xs text-premium-gold-text font-bold tracking-widest uppercase py-3 px-8 border border-[#c5a059]/30 hover:bg-[#c5a059]/10 transition-colors">
           Return Home
         </Link>
+      </div>
+    );
+  }
+
+  // MFA gate — still checking the session's assurance level.
+  if (mfaGate === 'checking') {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <Skeleton variant="rectangular" className="w-12 h-12 rounded-full" />
+      </div>
+    );
+  }
+
+  // MFA gate — admin has 2FA but this session hasn't verified a code yet.
+  if (mfaGate === 'challenge') {
+    return (
+      <div className="min-h-screen bg-bg text-content px-4 flex flex-col items-center justify-center">
+        <div className="w-full max-w-sm bg-surface border border-[#c5a059]/20 p-8">
+          <h1 className="text-sm font-bold tracking-[0.2em] uppercase text-[#c5a059] mb-2 text-center">Two-Factor Required</h1>
+          <p className="text-xs text-muted text-center mb-6 leading-relaxed">Enter the 6-digit code from your authenticator app to access the admin area.</p>
+          <form onSubmit={handleVerifyGate} className="space-y-5">
+            <input
+              inputMode="numeric" autoFocus maxLength={6} value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="000000"
+              className="w-full bg-bg border border-[#c5a059]/30 text-center text-2xl tracking-[0.5em] py-3 text-content focus:outline-none focus:border-[#c5a059]"
+            />
+            <button type="submit" disabled={verifyingMfa || mfaCode.length < 6} className="w-full bg-[#c5a059] text-bg text-xs font-bold uppercase tracking-widest py-3 hover:bg-premium-gold-text transition-colors disabled:opacity-50">
+              {verifyingMfa ? 'Verifying…' : 'Verify'}
+            </button>
+            <button type="button" onClick={handleSignOut} className="w-full text-[10px] uppercase tracking-widest text-muted hover:text-content transition-colors">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
     );
   }

@@ -4,6 +4,32 @@ import { AdminLayout } from './AdminLayout';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import * as AuthContext from '../../context/AuthContext';
 
+// Stub supabase so the admin MFA gate + data hooks resolve deterministically.
+vi.mock('../../lib/supabase', () => {
+  const result = { data: [], error: null, count: 0 };
+  const chain: any = {
+    select: () => chain, eq: () => chain, order: () => chain,
+    limit: () => Promise.resolve(result), single: () => Promise.resolve(result),
+    maybeSingle: () => Promise.resolve(result),
+    then: (res: any) => res(result),
+  };
+  return {
+    supabase: {
+      from: () => chain,
+      channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}), unsubscribe: () => {} }),
+      removeChannel: () => {},
+      auth: {
+        mfa: {
+          getAuthenticatorAssuranceLevel: () => Promise.resolve({ data: { currentLevel: 'aal2', nextLevel: 'aal2' }, error: null }),
+          listFactors: () => Promise.resolve({ data: { totp: [] }, error: null }),
+        },
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      },
+    },
+  };
+});
+
 describe('AdminLayout gating', () => {
   it('redirects to login when user is not authenticated', () => {
     vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
@@ -50,7 +76,7 @@ describe('AdminLayout gating', () => {
     expect(screen.getByText(/Not Authorized/i)).toBeInTheDocument();
   });
 
-  it('renders admin content when user is admin', () => {
+  it('renders admin content when user is admin (aal2 session)', async () => {
     vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
       user: { uid: 'admin-1' } as any,
       profile: { role: 'admin', email: 'x', fullName: 'x', phone: 'x', profileCompleted: true } as any,
@@ -71,7 +97,8 @@ describe('AdminLayout gating', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByTestId('admin-content')).toBeInTheDocument();
+    // The MFA gate resolves asynchronously (aal2 → ok) before content renders.
+    expect(await screen.findByTestId('admin-content')).toBeInTheDocument();
     expect(screen.queryByText(/Not Authorized/i)).not.toBeInTheDocument();
   });
 });
