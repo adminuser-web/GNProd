@@ -224,8 +224,8 @@ export function CollectionPage() {
                   
                   {/* Background specific to tile */}
                   <div className="absolute inset-0 z-0">
-                    <ScrimImage 
-                       src={series.heroImage}
+                    <ScrimImage
+                       src={series.imageUrl}
                        placeholderSrc="/product-bat.webp"
                        alt={series.name}
                        className="w-full h-full"
