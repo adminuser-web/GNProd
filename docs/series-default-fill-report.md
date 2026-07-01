@@ -1,7 +1,7 @@
 # Series Default Fill Report
 
-- Generated: 2026-07-01T04:33:53.768Z
-- Mode: **DRY RUN**
+- Generated: 2026-07-01T04:40:33.466Z
+- Mode: **APPLY**
 - Attributes added (all inactive): **49**
 - Rows to update: **5**
 - Integrity issues: **0** ✅
