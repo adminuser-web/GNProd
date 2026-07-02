@@ -100,7 +100,7 @@ export function AdminOrdersBoard() {
     searchParams.get('payment') === 'pending' ? 'Pending' : 'All'
   );
   const [sourceFilter, setSourceFilter] = useState<string>('All');
-  const [view, setView] = useState<'active' | 'cancelled' | 'all'>('active');
+  const [view, setView] = useState<'active' | 'completed' | 'cancelled'>('active');
   const [dateRange, setDateRange] = useState<string>('All Time');
   
   // Drawer State
@@ -139,11 +139,16 @@ export function AdminOrdersBoard() {
     if (!orders) return [];
     let result = [...orders];
 
-    // View: separate active orders from cancelled ones.
+    // View: Active (in-progress) / Completed (delivered) / Cancelled.
     if (view === 'active') {
-      result = result.filter(o => mapLegacyStatus(o.status || 'Order Placed') !== 'Cancelled');
+      result = result.filter(o => {
+        const m = mapLegacyStatus(o.status || 'Processing');
+        return m !== 'Cancelled' && m !== 'Delivered';
+      });
+    } else if (view === 'completed') {
+      result = result.filter(o => mapLegacyStatus(o.status || 'Processing') === 'Delivered');
     } else if (view === 'cancelled') {
-      result = result.filter(o => mapLegacyStatus(o.status || 'Order Placed') === 'Cancelled');
+      result = result.filter(o => mapLegacyStatus(o.status || 'Processing') === 'Cancelled');
     }
 
     // Date Range Matcher
@@ -211,10 +216,16 @@ export function AdminOrdersBoard() {
     return result;
   }, [orders, view, dateRange, statusFilter, paymentFilter, sourceFilter, searchQuery]);
 
-  const cancelledCount = useMemo(
-    () => (orders || []).filter(o => mapLegacyStatus(o.status || 'Order Placed') === 'Cancelled').length,
-    [orders],
-  );
+  const counts = useMemo(() => {
+    let active = 0, completed = 0, cancelled = 0;
+    for (const o of orders || []) {
+      const m = mapLegacyStatus(o.status || 'Processing');
+      if (m === 'Cancelled') cancelled++;
+      else if (m === 'Delivered') completed++;
+      else active++;
+    }
+    return { active, completed, cancelled };
+  }, [orders]);
 
   const handleStatusChange = async (order: any, status: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -295,13 +306,13 @@ export function AdminOrdersBoard() {
 
       {/* VIEW: Active / Cancelled / All */}
       <div className="shrink-0">
-        <Segmented<'active' | 'cancelled' | 'all'>
+        <Segmented<'active' | 'completed' | 'cancelled'>
           value={view}
           onChange={setView}
           options={[
-            { value: 'active', label: 'Active' },
-            { value: 'cancelled', label: `Cancelled${cancelledCount ? ` (${cancelledCount})` : ''}` },
-            { value: 'all', label: 'All' },
+            { value: 'active', label: `Active${counts.active ? ` (${counts.active})` : ''}` },
+            { value: 'completed', label: `Completed${counts.completed ? ` (${counts.completed})` : ''}` },
+            { value: 'cancelled', label: `Cancelled${counts.cancelled ? ` (${counts.cancelled})` : ''}` },
           ]}
         />
       </div>
@@ -398,7 +409,7 @@ export function AdminOrdersBoard() {
                   <Link 
                     key={order.id} 
                     to={`/admin/orders/${order.id}`}
-                    className="group bg-surface/40 hover:bg-surface/80 border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-colors p-5 lg:p-4 flex flex-col lg:grid lg:grid-cols-12 gap-y-4 lg:gap-4 items-start lg:items-center cursor-pointer relative"
+                    className="group rounded-xl border border-[#c5a059]/15 hover:border-[#c5a059]/50 hover:bg-[#c5a059]/[0.03] transition-all p-5 lg:p-4 flex flex-col lg:grid lg:grid-cols-12 gap-y-4 lg:gap-4 items-start lg:items-center cursor-pointer relative overflow-hidden"
                   >
                     {isNewOrder(order.createdAt) && (
                       <div className="absolute top-0 left-0 w-1 h-full bg-[#c5a059]" />
