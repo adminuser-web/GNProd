@@ -19,9 +19,9 @@ export type { OrderStatus } from './lib/orderStatus';
 export type EnquiryStatus = any;
 export type OrderRecord = any;
 
-// Payment on an order. Manual UPI / bank collection (no gateway): the customer
-// pays via a UPI link/QR, then we confirm from the bank. Kept permissive
-// ([k: string]: any) so existing loose access sites keep compiling.
+// Payment on an order. Paid at checkout via the Razorpay gateway (UPI/GPay/card);
+// `gateway`/`razorpayOrderId`/`razorpayPaymentId` are set on success. Legacy
+// manual-UPI fields remain permissive ([k: string]: any) for old records.
 export type PaymentStatus =
   | 'pending'        // order placed, no payment action yet
   | 'submitted'      // customer reports paid (UPI ref / proof) — awaiting admin check

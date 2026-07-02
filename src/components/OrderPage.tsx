@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useOrder } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
-import { BRAND } from '../types';
 import { clsx } from 'clsx';
 import { GoldButton } from './GoldButton';
 import { LazyImage } from './LazyImage';
-import { orderService } from '../features/orders/services/orderService';
 import { supabase } from '../lib/supabase';
+import { loadRazorpay } from '../lib/razorpayClient';
 import { ChevronDown, ChevronUp, Trash2, Plus, Minus, ShieldCheck, Lock, Hammer } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES, STATES_BY_COUNTRY, CITIES_BY_STATE } from '../data/locations';
@@ -130,12 +129,6 @@ export function OrderPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const generateOrderId = () => {
-    const date = new Date().toISOString().slice(0,10).replace(/-/g, '');
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `GRN-${date}-${random}`;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
@@ -146,131 +139,108 @@ export function OrderPage() {
 
     setIsSubmitting(true);
     setSubmitError(null);
-    const orderId = generateOrderId();
-    const receiptNumber = Math.floor(10000000 + Math.random() * 90000000).toString();
 
     try {
-      // Guests can order without an explicit login. We silently create an
-      // anonymous Supabase session so the order has an owner (orders RLS
-      // requires user_id = auth.uid()). Their email/phone is captured on the
-      // order regardless, so the team can follow up on WhatsApp.
+      // Guests check out without an explicit login — a silent anonymous session
+      // gives the order an owner (so it shows in "My Orders").
       let uid = user?.uid;
       if (!uid) {
         const { data, error } = await supabase.auth.signInAnonymously();
-        if (error || !data?.user) {
-          throw new Error('GUEST_AUTH_UNAVAILABLE');
-        }
+        if (error || !data?.user) throw new Error('GUEST_AUTH_UNAVAILABLE');
         uid = data.user.id;
       }
+
+      const Razorpay = await loadRazorpay();
+      if (!Razorpay) throw new Error('GATEWAY_LOAD_FAILED');
 
       const countryName = COUNTRIES.find(c => c.code === formData.country)?.name || formData.country;
       const stateName = STATES_BY_COUNTRY[formData.country]?.find(s => s.code === formData.state)?.name || formData.state;
 
-      let baseSubtotal = 0;
-      let customizationTotal = 0;
-      itemsWithPricing.forEach(item => {
-        const qty = item.quantity;
-        const res = item.pricingResult;
-        if (res) {
-          baseSubtotal += (res.base * qty);
-          customizationTotal += ((res.subtotal - res.base) * qty);
-        } else {
-          baseSubtotal += (item.basePrice * qty);
-        }
+      // The server recomputes the amount from these — never trusts the browser.
+      const items = itemsWithPricing.map(item => {
+        const selections: Record<string, string> = {};
+        const selectionLabels: { label: string; value: string; priceDelta: number }[] = [];
+        item.selections.forEach((s: any) => {
+          selections[s.groupId] = s.type === 'text' && s.valueText ? s.valueText : s.optionId;
+          selectionLabels.push({
+            label: s.groupLabel,
+            value: s.type === 'text' && s.valueText ? s.valueText : s.optionLabel,
+            priceDelta: s.priceDelta || 0,
+          });
+        });
+        return {
+          productId: (item.product as any).activeSubSeriesId || item.product.id,
+          seriesSlug: item.product.slug,
+          productName: item.product.name + (item.product.subSeriesName ? ` - ${item.product.subSeriesName}` : ''),
+          selections,
+          selectionLabels,
+          quantity: item.quantity,
+        };
       });
 
-      const snapshottedItems = itemsWithPricing.map(item => ({
-        ...item,
-        pricingResult: item.pricingResult,
-        productName: item.product.name + (item.product.subSeriesName ? ` - ${item.product.subSeriesName}` : ''),
-        basePrice: item.product.price,
-        unitPrice: item.pricingResult.total,
-        lineTotal: item.pricingResult.total * item.quantity,
-        selections: item.selections.map((s: any) => ({
-          groupId: s.groupId,
-          groupLabel: s.groupLabel,
-          optionId: s.optionId,
-          optionLabel: s.optionLabel,
-          priceDelta: s.priceDelta || 0,
-          type: s.type || 'select',
-          valueText: s.valueText || null
-        }))
-      }));
-
-      const orderData = {
-        userId: uid,
-        status: 'Order Placed' as const,
-        receiptNumber,
-        totalPrice: grandTotal,
-        subtotal: subtotal,
-        discountsApplied: discountsApplied,
-        discountCode: discountCode || null,
-        pricing: {
-          baseSubtotal: baseSubtotal,
-          customizationTotal: customizationTotal,
-          shipping: 0,
-          discountsApplied: discountsApplied,
-          discountCode: discountCode || null,
-          total: grandTotal,
-          currency: 'INR' as const
-        },
-        payment: {
-          status: 'pending' as const,
-          paidAmount: 0
-        },
-        timeline: [{
-          status: 'Order Placed' as const,
-          timestamp: new Date(),
-          changedBy: uid,
-          note: 'Order placed'
-        }],
-        customer: {
-          email: formData.email,
-          name: formData.name,
-          phone: formData.phone,
-        },
-        paymentStatus: 'pending' as const,
-        fulfillmentMode: 'delivery' as const,
-        orderSource: 'website' as const,
-        items: snapshottedItems,
-        shippingDetails: {
-          email: formData.email,
-          name: formData.name,
-          phone: formData.phone,
-          country: countryName,
-          state: stateName,
-          city: formData.city,
-          pincode: formData.pincode,
-          address: formData.address,
-          notes: formData.notes
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+      const shipping = {
+        name: formData.name, email: formData.email, phone: formData.phone,
+        country: countryName, state: stateName, city: formData.city,
+        pincode: formData.pincode, address: formData.address, notes: formData.notes,
       };
 
-      await orderService.createOrder(orderId, orderData);
-
-      let message = `NEW GRAINOOD ORDER ${receiptNumber}\n\n`;
-      snapshottedItems.forEach(item => {
-        const selObj = item.selections.map((s: any) => s.type === 'text' && s.valueText ? `${s.groupLabel}: ${s.valueText}` : s.optionLabel).join(' / ');
-        message += `${item.quantity}x ${item.productName} — ${selObj} — ₹${item.lineTotal.toLocaleString('en-IN')}\n`;
+      const { data, error } = await supabase.functions.invoke('razorpay-create-order', {
+        body: { items, discountCode: discountCode || undefined, expectedTotal: grandTotal, shipping },
       });
-      message += `\nTOTAL: ₹${grandTotal.toLocaleString('en-IN')}\n\n`;
-      message += `CUSTOMER DETAILS:\nName: ${formData.name}\nPhone: ${formData.phone}\nEmail: ${formData.email}\n`;
-      message += `Address: ${formData.address}, ${formData.city}, ${stateName} - ${formData.pincode}\n`;
-      
-      const url = `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(message)}`;
 
-      clearOrder();
-      navigate('/order/confirmed', { state: { orderId, receiptNumber, message, url, email: formData.email } });
-    } catch (error: any) {
-      console.error("Error creating order:", error);
-      if (error?.message === 'GUEST_AUTH_UNAVAILABLE') {
-        setSubmitError("Guest checkout is temporarily unavailable. Please sign in to place your order.");
-      } else {
-        setSubmitError("Failed to create order. Please try again or contact support.");
+      if (error || !data?.ok) {
+        const code = (data as any)?.error;
+        if (code === 'price_changed') setSubmitError('Prices have updated — please review your cart and try again.');
+        else if (code === 'not_configured') setSubmitError('Payments are being set up. Please try again shortly.');
+        else setSubmitError('Could not start payment. Please try again.');
+        setIsSubmitting(false);
+        return;
       }
-    } finally {
+
+      const { orderId, razorpayOrderId, amount, currency, keyId, prefill } = data as any;
+
+      const rzp = new Razorpay({
+        key: keyId,
+        order_id: razorpayOrderId,
+        amount,
+        currency,
+        name: 'Grainood',
+        description: `Handcrafted English Willow — Order ${orderId}`,
+        prefill: { name: prefill?.name, email: prefill?.email, contact: prefill?.contact },
+        notes: { orderId },
+        theme: { color: '#c5a059' },
+        handler: async (resp: any) => {
+          const { data: v, error: ve } = await supabase.functions.invoke('razorpay-verify', {
+            body: {
+              razorpay_order_id: resp.razorpay_order_id,
+              razorpay_payment_id: resp.razorpay_payment_id,
+              razorpay_signature: resp.razorpay_signature,
+            },
+          });
+          clearOrder();
+          if (ve || !v?.ok) {
+            // Payment captured but our verify hiccuped — the webhook reconciles.
+            toast.success('Payment received — confirming your order…');
+            navigate('/my-orders');
+            return;
+          }
+          navigate('/order/confirmed', { state: { orderId, email: formData.email, paid: true } });
+        },
+        modal: { ondismiss: () => setIsSubmitting(false) },
+      });
+      rzp.on('payment.failed', (r: any) => {
+        setSubmitError(r?.error?.description || 'Payment failed or was cancelled. Please try again.');
+        setIsSubmitting(false);
+      });
+      rzp.open();
+    } catch (error: any) {
+      if (error?.message === 'GUEST_AUTH_UNAVAILABLE') {
+        setSubmitError("Guest checkout is temporarily unavailable. Please sign in to continue.");
+      } else if (error?.message === 'GATEWAY_LOAD_FAILED') {
+        setSubmitError("Couldn't load the secure payment window. Check your connection and retry.");
+      } else {
+        setSubmitError("Something went wrong starting payment. Please try again.");
+      }
       setIsSubmitting(false);
     }
   };
@@ -436,7 +406,7 @@ export function OrderPage() {
                  <Lock size={24} className="text-[#c5a059] shrink-0" />
                  <div>
                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-content mb-1">Safe Checkout</h4>
-                   <p className="text-[10px] text-muted leading-relaxed">Payment is processed securely only after order confirmation.</p>
+                   <p className="text-[10px] text-muted leading-relaxed">Encrypted payment via Razorpay — UPI, GPay, or card. We never see your card details.</p>
                  </div>
                </div>
                <div className="flex items-start gap-4">
@@ -561,11 +531,11 @@ export function OrderPage() {
                 {/* INFO BOX */}
                 <div className="mt-8 bg-[#c5a059]/5 border border-[#c5a059]/20 p-4 rounded-sm mb-8 xl:mb-0">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-[#c5a059] text-[10px] font-bold tracking-[0.2em] uppercase">HOW PAYMENT WORKS</h3>
-                    <span className="text-[9px] uppercase tracking-widest text-content/60 border border-[#c5a059]/20 px-2 py-0.5 whitespace-nowrap">Cash/UPI later</span>
+                    <h3 className="text-[#c5a059] text-[10px] font-bold tracking-[0.2em] uppercase">SECURE PAYMENT</h3>
+                    <span className="text-[9px] uppercase tracking-widest text-content/60 border border-[#c5a059]/20 px-2 py-0.5 whitespace-nowrap">UPI · GPay · Card</span>
                   </div>
                   <p className="text-content/80 text-[10px] leading-relaxed tracking-wider">
-                    Place your order now without payment. Our consulting team will contact you via WhatsApp to re-confirm your specifications. You can complete payment securely via UPI or Bank Transfer after confirmation.
+                    Pay securely via GPay, any UPI app, or card. Your order is confirmed the moment payment succeeds and crafting begins. All payments are encrypted and processed by Razorpay.
                   </p>
                   <p className="text-[#c5a059]/70 text-[10px] tracking-wider mt-3 font-semibold uppercase">
                     Estimated Delivery: 10-15 working days
@@ -595,9 +565,9 @@ export function OrderPage() {
                   }}
                   className="w-full"
                 >
-                  PLACE ORDER
+                  PAY ₹{grandTotal.toLocaleString('en-IN')} & PLACE ORDER
                 </GoldButton>
-                <p className="text-[9px] text-muted text-center tracking-widest uppercase mt-3">No payment now — pay via UPI after WhatsApp confirmation</p>
+                <p className="text-[9px] text-muted text-center tracking-widest uppercase mt-3">Secure payment via UPI · GPay · Card — powered by Razorpay</p>
               </div>
             </div>
           </div>

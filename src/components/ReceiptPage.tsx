@@ -213,7 +213,7 @@ export function ReceiptPage() {
              {/* Footer Notes */}
              <div className="pt-8 border-t border-gray-200">
                 <p className="text-xs text-center text-gray-500 font-medium tracking-wide">
-                   Payment settled directly with Grainood via UPI / Bank Transfer. Let the runs flow.
+                   Payment received securely online via Razorpay. Let the runs flow.
                 </p>
                 <div className="mt-6 flex flex-col sm:flex-row justify-center gap-2 sm:gap-6 text-[10px] tracking-widest uppercase text-gray-400 items-center">
                    <span>{BRAND.email}</span>

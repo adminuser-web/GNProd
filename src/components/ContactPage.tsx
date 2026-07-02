@@ -20,7 +20,7 @@ const FAQS_FALLBACK = [
   },
   {
     question: "How do I pay for my order?",
-    answer: "We do not accept online payments through the website. Once you place an order, our team will confirm it via WhatsApp and share payment options (UPI / Bank Transfer)."
+    answer: "You pay securely at checkout using GPay, any UPI app, or a debit/credit card — all processed by Razorpay. Your order is confirmed the moment payment succeeds, and crafting begins right away."
   },
   {
     question: "How should I care for my new bat?",

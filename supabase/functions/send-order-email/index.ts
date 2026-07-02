@@ -159,15 +159,22 @@ Deno.serve(async (req) => {
     let alertAdmins = false;
 
     if (type === 'INSERT') {
-      template = 'order_placed';
-      alertAdmins = true;
+      // Pay-at-checkout: a fresh insert is "Awaiting Payment" (unpaid) — don't
+      // email yet. Only an already-paid insert (e.g. admin/POS order) notifies now.
+      if (record?.data?.payment?.status === 'confirmed') {
+        template = 'order_placed';
+        alertAdmins = true;
+      }
     } else if (type === 'UPDATE') {
       const newPay = record?.data?.payment?.status;
       const oldPay = oldRecord?.data?.payment?.status;
       const newStatus = record?.data?.status ?? record?.status;
       const oldStatus = oldRecord?.data?.status ?? oldRecord?.status;
       if (newPay === 'confirmed' && oldPay !== 'confirmed') {
+        // Payment just landed → confirm to customer AND alert the shop (the
+        // effective "new order" moment in the gateway flow).
         template = 'payment_confirmed';
+        alertAdmins = true;
       } else if (newStatus && newStatus !== oldStatus) {
         template = 'status_changed';
       }
