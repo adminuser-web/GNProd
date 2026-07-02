@@ -154,7 +154,7 @@ export function HomePage() {
       </section>
 
       {/* STORY BAND (Parallax) */}
-      <section className="relative overflow-hidden py-32 md:py-48 bg-surface border-y border-line">
+      <section className="relative overflow-hidden py-32 md:py-48 bg-bg border-y border-line">
         <div className="absolute inset-0 z-0 opacity-20">
           <div ref={parallaxRef} className="w-full h-[150%] -mt-[25%]">
             <ScrimImage 
@@ -205,7 +205,7 @@ export function HomePage() {
                       </span>
                     </div>
                   )}
-                  <div className="aspect-[3/4] w-full relative mb-8 overflow-hidden rounded-2xl bg-surface border border-line">
+                  <div className="aspect-[3/4] w-full relative mb-8 overflow-hidden rounded-2xl bg-bg border border-line">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent z-raised" />
                     <div className="absolute inset-0 pb-6 pt-6 px-4 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity duration-700">
                       <LazyImage 
