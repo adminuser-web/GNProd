@@ -312,8 +312,8 @@ export function AdminOrderDetailsPage() {
           {/* Stage 1: Order Placed → collect payment */}
           {stage === 0 && (
             <div className="space-y-5">
-              <h3 className="text-sm font-bold tracking-widest uppercase text-[#c5a059]">Step 1 · Collect payment</h3>
-              <p className="text-xs text-muted leading-relaxed">Email the customer a payment link, then confirm once you receive the money (proof optional).</p>
+              <h3 className="text-sm font-bold tracking-widest uppercase text-[#c5a059]">Awaiting Payment</h3>
+              <p className="text-xs text-muted leading-relaxed">Online orders are paid securely at checkout via Razorpay and move to <strong className="text-content">Processing</strong> automatically — you don't act here. Use the controls below <strong className="text-content">only to record an offline/manual payment</strong> (e.g. a phone or walk-in order).</p>
               <button onClick={() => openEmailModal('payment_request')} className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest bg-[#c5a059]/10 text-[#c5a059] border border-[#c5a059]/30 px-4 py-2.5 hover:bg-[#c5a059] hover:text-bg transition-colors">
                 <Mail className="w-3.5 h-3.5" /> Send Payment Email
               </button>

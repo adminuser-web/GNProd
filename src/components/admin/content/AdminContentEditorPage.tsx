@@ -93,14 +93,7 @@ function BrandIdentityForm({ data, onChange }: { data: any; onChange: (path: str
         </div>
       </Card>
 
-      <Card title="Payments (UPI)" desc="Used to generate the 'Pay via UPI' link & QR on customer orders. Money goes straight to this UPI ID — use a business/current-account UPI.">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="UPI ID (VPA)" value={d.payments?.upiId} onChange={(v: string) => onChange(['payments', 'upiId'], v)} help="e.g. grainood@okhdfc — leave blank to fall back to manual WhatsApp details." />
-          <Field label="Payee Name" value={d.payments?.upiPayeeName} onChange={(v: string) => onChange(['payments', 'upiPayeeName'], v)} help="Name shown in the customer's UPI app." />
-        </div>
-      </Card>
-
-      <Card title="Order Emails" desc="Admin order emails open a pre-filled Gmail draft (you review & send). This sets which signed-in Google account Gmail opens in.">
+      <Card title="Order Emails" desc="Payment, confirmation, and status emails are sent automatically to customers. This address is only used for any manual one-off emails you send from the admin order page (opens a pre-filled Gmail draft).">
         <Field label="Order email sent from (Gmail address)" value={d.orderEmailFrom} onChange={(v: string) => onChange(['orderEmailFrom'], v)} help="e.g. adminuser@grainood.com — Gmail opens this account even if several are signed in." />
       </Card>
     </div>
