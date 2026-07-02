@@ -4,7 +4,7 @@ import { ChevronRight, Filter, X, SearchX } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useProducts } from '../context/ProductsContext';
 import { Reveal } from './Reveal';
-import { ScrimImage } from './ScrimImage';
+import { LazyImage } from './LazyImage';
 import { GoldButton } from './GoldButton';
 import { Skeleton, SkeletonTextLines } from './Skeleton';
 import { EmptyState } from './EmptyState';
@@ -219,76 +219,56 @@ export function CollectionPage() {
 
           return (
             <Reveal key={series.id} delay={idx * 150} className="h-full">
-              <Link to={`/collection/${series.slug}`} className="block h-full transition-all duration-500 ease-out relative outline-none hover:-translate-y-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] rounded-3xl">
-                <div className="flex flex-col relative rounded-3xl overflow-hidden h-full border border-[#c5a059]/20 group-hover:border-[#c5a059] shadow-sm shadow-[#c5a059]/5 group-hover:shadow-[0_8px_30px_rgba(197,160,89,0.15)] transition-all duration-500">
-                  
-                  {/* Background specific to tile */}
-                  <div className="absolute inset-0 z-0">
-                    <ScrimImage
-                       src={series.imageUrl}
-                       placeholderSrc="/product-bat.webp"
-                       alt={series.name}
-                       className="w-full h-full"
-                       imageClassName="group-hover:scale-105 active:scale-100 transition-transform duration-700 ease-out"
-                       scrim="linear-gradient(to top, rgba(8,8,10,0.9) 0%, rgba(8,8,10,0.6) 40%, rgba(8,8,10,0.2) 75%, rgba(8,8,10,0.1) 100%)"
+              <Link to={`/collection/${series.slug}`} className="block h-full outline-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] rounded-3xl">
+                <div className="relative h-full flex flex-col rounded-3xl border border-[#c5a059]/25 group-hover:border-[#c5a059]/70 p-6 md:p-8 transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-[0_16px_48px_-16px_rgba(197,160,89,0.4)]">
+
+                  <div className="flex justify-between gap-2 mb-4">
+                    <span className="px-3 py-1 border border-[#c5a059]/30 text-[#c5a059] text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
+                      {series.slug === 'debutant' && 'Best for Beginners'}
+                      {series.slug === 'millennium' && 'Club Match Ready'}
+                      {series.slug === 'legend' && 'Best Pickup'}
+                      {series.slug === 'eternal' && 'Power Hitter Choice'}
+                      {series.slug === 'immortal' && 'Pro Reserve'}
+                      {!['debutant', 'millennium', 'legend', 'eternal', 'immortal'].includes(series.slug) && (series.isFlagship ? 'Premium Choice' : 'New Arrival')}
+                    </span>
+                    {(series.badge || series.isFlagship) && (
+                      <span className="px-3 py-1 border border-[#c5a059]/30 text-content text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
+                        {series.badge || 'Flagship'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="aspect-[4/5] w-full relative flex items-center justify-center mb-6 px-4">
+                    <LazyImage
+                      src={series.imageUrl}
+                      alt={series.name}
+                      containerClassName="h-full bg-transparent"
+                      className="w-auto h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-out drop-shadow-md"
+                      optimizeWidth={500}
                     />
                   </div>
 
-                  <div className="w-full h-[60vh] md:h-[65vh] p-8 flex flex-col justify-end relative z-raised text-center text-white">
-                    <div className="absolute top-6 left-6 right-6 flex justify-between">
-                      <span className="px-3 py-1 bg-black/40 backdrop-blur-sm border border-[#c5a059]/20 text-[#c5a059] text-[10px] font-bold tracking-widest uppercase shadow-sm">
-                        {series.slug === 'debutant' && 'Best for Beginners'}
-                        {series.slug === 'millennium' && 'Club Match Ready'}
-                        {series.slug === 'legend' && 'Best Pickup'}
-                        {series.slug === 'eternal' && 'Power Hitter Choice'}
-                        {series.slug === 'immortal' && 'Pro Reserve'}
-                        {!['debutant', 'millennium', 'legend', 'eternal', 'immortal'].includes(series.slug) && (series.isFlagship ? 'Premium Choice' : 'New Arrival')}
-                      </span>
-                      {(series.badge || series.isFlagship) && (
-                        <span className="px-3 py-1 bg-black/40 backdrop-blur-sm border border-[#c5a059]/20 text-white text-[10px] font-bold tracking-widest uppercase shadow-sm">
-                          {series.badge || 'Flagship'}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mb-2">
-                       <span 
-                         className="text-[#c5a059] text-[10px] tracking-[0.2em] font-bold uppercase"
-                         style={{ textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
-                       >
-                         {series.gradeLabel || series.grade || 'Pro Elite'}
-                       </span>
-                    </div>
-                    
-                    <h2 
-                      className="text-3xl lg:text-4xl font-extrabold uppercase tracking-tight mb-3"
-                      style={{ textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
-                    >
-                       {series.name}
+                  <div className="text-center mt-auto">
+                    <span className="text-[#c5a059] text-[10px] tracking-[0.2em] font-bold uppercase">
+                      {series.gradeLabel || series.grade || 'Pro Elite'}
+                    </span>
+                    <h2 className="text-2xl lg:text-3xl font-extrabold uppercase tracking-tight text-content mt-2 mb-3">
+                      {series.name}
                     </h2>
-                    
-                    <p 
-                      className="text-white/90 text-sm md:text-base leading-snug mb-6 max-w-sm mx-auto font-light"
-                      style={{ textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
-                    >
-                        {series.slug === 'debutant' && 'Entry-level Grade 4 English Willow for beginners and casual players.'}
-                        {series.slug === 'millennium' && 'Reliable match-use English Willow for regular club cricketers.'}
-                        {series.slug === 'legend' && 'Pickup-focused premium English Willow for timing and control.'}
-                        {series.slug === 'eternal' && 'Power-focused premium bat for serious aggressive players.'}
-                        {series.slug === 'immortal' && 'Flagship pro-reserve build for elite/premium buyers.'}
-                        {!['debutant', 'millennium', 'legend', 'eternal', 'immortal'].includes(series.slug) && series.tagline}
+                    <p className="text-muted text-sm leading-snug mb-6 max-w-sm mx-auto font-light">
+                      {series.slug === 'debutant' && 'Entry-level Grade 4 English Willow for beginners and casual players.'}
+                      {series.slug === 'millennium' && 'Reliable match-use English Willow for regular club cricketers.'}
+                      {series.slug === 'legend' && 'Pickup-focused premium English Willow for timing and control.'}
+                      {series.slug === 'eternal' && 'Power-focused premium bat for serious aggressive players.'}
+                      {series.slug === 'immortal' && 'Flagship pro-reserve build for elite/premium buyers.'}
+                      {!['debutant', 'millennium', 'legend', 'eternal', 'immortal'].includes(series.slug) && series.tagline}
                     </p>
-
-                    <div 
-                      className="text-lg md:text-xl font-bold tracking-widest mb-8 text-white"
-                      style={{ textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
-                    >
-                       From ₹{startingPrice?.toLocaleString('en-IN')}
+                    <div className="text-lg md:text-xl font-bold tracking-widest mb-6 text-content">
+                      From ₹{startingPrice?.toLocaleString('en-IN')}
                     </div>
-
-                    <div className="w-full py-4 tracking-[0.25em] text-[10px] font-bold flex items-center justify-center gap-2 border border-[#c5a059]/30 bg-transparent text-white group-hover:bg-[#c5a059] group-hover:text-bg transition-colors duration-300">
-                       VIEW RANGE
-                       <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    <div className="w-full py-4 tracking-[0.25em] text-[10px] font-bold flex items-center justify-center gap-2 border border-[#c5a059]/40 text-[#c5a059] group-hover:bg-[#c5a059] group-hover:text-bg transition-colors duration-300">
+                      VIEW RANGE
+                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
 
