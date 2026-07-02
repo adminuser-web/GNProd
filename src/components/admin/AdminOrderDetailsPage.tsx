@@ -153,10 +153,18 @@ export function AdminOrderDetailsPage() {
   const shortId = order.receiptNumber || (order.id || '').slice(0, 16);
   const rzpPaymentId = (order.payment as any)?.razorpayPaymentId;
 
+  // Re-fetch after a mutation so the UI updates without a manual refresh
+  // (belt-and-suspenders alongside the realtime subscription).
+  const refresh = async () => {
+    if (!id) return;
+    const o = await orderService.getOrder(id);
+    if (o) setOrder(o);
+  };
+
   const setStatus = async (next: any, note: string, ok: string) => {
     if (!id) return;
     setSaving(true);
-    try { await orderService.updateOrderStatus(id, next, user?.email || 'Admin', note); toast.success(ok); }
+    try { await orderService.updateOrderStatus(id, next, user?.email || 'Admin', note); toast.success(ok); await refresh(); }
     catch (e: any) { toast.error('Could not update: ' + (e?.message || 'error')); }
     finally { setSaving(false); }
   };
@@ -173,6 +181,7 @@ export function AdminOrderDetailsPage() {
       });
       if (status !== 'Shipped') await orderService.updateOrderStatus(id, 'Shipped', user?.email || 'Admin', 'Dispatched to customer');
       toast.success('Delivery details saved · order marked Shipped');
+      await refresh();
     } catch (e: any) { toast.error('Could not update: ' + (e?.message || 'error')); }
     finally { setSaving(false); }
   };
@@ -192,6 +201,7 @@ export function AdminOrderDetailsPage() {
       await orderService.cancelOrder(id, cancelReason, user?.email || 'Admin');
       toast.success(paid && !refunded ? 'Order cancelled & refund initiated' : 'Order cancelled');
       setShowCancel(false); setCancelReason('');
+      await refresh();
     } catch (e: any) { toast.error(e?.message || 'Could not cancel'); }
     finally { setCancelSaving(false); }
   };
