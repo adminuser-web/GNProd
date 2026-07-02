@@ -197,17 +197,16 @@ export function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
             {products.map((product, index) => (
               <Reveal key={product.id} delay={index * 100} className="group cursor-pointer">
-                <Link to={`/collection/${product.slug}`} className="block h-full transition-all duration-500 py-6 relative outline-none hover:-translate-y-1">
-                  {product.isFlagship && (
-                    <div className="absolute top-8 right-0 z-sticky-section">
-                      <span className="px-3 py-1 bg-elevated/90 border border-[#c5a059]/20 text-[#c5a059] text-[10px] font-bold tracking-widest uppercase">
-                        Flagship
-                      </span>
-                    </div>
-                  )}
-                  <div className="aspect-[3/4] w-full relative mb-8 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent z-raised" />
-                    <div className="absolute inset-0 pb-6 pt-6 px-4 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity duration-700">
+                <Link to={`/collection/${product.slug}`} className="block h-full outline-none">
+                  <div className="relative h-full flex flex-col rounded-2xl border border-[#c5a059]/25 group-hover:border-[#c5a059]/70 p-5 md:p-6 transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_14px_44px_-14px_rgba(197,160,89,0.4)]">
+                    {product.isFlagship && (
+                      <div className="absolute top-4 right-4 z-raised">
+                        <span className="px-2.5 py-1 border border-[#c5a059]/40 text-[#c5a059] text-[9px] font-bold tracking-widest uppercase">
+                          Flagship
+                        </span>
+                      </div>
+                    )}
+                    <div className="aspect-[3/4] w-full relative flex items-center justify-center mb-6 px-2">
                       <LazyImage
                         src={product.imageUrl}
                         alt={product.name}
@@ -216,11 +215,11 @@ export function HomePage() {
                         optimizeWidth={400}
                       />
                     </div>
-                  </div>
-                  <div className="text-center relative z-sticky-section">
-                    <p className="text-[#c5a059] text-[10px] tracking-widest mb-2 font-semibold uppercase">{product.tier}</p>
-                    <h3 className="text-lg md:text-xl font-medium text-content tracking-tight mb-2 capitalize whitespace-nowrap">{product.name}</h3>
-                    <p className="text-muted text-xs tracking-wide">From ₹{(product.price ?? 0).toLocaleString('en-IN')}</p>
+                    <div className="text-center mt-auto">
+                      <p className="text-[#c5a059] text-[10px] tracking-widest mb-2 font-semibold uppercase">{product.tier}</p>
+                      <h3 className="text-lg md:text-xl font-medium text-content tracking-tight mb-2 capitalize whitespace-nowrap">{product.name}</h3>
+                      <p className="text-muted text-xs tracking-wide">From ₹{(product.price ?? 0).toLocaleString('en-IN')}</p>
+                    </div>
                   </div>
                 </Link>
               </Reveal>
