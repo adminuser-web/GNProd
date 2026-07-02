@@ -16,45 +16,51 @@ async function fetchOrderRow(orderId: string): Promise<any | null> {
 }
 
 export const orderService = {
-  // "Subscriptions" — fetch-on-call (returns a no-op unsubscribe). Realtime can
-  // be layered on with Supabase channels during hardening.
+  // Live subscriptions: an initial fetch + a realtime channel that re-fetches on
+  // any change to `orders` (RLS re-applied by the re-fetch). Requires the orders
+  // table to be in the `supabase_realtime` publication (migration ...000005).
   subscribeToAllOrders(callback: (orders: OrderRecord[]) => void) {
-    supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200)
-      .then(({ data, error }) => {
-        if (error) { console.error('subscribeToAllOrders', error); return; }
-        callback((data ?? []).map(rowToOrder));
-      });
-    return () => {};
+    const fetchAll = async () => {
+      const { data, error } = await supabase
+        .from('orders').select('*').order('created_at', { ascending: false }).limit(200);
+      if (error) { console.error('subscribeToAllOrders', error); return; }
+      callback((data ?? []).map(rowToOrder));
+    };
+    fetchAll();
+    const ch = supabase
+      .channel(`orders-all-${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { fetchAll(); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   },
 
   subscribeToUserOrders(userId: string, callback: (orders: OrderRecord[]) => void) {
-    supabase
-      .from('orders')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) { console.error('subscribeToUserOrders', error); return; }
-        callback((data ?? []).map(rowToOrder));
-      });
-    return () => {};
+    const fetchMine = async () => {
+      const { data, error } = await supabase
+        .from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+      if (error) { console.error('subscribeToUserOrders', error); return; }
+      callback((data ?? []).map(rowToOrder));
+    };
+    fetchMine();
+    const ch = supabase
+      .channel(`orders-user-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, () => { fetchMine(); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   },
 
   subscribeToOrder(orderId: string, callback: (order: OrderRecord | null) => void) {
-    supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error) { console.error('subscribeToOrder', error); return; }
-        callback(data ? rowToOrder(data) : null);
-      });
-    return () => {};
+    const fetchOne = async () => {
+      const { data, error } = await supabase.from('orders').select('*').eq('id', orderId).maybeSingle();
+      if (error) { console.error('subscribeToOrder', error); return; }
+      callback(data ? rowToOrder(data) : null);
+    };
+    fetchOne();
+    const ch = supabase
+      .channel(`order-${orderId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` }, () => { fetchOne(); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   },
 
   async getOrder(orderId: string): Promise<OrderRecord | null> {
