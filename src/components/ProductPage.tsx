@@ -853,7 +853,7 @@ export function ProductPage() {
                     )}
                   </div>
 
-                  {/* Pay-later reassurance */}
+                  {/* Payment reassurance */}
                   <HowItWorks variant="compact" className="mt-4" />
 
                   {/* Secondary actions — subordinate to Add to Cart */}
@@ -876,7 +876,7 @@ export function ProductPage() {
 
                 <div className="text-center mt-6 flex flex-col gap-2">
                     <a href={whatsappUrl} target="_blank" rel="noreferrer" className="text-muted hover:text-premium-gold-text text-[11px] tracking-[0.2em] uppercase transition-colors inline-block border-b border-transparent hover:border-[#c5a059] focus-visible:outline-none focus-visible:text-premium-gold-text">
-                      CONFIRM SPECS ON WHATSAPP
+                      QUESTIONS? CHAT ON WHATSAPP
                     </a>
                   </div>
                   <div className="text-center mt-4 border-t border-[#c5a059]/10 pt-4">
@@ -1160,7 +1160,7 @@ export function ProductPage() {
                     )}
                     <div className="text-center mt-6 border-t border-line/30 pt-4 flex flex-col gap-2">
                       <a href={whatsappUrl} target="_blank" rel="noreferrer" className="text-content hover:text-premium-gold-text text-[10px] tracking-[0.2em] uppercase transition-colors inline-block border-b border-transparent hover:border-[#c5a059]">
-                        CONFIRM SPECS ON WHATSAPP
+                        QUESTIONS? CHAT ON WHATSAPP
                       </a>
                     </div>
                   </div>

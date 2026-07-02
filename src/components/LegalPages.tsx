@@ -67,9 +67,10 @@ export function ShippingPage() {
 
 const REFUND_SECTIONS: LegalSection[] = [
   {
-    heading: "Made-To-Order Commitment",
+    heading: "Cancellations & Refunds",
     content: [
-      "Because every bat is custom-crafted to your specific weight, handle, and aesthetic requirements, we cannot offer refunds or cancellations once the shaping process has begun in our workshop. Please be certain of your specifications before confirming your order."
+      "You pay securely at checkout. You may cancel for a full refund any time before we begin crafting your bat — typically within 24 hours of placing the order. Approved refunds are issued to your original payment method via our payment partner (Razorpay) within 5–7 business days.",
+      "Because every bat is then custom-crafted to your exact weight, handle, and aesthetic specifications, orders cannot be cancelled or refunded once the shaping process has begun in our workshop. Please be certain of your specifications before paying."
     ]
   },
   {
@@ -96,13 +97,13 @@ const PRIVACY_SECTIONS: LegalSection[] = [
   {
     heading: "Local Storage & Order Data",
     content: [
-      "Your order configurations, cart items, and personal details entered during checkout are stored locally on your device. We do not store this information on a central server during your browsing session. The data is only transmitted to Grainood when you explicitly submit your order via WhatsApp or Email."
+      "Your cart items and configurations are stored locally on your device while you browse. Your details are transmitted to Grainood only when you place your order and complete payment at checkout."
     ]
   },
   {
     heading: "Payment Security",
     content: [
-      "The Grainood website does not collect, process, or store any payment data or credit card information. All monetary transactions are handled externally and securely via UPI or direct bank transfer following order confirmation."
+      "Payments are processed securely by our PCI-DSS-compliant payment partner, Razorpay. Your card, UPI, and bank details go directly to the gateway — the Grainood website never sees or stores your full payment credentials."
     ]
   },
   {

@@ -406,7 +406,7 @@ export function OrderPage() {
                  <Lock size={24} className="text-[#c5a059] shrink-0" />
                  <div>
                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-content mb-1">Safe Checkout</h4>
-                   <p className="text-[10px] text-muted leading-relaxed">Payment is processed securely only after order confirmation.</p>
+                   <p className="text-[10px] text-muted leading-relaxed">Encrypted payment via Razorpay — UPI, GPay, or card. We never see your card details.</p>
                  </div>
                </div>
                <div className="flex items-start gap-4">
