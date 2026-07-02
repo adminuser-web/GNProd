@@ -79,6 +79,7 @@ export function OrderDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [payRetrying, setPayRetrying] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   
   const { dispatch, openDrawer } = useOrder();
   const { products } = useProducts();
@@ -214,6 +215,16 @@ export function OrderDetailPage() {
     if (res.status === 'paid') { toast.success('Payment confirmed — crafting begins!'); setReloadKey(k => k + 1); }
     else if (res.status === 'pending') { toast.success('Payment received — confirming your order…'); setReloadKey(k => k + 1); }
     else if (res.status === 'failed' && res.message) toast.error(res.message);
+  };
+
+  const handleSelfCancel = async () => {
+    if (!order || cancelling) return;
+    if (!confirm('Cancel this order? Your bat specs will be lost. This cannot be undone.')) return;
+    setCancelling(true);
+    const res = await orderService.selfCancel(order.id, 'Cancelled before payment');
+    setCancelling(false);
+    if (res.ok) { toast.success('Order cancelled.'); setReloadKey(k => k + 1); }
+    else toast.error(res.error === 'not_cancellable' ? 'This order can no longer be cancelled here — please contact support.' : 'Could not cancel — please try again.');
   };
 
   const handleSubmitTicket = async (e: React.FormEvent) => {
@@ -407,6 +418,11 @@ export function OrderDetailPage() {
               <GoldButton onClick={handleRetryPayment} disabled={payRetrying} variant="solid">
                 {payRetrying ? 'OPENING SECURE PAYMENT…' : 'COMPLETE PAYMENT'}
               </GoldButton>
+              <div className="mt-3">
+                <button onClick={handleSelfCancel} disabled={cancelling || payRetrying} className="text-[10px] uppercase tracking-widest text-muted hover:text-red-400 transition-colors disabled:opacity-50">
+                  {cancelling ? 'Cancelling…' : 'Cancel this order'}
+                </button>
+              </div>
             </div>
           </RevealSection>
         )}
