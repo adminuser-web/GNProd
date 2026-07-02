@@ -205,13 +205,13 @@ export function HomePage() {
                       </span>
                     </div>
                   )}
-                  <div className="aspect-[3/4] w-full relative mb-8 overflow-hidden rounded-2xl bg-bg border border-line">
+                  <div className="aspect-[3/4] w-full relative mb-8 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent z-raised" />
                     <div className="absolute inset-0 pb-6 pt-6 px-4 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity duration-700">
-                      <LazyImage 
-                        src={product.imageUrl} 
+                      <LazyImage
+                        src={product.imageUrl}
                         alt={product.name}
-                        containerClassName="h-full"
+                        containerClassName="h-full bg-transparent"
                         className="w-auto h-full object-contain group-hover:scale-105 transition-transform duration-700 drop-shadow-md"
                         optimizeWidth={400}
                       />
