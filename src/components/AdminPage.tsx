@@ -9,10 +9,10 @@ import {
   UserPlus,
   Bookmark,
   Layers,
-  Tag,
   Share2,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -60,8 +60,8 @@ function BarChart({
 }) {
   const maxVal = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="bg-surface border border-[#c5a059]/20 p-4 flex flex-col h-full min-h-[210px]">
-      <h3 className="text-[10px] text-muted uppercase tracking-widest mb-4">
+    <div className="flex flex-col h-full min-h-[190px]">
+      <h3 className="text-[11px] text-muted mb-4">
         {title}
       </h3>
       <div className="flex-1 flex items-end gap-1 md:gap-2 justify-between mt-auto">
@@ -108,9 +108,9 @@ function DonutChart({
   ];
 
   return (
-    <div className="bg-surface border border-[#c5a059]/20 p-4 flex flex-col sm:flex-row items-center sm:items-start gap-6 h-full">
+    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 h-full">
       <div className="flex-1 flex flex-col justify-center items-center relative">
-        <h3 className="text-[10px] text-muted uppercase tracking-widest absolute top-0 left-0 w-full text-left">
+        <h3 className="text-[11px] text-muted absolute top-0 left-0 w-full text-left">
           {title}
         </h3>
         <svg
@@ -189,8 +189,8 @@ function LineChart({
     .join(" ");
 
   return (
-    <div className="bg-surface border border-[#c5a059]/20 p-4 flex flex-col h-full min-h-[210px]">
-      <h3 className="text-[10px] text-muted uppercase tracking-widest mb-4">
+    <div className="flex flex-col h-full min-h-[190px]">
+      <h3 className="text-[11px] text-muted mb-4">
         {title}
       </h3>
       <div className="flex-1 relative mt-4">
@@ -240,7 +240,7 @@ function LineChart({
   );
 }
 
-function ActionQueue({
+function AttentionStrip({
   crafting,
   readyToShip,
   openSupport,
@@ -250,55 +250,27 @@ function ActionQueue({
   openSupport: number;
 }) {
   const items = [
-    {
-      label: "Paid orders in crafting",
-      count: crafting,
-      icon: ShoppingBag,
-      to: "/admin/orders?status=Processing",
-    },
-    {
-      label: "Ready to ship",
-      count: readyToShip,
-      icon: IndianRupee,
-      to: "/admin/orders?status=Ready for Shipment",
-    },
-    {
-      label: "Open support requests",
-      count: openSupport,
-      icon: LifeBuoy,
-      to: "/admin/support?status=open",
-    },
+    { label: "to craft", count: crafting, to: "/admin/orders?status=Processing" },
+    { label: "to ship", count: readyToShip, to: "/admin/orders?status=Ready for Shipment" },
+    { label: "support replies", count: openSupport, to: "/admin/support?status=open" },
   ].filter((i) => i.count > 0);
 
+  if (items.length === 0) {
+    return (
+      <div className="flex items-center gap-2 py-3 border-b border-line text-sm text-muted">
+        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> All caught up — nothing waiting.
+      </div>
+    );
+  }
   return (
-    <div className="bg-surface border border-[#c5a059]/20 shadow-sm">
-      {items.length === 0 ? (
-        <div className="flex items-center gap-3 px-4 py-3.5">
-          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          <p className="text-sm text-content tracking-wide">All caught up — no orders or requests waiting.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#c5a059]/10">
-          {items.map((i) => (
-            <Link
-              key={i.label}
-              to={i.to}
-              className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-[#c5a059]/5 transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full border border-[#c5a059]/30 flex items-center justify-center shrink-0">
-                  <i.icon className="w-4 h-4 text-[#c5a059]" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-base font-bold text-content leading-none">{i.count}</div>
-                  <div className="text-[10px] uppercase tracking-widest text-muted mt-1 truncate">{i.label}</div>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted group-hover:text-[#c5a059] group-hover:translate-x-0.5 transition-all shrink-0" />
-            </Link>
-          ))}
-        </div>
-      )}
+    <div className="flex flex-wrap items-center gap-x-7 gap-y-2 py-3 border-b border-line">
+      {items.map((i) => (
+        <Link key={i.label} to={i.to} className="group flex items-center gap-2 text-sm text-content hover:text-[#c5a059] transition-colors">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059]" aria-hidden />
+          <span className="font-bold">{i.count}</span> {i.label}
+          <ChevronRight className="w-3.5 h-3.5 text-muted group-hover:text-[#c5a059] group-hover:translate-x-0.5 transition-all" />
+        </Link>
+      ))}
     </div>
   );
 }
@@ -586,37 +558,30 @@ export function AdminPage() {
   if (loading) {
     return (
       <div className="pb-10 space-y-4 font-sans">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 border-b border-[#c5a059]/10 pb-6">
-          <div>
-            <Skeleton variant="text" className="h-3 w-32 mb-2" />
-            <Skeleton variant="text" className="h-8 w-64" />
-          </div>
-          <Skeleton variant="rectangular" className="h-10 w-48" />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-5 border-b border-line pb-4">
+          <Skeleton variant="text" className="h-7 w-64" />
+          <Skeleton variant="rectangular" className="h-9 w-48" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {Array(5).fill(0).map((_, i) => (
-             <Skeleton key={i} variant="rectangular" className="h-32" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Skeleton variant="rectangular" className="h-10 w-full" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 py-2">
           {Array(4).fill(0).map((_, i) => (
-             <Skeleton key={i} variant="rectangular" className="h-32" />
+            <Skeleton key={i} variant="rectangular" className="h-16" />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Skeleton variant="rectangular" className="h-64" />
-          <Skeleton variant="rectangular" className="h-64" />
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <Skeleton variant="rectangular" className="h-56 lg:col-span-3" />
+          <Skeleton variant="rectangular" className="h-56 lg:col-span-2" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="pb-10 space-y-4 font-sans">
+    <div className="pb-10 font-sans">
       <RevealSection>
         <PageHeader
-          eyebrow="Metrics & Reports"
-          title="Performance Dashboard"
+          eyebrow="Commerce"
+          title="Dashboard"
           actions={
             <Segmented<"30d" | "90d" | "12m">
               value={period}
@@ -632,7 +597,7 @@ export function AdminPage() {
       </RevealSection>
 
       <RevealSection delay={25}>
-        <ActionQueue
+        <AttentionStrip
           crafting={m.craftingOrders}
           readyToShip={m.readyToShipOrders}
           openSupport={m.openSupportRequests}
@@ -640,308 +605,83 @@ export function AdminPage() {
       </RevealSection>
 
       <RevealSection delay={50}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          <StatCard
-            to="/admin/orders"
-            label="Today's Orders"
-            value={m.todaysOrders}
-            subLabel="Orders placed today"
-            icon={ShoppingBag}
-          />
-          <StatCard
-            to="/admin/orders"
-            label="Confirmed Sales"
-            value={inr(m.thisMonthSales)}
-            subLabel="This month's revenue"
-            icon={IndianRupee}
-          />
-          <StatCard
-            to="/admin/orders?payment=pending"
-            label="Pending Payments"
-            value={inr(m.pendingPaymentsAmt)}
-            subLabel="Awaiting action"
-            icon={AlertTriangle}
-            alert={m.pendingPaymentsAmt > 0}
-          />
-          <StatCard
-            to="/admin/support?status=open"
-            label="Open Support"
-            value={m.openSupportRequests}
-            subLabel="Requires attention"
-            icon={LifeBuoy}
-            alert={m.openSupportRequests > 0}
-          />
-          <StatCard
-            to="/admin/customers"
-            label="New Customers"
-            value={m.newCustomersCount}
-            subLabel={`In last ${period}`}
-            icon={UserPlus}
-          />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 py-6 border-b border-line">
+          <StatCard accent to="/admin/orders" label="Sales this month" value={inr(m.thisMonthSales)} icon={IndianRupee} />
+          <StatCard to="/admin/orders" label="Today's orders" value={m.todaysOrders} icon={ShoppingBag} />
+          <StatCard to="/admin/orders?payment=pending" label="Pending payments" value={inr(m.pendingPaymentsAmt)} alert={m.pendingPaymentsAmt > 0} icon={AlertTriangle} />
+          <StatCard to="/admin/support?status=open" label="Open support" value={m.openSupportRequests} alert={m.openSupportRequests > 0} icon={LifeBuoy} />
         </div>
       </RevealSection>
 
-      <RevealSection delay={100}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Saved Builds"
-            value={m.savedBuildsCount}
-            subLabel={`In last ${period}`}
-            icon={Bookmark}
-          />
-          <StatCard
-            label="Top Series"
-            value={m.topSeries ? m.topSeries[0] : "N/A"}
-            subLabel={
-              m.topSeries
-                ? `₹${(m.topSeries[1] / 1000).toFixed(1)}k revenue`
-                : "No data"
-            }
-            icon={Layers}
-          />
-          <StatCard
-            label="Top Sub-Series"
-            value={m.topSubSeries ? m.topSubSeries[0] : "N/A"}
-            subLabel={
-              m.topSubSeries
-                ? `₹${(m.topSubSeries[1] / 1000).toFixed(1)}k revenue`
-                : "No data"
-            }
-            icon={Tag}
-          />
-          <StatCard
-            label="Most Saved Product"
-            value={m.mostSavedProduct ? m.mostSavedProduct[0] : "N/A"}
-            subLabel={
-              m.mostSavedProduct ? `${m.mostSavedProduct[1]} saves` : "No saves"
-            }
-            icon={Share2}
-          />
-        </div>
-      </RevealSection>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <RevealSection delay={150}>
-          <LineChart title="Sales by Month" data={m.salesByMonthData} />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-10 py-6">
+        <RevealSection delay={100} className="lg:col-span-3">
+          <LineChart title="Sales trend" data={m.salesByMonthData} />
         </RevealSection>
-        <RevealSection delay={150}>
-          <DonutChart title="Orders by Status" data={m.ordersByStatusData} />
-        </RevealSection>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <RevealSection delay={200}>
-          <BarChart
-            title="Sales by Series"
-            data={m.salesBySeriesData}
-            isCurrency
-          />
-        </RevealSection>
-        <RevealSection delay={200}>
-          <BarChart
-            title="Sales by Sub-Series"
-            data={m.salesBySubData}
-            isCurrency
-          />
-        </RevealSection>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <RevealSection delay={250}>
-          <DonutChart
-            title="Support Requests by Type"
-            data={m.supportByTypeData}
-          />
-        </RevealSection>
-        <RevealSection delay={250}>
-          <LineChart title="Customer Growth" data={m.custGrowthData} />
-        </RevealSection>
-      </div>
-
-      {/* Tables */}
-      <RevealSection delay={300}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Recent Orders Table */}
-          <div className="bg-surface border border-[#c5a059]/20 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
-              <h3 className="text-[10px] uppercase tracking-widest text-muted">
-                Recent Orders
-              </h3>
-              <Link
-                to="/admin/orders"
-                className="text-[9px] uppercase tracking-widest text-[#c5a059] hover:underline"
-              >
-                View All
-              </Link>
-            </div>
-            <div className="divide-y divide-[#c5a059]/10">
-              {m.recentOrders.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted">
-                  No recent orders
-                </div>
-              ) : (
-                m.recentOrders.map((o, i) => (
-                  <Link
-                    key={i}
-                    to={`/admin/orders/${o.id}`}
-                    className="px-4 py-2.5 flex justify-between items-center hover:bg-[#c5a059]/5 transition-colors cursor-pointer group"
-                  >
-                    <div>
-                      <div className="text-sm font-bold text-content font-mono group-hover:text-[#c5a059] transition-colors">
-                        {o.id.substring(0, 8).toUpperCase()}
+        <RevealSection delay={100} className="lg:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-[11px] text-muted">Recent orders</h3>
+            <Link to="/admin/orders" className="text-[10px] uppercase tracking-widest text-[#c5a059] hover:underline">View all</Link>
+          </div>
+          {m.recentOrders.length === 0 ? (
+            <p className="text-xs text-muted py-6">No orders yet.</p>
+          ) : (
+            <div>
+              {m.recentOrders.map((o) => {
+                const st = mapLegacyStatus(o.status || "Order Placed");
+                return (
+                  <Link key={o.id} to={`/admin/orders/${o.id}`} className="flex justify-between items-center py-2.5 border-b border-line last:border-0 group">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold font-mono text-content group-hover:text-[#c5a059] transition-colors">
+                        {o.receiptNumber ? `#${o.receiptNumber}` : o.id.substring(0, 8).toUpperCase()}
                       </div>
-                      <div className="text-[10px] text-muted mt-1">
-                        {orderDate(o).toLocaleDateString()} &bull;{" "}
-                        {o.customer?.name || o.shippingDetails?.name || "-"}
+                      <div className="text-[10px] text-muted truncate mt-0.5">
+                        {orderDate(o).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · {o.customer?.name || o.shippingDetails?.name || "—"}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-content">
-                        {inr(orderTotal(o))}
-                      </div>
-                      <div
-                        className="text-[9px] uppercase tracking-widest mt-1"
-                        style={{
-                          color:
-                            STATUS_COLORS[
-                              mapLegacyStatus(o.status || "Order Placed")
-                            ],
-                        }}
-                      >
-                        {mapLegacyStatus(o.status || "Order Placed")}
-                      </div>
+                    <div className="text-right shrink-0 ml-3">
+                      <div className="text-xs font-bold text-premium-gold-text font-mono">{inr(orderTotal(o))}</div>
+                      <div className="text-[9px] uppercase tracking-widest mt-0.5" style={{ color: STATUS_COLORS[st] }}>{st}</div>
                     </div>
                   </Link>
-                ))
-              )}
+                );
+              })}
             </div>
-          </div>
+          )}
+        </RevealSection>
+      </div>
 
-          {/* Recent Support Requests Table */}
-          <div className="bg-surface border border-[#c5a059]/20 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
-              <h3 className="text-[10px] uppercase tracking-widest text-muted">
-                Recent Support Requests
-              </h3>
-              <Link
-                to="/admin/support"
-                className="text-[9px] uppercase tracking-widest text-[#c5a059] hover:underline"
-              >
-                View All
-              </Link>
-            </div>
-            <div className="divide-y divide-[#c5a059]/10">
-              {m.recentTickets.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted">
-                  No recent requests
-                </div>
-              ) : (
-                m.recentTickets.map((t, i) => (
-                  <div
-                    key={i}
-                    className="px-4 py-2.5 flex justify-between items-center hover:bg-[#c5a059]/5 transition-colors"
-                  >
-                    <div>
-                      <div className="text-sm font-bold text-content line-clamp-1">
-                        {t.subject}
-                      </div>
-                      <div className="text-[10px] text-muted mt-1 uppercase tracking-widest">
-                        {t.type ? t.type.replace(/_/g, " ") : "General"}
-                      </div>
-                    </div>
-                    <div
-                      className="text-[9px] uppercase tracking-widest px-2 py-1 rounded-sm border shrink-0 ml-4"
-                      style={{
-                        borderColor:
-                          t.status === "open" ? "#3b82f640" : "#10b98140",
-                        color: t.status === "open" ? "#3b82f6" : "#10b981",
-                        backgroundColor:
-                          t.status === "open" ? "#3b82f610" : "#10b98110",
-                      }}
-                    >
-                      {t.status}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+      <details className="group border-t border-line">
+        <summary className="cursor-pointer list-none py-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-muted hover:text-content transition-colors [&::-webkit-details-marker]:hidden">
+          More analytics
+          <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="pb-6 space-y-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard label={`New customers · ${period}`} value={m.newCustomersCount} icon={UserPlus} />
+            <StatCard label={`Saved builds · ${period}`} value={m.savedBuildsCount} icon={Bookmark} />
+            <StatCard label="Top series" value={m.topSeries ? m.topSeries[0] : "—"} subLabel={m.topSeries ? `${inr(m.topSeries[1])} revenue` : "No data"} icon={Layers} />
+            <StatCard label="Most saved product" value={m.mostSavedProduct ? m.mostSavedProduct[0] : "—"} subLabel={m.mostSavedProduct ? `${m.mostSavedProduct[1]} saves` : "No saves"} icon={Share2} />
           </div>
-
-          {/* Top Customers Table */}
-          <div className="bg-surface border border-[#c5a059]/20 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
-              <h3 className="text-[10px] uppercase tracking-widest text-muted">
-                Top Customers by AOV
-              </h3>
-              <Link
-                to="/admin/customers"
-                className="text-[9px] uppercase tracking-widest text-[#c5a059] hover:underline"
-              >
-                View All
-              </Link>
-            </div>
-            <div className="divide-y divide-[#c5a059]/10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="border border-line rounded-xl p-4"><DonutChart title="Orders by status" data={m.ordersByStatusData} /></div>
+            <div className="border border-line rounded-xl p-4"><LineChart title="Customer growth" data={m.custGrowthData} /></div>
+            <div className="border border-line rounded-xl p-4"><BarChart title="Sales by series" data={m.salesBySeriesData} isCurrency /></div>
+            <div className="border border-line rounded-xl p-4"><BarChart title="Sales by sub-series" data={m.salesBySubData} isCurrency /></div>
+            <div className="border border-line rounded-xl p-4"><DonutChart title="Support by type" data={m.supportByTypeData} /></div>
+            <div className="border border-line rounded-xl p-4">
+              <h3 className="text-[11px] text-muted mb-2">Top customers by AOV</h3>
               {m.topCustomers.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted">
-                  No customer data
-                </div>
+                <p className="text-xs text-muted py-4">No customer data.</p>
               ) : (
                 m.topCustomers.map((c, i) => (
-                  <div
-                    key={i}
-                    className="px-4 py-2.5 flex flex-col sm:flex-row justify-between sm:items-center hover:bg-[#c5a059]/5 transition-colors gap-2"
-                  >
-                    <div>
-                      <div className="text-sm font-bold text-content">
-                        {c.name}
-                      </div>
-                      <div className="text-[10px] text-muted mt-1">
-                        {c.email}
-                      </div>
+                  <div key={i} className="flex justify-between items-center py-2 border-b border-line last:border-0 text-xs">
+                    <div className="min-w-0">
+                      <span className="text-content font-bold block truncate">{c.name}</span>
+                      <span className="text-[10px] text-muted block truncate">{c.email}</span>
                     </div>
-                    <div className="flex gap-4 sm:flex-col sm:gap-1 text-left sm:text-right">
-                      <div className="text-[10px] uppercase tracking-widest text-muted">
-                        AOV{" "}
-                        <span className="font-bold text-content ml-1">
-                          {inr(c.averageOrderValue)}
-                        </span>
-                      </div>
-                      <div className="text-[10px] uppercase tracking-widest text-muted">
-                        LTV{" "}
-                        <span className="font-bold text-content ml-1">
-                          {inr(c.lifetimeSpend)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Popular Builds/Products Table */}
-          <div className="bg-surface border border-[#c5a059]/20 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
-              <h3 className="text-[10px] uppercase tracking-widest text-muted">
-                Popular Saved Builds
-              </h3>
-            </div>
-            <div className="divide-y divide-[#c5a059]/10">
-              {m.popularBuilds.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted">
-                  No saved builds
-                </div>
-              ) : (
-                m.popularBuilds.map((pb, i) => (
-                  <div
-                    key={i}
-                    className="px-4 py-2.5 flex justify-between items-center hover:bg-[#c5a059]/5 transition-colors"
-                  >
-                    <div className="text-sm font-bold text-content">
-                      {pb[0]}
-                    </div>
-                    <div className="text-[10px] uppercase tracking-widest text-[#c5a059] bg-[#c5a059]/10 px-2 py-1 rounded-sm">
-                      {pb[1]} Saves
+                    <div className="text-right shrink-0 ml-3">
+                      <span className="text-content font-mono block">{inr(c.averageOrderValue)} AOV</span>
+                      <span className="text-[10px] text-muted block">{inr(c.lifetimeSpend)} lifetime</span>
                     </div>
                   </div>
                 ))
@@ -949,8 +689,7 @@ export function AdminPage() {
             </div>
           </div>
         </div>
-      </RevealSection>
-
+      </details>
     </div>
   );
 }

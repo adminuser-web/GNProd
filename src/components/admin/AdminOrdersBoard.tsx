@@ -51,7 +51,7 @@ function paymentHint(order: any, mapped: string): { label: string; cls: string }
 
 function FilterSelect({ icon: Icon, value, onChange, children }: { icon?: any; value: string; onChange: (v: string) => void; children: React.ReactNode }) {
   return (
-    <div className="flex items-center border border-[#c5a059]/20 bg-surface/50 pl-2.5 pr-1 rounded-sm group hover:border-[#c5a059]/40 transition-colors">
+    <div className="flex items-center border border-line bg-surface/50 pl-2.5 pr-1 rounded-sm group hover:border-[#c5a059]/40 transition-colors">
       {Icon && <Icon className="w-3.5 h-3.5 text-[#c5a059]/50 group-hover:text-[#c5a059] mr-1.5 shrink-0 transition-colors" />}
       <select
         value={value}
@@ -258,7 +258,7 @@ export function AdminOrdersBoard() {
           title="Sales & Orders"
           description={`Showing ${filteredOrders.length} ${filteredOrders.length === 1 ? 'result' : 'results'}`}
           actions={
-            <div className="flex bg-surface border border-[#c5a059]/20 items-center px-3 py-1.5 rounded-sm">
+            <div className="flex bg-surface border border-line items-center px-3 py-1.5 rounded-sm">
               <Calendar className="w-4 h-4 text-[#c5a059] mr-2 shrink-0" />
               <select
                 value={dateRange}
@@ -292,7 +292,7 @@ export function AdminOrdersBoard() {
               placeholder="Order #, customer, phone…"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-surface/50 border border-[#c5a059]/20 py-2 pl-9 pr-3 text-[10px] text-content focus:border-[#c5a059]/50 focus:outline-none placeholder-muted uppercase tracking-widest transition-colors rounded-sm"
+              className="w-full bg-surface/50 border border-line py-2 pl-9 pr-3 text-[10px] text-content focus:border-[#c5a059]/50 focus:outline-none placeholder-muted uppercase tracking-widest transition-colors rounded-sm"
             />
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -324,13 +324,13 @@ export function AdminOrdersBoard() {
             ))}
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="border border-[#c5a059]/10 border-dashed bg-surface/30 rounded-xl">
+          <div className="border border-line border-dashed bg-surface/30 rounded-xl">
             <EmptyState icon={ShoppingBag} title="No orders found" description="Adjust your search or filters to see more results." />
           </div>
         ) : (
-          <div className="rounded-xl border border-[#c5a059]/15 overflow-hidden">
+          <div className="rounded-xl border border-line overflow-hidden">
             {/* Desktop header */}
-            <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2.5 text-[9px] uppercase tracking-[0.2em] font-bold text-muted bg-bg border-b border-[#c5a059]/15 sticky top-0 z-raised">
+            <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2.5 text-[9px] uppercase tracking-[0.2em] font-bold text-muted bg-bg border-b border-line sticky top-0 z-raised">
               <div className="col-span-2">Order</div>
               <div className="col-span-3">Customer</div>
               <div className="col-span-3">Product</div>
@@ -338,7 +338,7 @@ export function AdminOrdersBoard() {
               <div className="col-span-2 text-right">Status</div>
             </div>
 
-            <div className="divide-y divide-[#c5a059]/10">
+            <div className="divide-y divide-line">
               {filteredOrders.map(order => <OrderRow key={order.id} order={order} />)}
             </div>
           </div>

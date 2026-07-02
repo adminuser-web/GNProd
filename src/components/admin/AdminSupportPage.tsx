@@ -453,7 +453,7 @@ export function AdminSupportPage() {
                       <select 
                           value={statusFilter}
                           onChange={(e) => setStatusFilter(e.target.value)}
-                          className="w-full appearance-none bg-surface border border-[#c5a059]/30 px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
+                          className="w-full appearance-none bg-surface border border-line px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
                       >
                           <option value="all" className="bg-bg text-content">All Status</option>
                           <option value="open" className="bg-bg text-content">Open</option>
@@ -471,7 +471,7 @@ export function AdminSupportPage() {
                       <select 
                           value={typeFilter}
                           onChange={(e) => setTypeFilter(e.target.value)}
-                          className="w-full appearance-none bg-surface border border-[#c5a059]/30 px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
+                          className="w-full appearance-none bg-surface border border-line px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
                       >
                           <option value="all" className="bg-bg text-content">All Types</option>
                           <option value="order_query" className="bg-bg text-content">Order Query</option>
@@ -488,7 +488,7 @@ export function AdminSupportPage() {
                       <select 
                           value={priorityFilter}
                           onChange={(e) => setPriorityFilter(e.target.value)}
-                          className="w-full appearance-none bg-surface border border-[#c5a059]/30 px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
+                          className="w-full appearance-none bg-surface border border-line px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
                       >
                           <option value="all" className="bg-bg text-content">All Priorities</option>
                           <option value="normal" className="bg-bg text-content">Normal</option>
@@ -503,7 +503,7 @@ export function AdminSupportPage() {
                       <select 
                           value={dateFilter}
                           onChange={(e) => setDateFilter(e.target.value)}
-                          className="w-full appearance-none bg-surface border border-[#c5a059]/30 px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
+                          className="w-full appearance-none bg-surface border border-line px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
                       >
                           <option value="all" className="bg-bg text-content">All Dates</option>
                           <option value="7days" className="bg-bg text-content">Last 7 Days</option>
@@ -521,7 +521,7 @@ export function AdminSupportPage() {
                   placeholder="SEARCH TICKETS..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-surface border border-[#c5a059]/30 pl-10 pr-4 py-2 min-h-[36px] text-[10px] font-bold tracking-widest uppercase text-content focus:outline-none focus:border-[#c5a059] transition-colors"
+                  className="w-full bg-surface border border-line pl-10 pr-4 py-2 min-h-[36px] text-[10px] font-bold tracking-widest uppercase text-content focus:outline-none focus:border-[#c5a059] transition-colors"
                 />
               </div>
           </div>
@@ -541,13 +541,13 @@ export function AdminSupportPage() {
              ))}
          </div>
        ) : filteredTickets.length === 0 ? (
-           <div className="bg-surface border border-[#c5a059]/10">
+           <div className="bg-surface border border-line">
               <EmptyState icon={MessageSquare} title="No requests found" description="Try adjusting your search or filters to see more results." />
            </div>
        ) : (
-           <div className="rounded-xl border border-[#c5a059]/15 overflow-hidden w-full">
+           <div className="rounded-xl border border-line overflow-hidden w-full">
               {/* Desktop Header */}
-              <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2.5 text-[9px] font-bold tracking-[0.2em] uppercase text-muted bg-bg border-b border-[#c5a059]/15 sticky top-0 z-raised w-full">
+              <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2.5 text-[9px] font-bold tracking-[0.2em] uppercase text-muted bg-bg border-b border-line sticky top-0 z-raised w-full">
                   <div className="col-span-5">Ticket Summary</div>
                   <div className="col-span-2 text-center">Status</div>
                   <div className="col-span-3">Customer</div>
@@ -555,7 +555,7 @@ export function AdminSupportPage() {
               </div>
 
               {/* Rows */}
-              <div className="divide-y divide-[#c5a059]/10">
+              <div className="divide-y divide-line">
                   {filteredTickets.map(ticket => {
                       const date = ticket.updatedAt?.toDate ? ticket.updatedAt.toDate() : new Date();
                       const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });

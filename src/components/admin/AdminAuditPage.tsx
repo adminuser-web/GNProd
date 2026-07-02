@@ -70,7 +70,7 @@ export function AdminAuditPage() {
             <select
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value as AuditAction | 'all')}
-              className="bg-bg border border-[#c5a059]/20 text-xs uppercase tracking-widest px-3 py-2 text-content focus:outline-none focus:border-[#c5a059]"
+              className="bg-bg border border-line text-xs uppercase tracking-widest px-3 py-2 text-content focus:outline-none focus:border-[#c5a059]"
             >
               <option value="all">All actions</option>
               {ACTIONS.map((a) => (
@@ -79,7 +79,7 @@ export function AdminAuditPage() {
             </select>
             <button
               onClick={() => load(true)}
-              className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted border border-[#c5a059]/20 px-3 py-2 rounded-sm hover:text-[#c5a059] hover:border-[#c5a059]/50 transition-colors"
+              className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted border border-line px-3 py-2 rounded-sm hover:text-[#c5a059] hover:border-[#c5a059]/50 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Refresh
             </button>
@@ -131,7 +131,7 @@ export function AdminAuditPage() {
           <button
             onClick={() => load(false)}
             disabled={loadingMore}
-            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest border border-[#c5a059]/30 px-5 py-2.5 hover:bg-[#c5a059]/10 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest border border-line px-5 py-2.5 hover:bg-[#c5a059]/10 transition-colors disabled:opacity-50"
           >
             {loadingMore ? 'Loading…' : <>Load more <ChevronRight className="w-3.5 h-3.5" /></>}
           </button>

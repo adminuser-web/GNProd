@@ -201,7 +201,7 @@ export function AdminOrderDetailsPage() {
     finally { setCancelSaving(false); }
   };
 
-  const card = 'bg-surface border border-[#c5a059]/20 rounded-xl p-5';
+  const card = 'bg-surface border border-line rounded-xl p-5';
 
   return (
     <div className="max-w-6xl space-y-5">

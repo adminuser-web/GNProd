@@ -92,7 +92,7 @@ export function AdminEnquiriesPage() {
             <select
               value={filter}
               onChange={e => setFilter(e.target.value as any)}
-              className="bg-bg border border-[#c5a059]/20 text-content text-xs uppercase tracking-widest px-3 py-2 focus:outline-none focus:border-[#c5a059]"
+              className="bg-bg border border-line text-content text-xs uppercase tracking-widest px-3 py-2 focus:outline-none focus:border-[#c5a059]"
             >
               <option value="all">All Enquiries</option>
               <option value="new">New</option>
@@ -108,7 +108,7 @@ export function AdminEnquiriesPage() {
 
       <div className="space-y-3">
         {filteredEnquiries.length === 0 ? (
-          <div className="bg-surface border border-[#c5a059]/20">
+          <div className="bg-surface border border-line rounded-xl">
             <EmptyState icon={MessageSquare} title="No enquiries found" description={search || filter !== 'all' ? 'Try clearing the search or filter.' : 'New customer enquiries will appear here.'} />
           </div>
         ) : (
@@ -120,7 +120,7 @@ export function AdminEnquiriesPage() {
             const productDisplay = enq.productRef ? `${enq.productRef.seriesName} ${enq.productRef.subSeriesName || ''}` : (enq.productOfInterest || 'General Enquiry');
 
             return (
-              <div key={enq.id} className="bg-surface border border-[#c5a059]/20 p-4 flex flex-col md:flex-row gap-4 justify-between items-start">
+              <div key={enq.id} className="bg-surface border border-line p-4 flex flex-col md:flex-row gap-4 justify-between items-start">
                 <div className="space-y-2.5 flex-1 w-full relative z-0">
                   <div className="flex justify-between items-start">
                     <div>
@@ -168,7 +168,7 @@ export function AdminEnquiriesPage() {
                     <select
                       value={enq.status}
                       onChange={(e) => handleStatusChange(enq.id!, e.target.value as EnquiryStatus)}
-                      className="bg-bg border border-[#c5a059]/30 text-content text-xs px-3 py-2 w-full md:w-40 focus:border-[#c5a059] focus:outline-none"
+                      className="bg-bg border border-line text-content text-xs px-3 py-2 w-full md:w-40 focus:border-[#c5a059] focus:outline-none"
                     >
                       <option value="new">New</option>
                       <option value="in_review">In Review</option>
