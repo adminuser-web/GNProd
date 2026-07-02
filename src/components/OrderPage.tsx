@@ -262,7 +262,7 @@ export function OrderPage() {
       const url = `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(message)}`;
 
       clearOrder();
-      navigate('/order/confirmed', { state: { orderId, receiptNumber, message, url } });
+      navigate('/order/confirmed', { state: { orderId, receiptNumber, message, url, email: formData.email } });
     } catch (error: any) {
       console.error("Error creating order:", error);
       if (error?.message === 'GUEST_AUTH_UNAVAILABLE') {

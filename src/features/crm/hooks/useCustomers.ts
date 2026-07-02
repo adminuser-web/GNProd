@@ -14,6 +14,7 @@ export interface Customer {
   address: string;
   dob?: string;
   registeredDate: Date | null;
+  hasAccount: boolean; // true = registered profile; false = guest (order-only)
   lifetimeSpend: number;
   averageOrderValue: number;
   lastOrderDate: Date | null;
@@ -77,6 +78,7 @@ export function useCustomers() {
           state: initialData?.state || "",
           dob: initialData?.dob,
           registeredDate: initialData?.registeredDate || null,
+          hasAccount: initialData?.hasAccount || false,
           lifetimeSpend: 0,
           averageOrderValue: 0,
           lastOrderDate: null,
@@ -107,6 +109,7 @@ export function useCustomers() {
         state: u.state,
         dob: u.dob,
         registeredDate,
+        hasAccount: true,
       });
     }
 
