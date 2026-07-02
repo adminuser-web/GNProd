@@ -18,7 +18,7 @@ export function AdminPricingTab({ subSeries, updateSubSeries }: Props) {
 
   return (
     <div className="space-y-8 animate-fade-in relative pb-12">
-      <div className="border-b border-[#c5a059]/10 pb-4 mb-6">
+      <div className="border-b border-line pb-4 mb-6">
         <h2 className="text-sm font-bold tracking-widest uppercase text-content">
           Pricing & Delivery
         </h2>
@@ -29,7 +29,7 @@ export function AdminPricingTab({ subSeries, updateSubSeries }: Props) {
 
       <div className="space-y-8">
         <div>
-          <h5 className="text-[10px] text-muted uppercase tracking-widest block border-b border-[#c5a059]/10 pb-2 mb-4 font-bold">
+          <h5 className="text-[10px] text-muted uppercase tracking-widest block border-b border-line pb-2 mb-4 font-bold">
             Pricing Configuration
           </h5>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -43,7 +43,7 @@ export function AdminPricingTab({ subSeries, updateSubSeries }: Props) {
                 onChange={(e) =>
                   updateField("basePrice", Number(e.target.value))
                 }
-                className="w-full bg-bg border border-[#c5a059]/20 text-sm text-content p-3 focus:outline-none focus:border-[#c5a059] transition-colors rounded-none font-mono"
+                className="w-full bg-bg border border-line text-sm text-content p-3 focus:outline-none focus:border-[#c5a059] transition-colors rounded-none font-mono"
               />
             </div>
             <div>
@@ -59,7 +59,7 @@ export function AdminPricingTab({ subSeries, updateSubSeries }: Props) {
                     e.target.value ? Number(e.target.value) : null,
                   )
                 }
-                className="w-full bg-bg border border-[#c5a059]/20 text-sm text-content p-3 focus:outline-none focus:border-[#c5a059] transition-colors rounded-none font-mono"
+                className="w-full bg-bg border border-line text-sm text-content p-3 focus:outline-none focus:border-[#c5a059] transition-colors rounded-none font-mono"
               />
             </div>
           </div>
@@ -72,7 +72,7 @@ export function AdminPricingTab({ subSeries, updateSubSeries }: Props) {
         </div>
 
         <div>
-          <h5 className="text-[10px] text-muted uppercase tracking-widest block border-b border-[#c5a059]/10 pb-2 mb-4 font-bold mt-8">
+          <h5 className="text-[10px] text-muted uppercase tracking-widest block border-b border-line pb-2 mb-4 font-bold mt-8">
             Fulfillment & Promises
           </h5>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -86,7 +86,7 @@ export function AdminPricingTab({ subSeries, updateSubSeries }: Props) {
                 onChange={(e) =>
                   updateField("estimatedDeliveryDays", Number(e.target.value))
                 }
-                className="w-full bg-bg border border-[#c5a059]/20 text-sm text-content p-3 focus:outline-none focus:border-[#c5a059] transition-colors rounded-none"
+                className="w-full bg-bg border border-line text-sm text-content p-3 focus:outline-none focus:border-[#c5a059] transition-colors rounded-none"
                 placeholder="e.g. 14"
               />
             </div>
@@ -100,7 +100,7 @@ export function AdminPricingTab({ subSeries, updateSubSeries }: Props) {
                 onChange={(e) =>
                   updateField("warrantyMonths", Number(e.target.value))
                 }
-                className="w-full bg-bg border border-[#c5a059]/20 text-sm text-content p-3 focus:outline-none focus:border-[#c5a059] transition-colors rounded-none"
+                className="w-full bg-bg border border-line text-sm text-content p-3 focus:outline-none focus:border-[#c5a059] transition-colors rounded-none"
                 placeholder="e.g. 12"
               />
             </div>

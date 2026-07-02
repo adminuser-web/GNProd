@@ -76,7 +76,7 @@ export function AdminMediaTab({ series, subSeries, updateSubSeries }: Props) {
 
   return (
     <div className="space-y-8 animate-fade-in relative pb-12">
-      <div className="border-b border-[#c5a059]/10 pb-4 mb-6">
+      <div className="border-b border-line pb-4 mb-6">
         <h2 className="text-sm font-bold tracking-widest uppercase text-content">
           Media Gallery
         </h2>
@@ -105,7 +105,7 @@ export function AdminMediaTab({ series, subSeries, updateSubSeries }: Props) {
           />
         </div>
 
-        <div className="pt-8 border-t border-[#c5a059]/10">
+        <div className="pt-8 border-t border-line">
           <div className="flex justify-between items-end mb-4">
             <div>
               <label className="block text-[10px] uppercase tracking-widest text-muted mb-1">
@@ -133,7 +133,7 @@ export function AdminMediaTab({ series, subSeries, updateSubSeries }: Props) {
               {gallery.map((img, idx) => (
                 <div
                   key={idx}
-                  className="bg-bg border border-[#c5a059]/20 relative group aspect-square flex flex-col"
+                  className="bg-bg border border-line relative group aspect-square flex flex-col"
                 >
                   <div className="flex-1 p-2 flex items-center justify-center overflow-hidden">
                     <img
@@ -173,7 +173,7 @@ export function AdminMediaTab({ series, subSeries, updateSubSeries }: Props) {
               ))}
             </div>
           ) : (
-            <div className="w-full h-32 border-2 border-dashed border-[#c5a059]/10 flex items-center justify-center">
+            <div className="w-full h-32 border-2 border-dashed border-line flex items-center justify-center">
               <span className="text-[10px] uppercase tracking-widest text-muted">
                 No gallery images uploaded
               </span>

@@ -26,7 +26,7 @@ export function AdminSeoTab({ subSeries, updateSubSeries }: AdminSeoTabProps) {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="border-b border-[#c5a059]/10 pb-4 mb-6">
+      <div className="border-b border-line pb-4 mb-6">
         <h2 className="text-sm font-bold tracking-widest uppercase text-content">
           SEO Settings
         </h2>
@@ -44,7 +44,7 @@ export function AdminSeoTab({ subSeries, updateSubSeries }: AdminSeoTabProps) {
             type="text"
             value={(subSeries as any).seoTitle || ""}
             onChange={(e) => handleChange("seoTitle", e.target.value)}
-            className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+            className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
             placeholder={`e.g. ${subSeries.name} | Premium English Willow Cricket Bat`}
             maxLength={60}
           />
@@ -60,7 +60,7 @@ export function AdminSeoTab({ subSeries, updateSubSeries }: AdminSeoTabProps) {
           <textarea
             value={(subSeries as any).seoDescription || ""}
             onChange={(e) => handleChange("seoDescription", e.target.value)}
-            className="w-full h-24 bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+            className="w-full h-24 bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
             placeholder="Brief description for search engines..."
             maxLength={160}
           />
@@ -77,7 +77,7 @@ export function AdminSeoTab({ subSeries, updateSubSeries }: AdminSeoTabProps) {
             type="text"
             value={(subSeries.seoKeywords || []).join(", ")}
             onChange={(e) => handleKeywordsChange(e.target.value)}
-            className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+            className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
             placeholder="comma, separated, keywords"
           />
           <p className="text-[10px] text-muted mt-1">
@@ -87,7 +87,7 @@ export function AdminSeoTab({ subSeries, updateSubSeries }: AdminSeoTabProps) {
       </div>
 
       {/* Search Engine Preview */}
-      <div className="pt-8 border-t border-[#c5a059]/10">
+      <div className="pt-8 border-t border-line">
         <h3 className="text-[10px] uppercase tracking-widest text-muted mb-4 font-bold">
           Search Preview
         </h3>
