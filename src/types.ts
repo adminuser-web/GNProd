@@ -64,9 +64,6 @@ export interface BrandContent {
   contact: { phone: string; whatsapp: string; email: string; instagram: string; };
   store: { address: string; hours: string; mapLink: string; };
   social?: { instagram?: string; facebook?: string; youtube?: string; };
-  // Manual UPI collection: the business UPI ID money is paid into, and the
-  // payee name shown in the customer's UPI app. Configured in admin → Content → Brand.
-  payments?: { upiId?: string; upiPayeeName?: string };
   // Gmail account that order emails are composed FROM (admin opens a pre-filled
   // Gmail draft in this account). `authuser` targets it even with multiple
   // Google accounts signed in. Configured in admin → Content → Brand.
@@ -164,10 +161,6 @@ export const DEFAULT_SITE_CONTENT: SiteContentMap = {
       instagram: "grainood",
       facebook: "",
       youtube: ""
-    },
-    payments: {
-      upiId: "",
-      upiPayeeName: "GRAINOOD"
     },
     orderEmailFrom: "adminuser@grainood.com"
   },
