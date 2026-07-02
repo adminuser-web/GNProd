@@ -169,17 +169,6 @@ export const orderService = {
     }
   },
 
-  // Record that an order email DRAFT was opened in Gmail (admin sends it manually).
-  // Does NOT mark the order as "sent" — just timestamps that it was prepared.
-  async markEmailPrepared(orderId: string, template: string) {
-    const row = await fetchOrderRow(orderId);
-    if (!row) throw new Error('Order not found');
-    const data: any = row.data;
-    const payment = { ...(data.payment || {}), emailPreparedAt: new Date().toISOString(), emailPreparedTemplate: template };
-    const newData = { ...data, payment, updatedAt: new Date().toISOString() };
-    const { error } = await supabase.from('orders').update({ data: newData }).eq('id', orderId);
-    if (error) throw error;
-  },
 
   // Cancel an order with a customer-visible reason. Blocked once delivered.
   async cancelOrder(orderId: string, reason: string, changedBy: string) {

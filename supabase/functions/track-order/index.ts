@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
     const items = (data.items ?? []).map((it: any) => ({
       name: it.productName || it.product?.name || 'Custom bat',
       qty: it.quantity || 1,
+      lineTotal: Number(it.lineTotal ?? (it.unitPrice || it.price || 0) * (it.quantity || 1)) || 0,
       image: it.product?.imageUrl || null,
     }));
     const timeline = (data.timeline ?? []).map((t: any) => ({
