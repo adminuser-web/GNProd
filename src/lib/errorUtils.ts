@@ -13,9 +13,13 @@ export interface DataErrorInfo {
   path: string | null;
 }
 
+import { maskString } from './logRedaction';
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
   const errInfo: DataErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    // Mask any PII/secret the underlying error message may echo — this value is
+    // logged AND thrown (so it can surface elsewhere), not just console-scrubbed.
+    error: maskString(error instanceof Error ? error.message : String(error)),
     operationType,
     path,
   };
