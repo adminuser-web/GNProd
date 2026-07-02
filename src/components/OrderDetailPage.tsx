@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import { LazyImage } from './LazyImage';
 import { getCustomizableAttributes } from '../features/products/attributes';
+import { retryOrderPayment } from '../features/orders/retryPayment';
 
 function StatusTracker({ status }: { status: string }) {
   const normalizedStatus = mapLegacyStatus(status || 'Order Placed');
@@ -76,6 +77,8 @@ export function OrderDetailPage() {
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [payRetrying, setPayRetrying] = useState(false);
   
   const { dispatch, openDrawer } = useOrder();
   const { products } = useProducts();
@@ -201,7 +204,17 @@ export function OrderDetailPage() {
     };
 
     fetchOrder();
-  }, [id, user]);
+  }, [id, user, reloadKey]);
+
+  const handleRetryPayment = async () => {
+    if (!order || payRetrying) return;
+    setPayRetrying(true);
+    const res = await retryOrderPayment(order.id);
+    setPayRetrying(false);
+    if (res.status === 'paid') { toast.success('Payment confirmed — crafting begins!'); setReloadKey(k => k + 1); }
+    else if (res.status === 'pending') { toast.success('Payment received — confirming your order…'); setReloadKey(k => k + 1); }
+    else if (res.status === 'failed' && res.message) toast.error(res.message);
+  };
 
   const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -389,9 +402,12 @@ export function OrderDetailPage() {
           <RevealSection delay={75}>
             <div className="mb-8 bg-[#c5a059]/5 border border-[#c5a059]/20 p-5 text-center">
               <p className="text-[11px] font-bold uppercase tracking-widest text-[#c5a059] mb-1">Payment Not Completed</p>
-              <p className="text-[12px] text-muted leading-relaxed max-w-md mx-auto">
-                This order wasn't paid for. If you'd still like it, please place the order again from the collection — payment is taken securely at checkout.
+              <p className="text-[12px] text-muted leading-relaxed max-w-md mx-auto mb-4">
+                Your bat specs are saved — finish the payment securely to confirm this order and begin crafting.
               </p>
+              <GoldButton onClick={handleRetryPayment} disabled={payRetrying} variant="solid">
+                {payRetrying ? 'OPENING SECURE PAYMENT…' : 'COMPLETE PAYMENT'}
+              </GoldButton>
             </div>
           </RevealSection>
         )}
