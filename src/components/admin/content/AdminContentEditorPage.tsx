@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useContentContext } from '../../../context/ContentContext';
 import { contentService } from '../../../features/content/services/contentService';
 import { SiteContentMap, DEFAULT_SITE_CONTENT } from '../../../types';
-import { Save, AlertCircle, RefreshCw, Box, Upload } from 'lucide-react';
+import { Save, AlertCircle, RefreshCw, Upload } from 'lucide-react';
 import { GoldButton } from '../../GoldButton';
 
 import { ImageUpload } from '../ImageUpload';
@@ -29,10 +29,10 @@ function Field({ label, help, value, onChange, type = 'text', textarea = false }
       <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">{label}</label>
       {textarea ? (
         <textarea value={value || ''} onChange={(e) => onChange(e.target.value)} rows={3}
-          className="w-full bg-bg border border-[#c5a059]/20 px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors" />
+          className="w-full bg-bg border border-line px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors" />
       ) : (
         <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-bg border border-[#c5a059]/20 px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors" />
+          className="w-full bg-bg border border-line px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors" />
       )}
       {help && <p className="text-[10px] text-muted mt-1 leading-relaxed">{help}</p>}
     </div>
@@ -41,7 +41,7 @@ function Field({ label, help, value, onChange, type = 'text', textarea = false }
 
 function Card({ title, desc, children }: any) {
   return (
-    <div className="bg-bg/40 border border-[#c5a059]/10 p-5">
+    <div className="bg-bg/40 border border-line p-5">
       <h3 className="text-xs font-bold uppercase tracking-widest text-[#c5a059]">{title}</h3>
       {desc && <p className="text-[10px] text-muted mt-1">{desc}</p>}
       <div className="space-y-4 mt-4">{children}</div>
@@ -174,7 +174,7 @@ function ContactForm({ data, onChange }: { data: any; onChange: (path: string[],
       </Card>
       <Card title="FAQs" desc="Questions and answers shown on the contact page.">
         {faqs.map((f, i) => (
-          <div key={i} className="relative border border-[#c5a059]/10 p-3 space-y-3">
+          <div key={i} className="relative border border-line p-3 space-y-3">
             <button type="button" onClick={() => setFaqs(faqs.filter((_, j) => j !== i))} className="absolute right-2 top-2 text-red-400 text-[10px] uppercase tracking-widest hover:text-red-300">Remove</button>
             <Field label={`Question ${i + 1}`} value={f.question} onChange={(v: string) => setFaqs(faqs.map((x, j) => (j === i ? { ...x, question: v } : x)))} />
             <Field label="Answer" textarea value={f.answer} onChange={(v: string) => setFaqs(faqs.map((x, j) => (j === i ? { ...x, answer: v } : x)))} />
@@ -198,7 +198,7 @@ function FooterForm({ data, onChange }: { data: any; onChange: (path: string[], 
           const links: any[] = col.links || [];
           const setLinks = (next: any[]) => updateCol(i, { links: next });
           return (
-            <div key={i} className="relative border border-[#c5a059]/10 p-3 space-y-3">
+            <div key={i} className="relative border border-line p-3 space-y-3">
               <button type="button" onClick={() => setColumns(columns.filter((_, j) => j !== i))} className="absolute right-2 top-2 text-red-400 text-[10px] uppercase tracking-widest hover:text-red-300">Remove Column</button>
               <Field label="Column Title" value={col.title} onChange={(v: string) => updateCol(i, { title: v })} />
               {links.map((lnk, k) => (
@@ -245,7 +245,7 @@ function ReviewsForm({ data, onChange }: { data: any; onChange: (path: string[],
     <div className="space-y-6">
       <Card title="Customer Reviews" desc="Testimonials shown on the site.">
         {reviews.map((r, i) => (
-          <div key={i} className="relative border border-[#c5a059]/10 p-3 space-y-3">
+          <div key={i} className="relative border border-line p-3 space-y-3">
             <button type="button" onClick={() => setReviews(reviews.filter((_, j) => j !== i))} className="absolute right-2 top-2 text-red-400 text-[10px] uppercase tracking-widest hover:text-red-300">Remove</button>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Name" value={r.name} onChange={(v: string) => update(i, { name: v })} />
@@ -271,7 +271,7 @@ function MaintenanceForm({ data, onChange }: { data: any; onChange: (path: strin
   return (
     <div className="space-y-6">
       <Card title="Launching Soon Mode" desc="When ON, public visitors see a 'Launching Soon' splash. /admin and /login stay open; admins and preview-link holders still see the full site.">
-        <label className="flex items-center justify-between gap-4 border border-[#c5a059]/20 p-4 cursor-pointer select-none">
+        <label className="flex items-center justify-between gap-4 border border-line p-4 cursor-pointer select-none">
           <span>
             <span className={`block text-sm font-bold uppercase tracking-widest ${enabled ? 'text-amber-400' : 'text-emerald-400'}`}>{enabled ? 'Maintenance mode is ON' : 'Site is LIVE'}</span>
             <span className="block text-[10px] text-muted mt-1">{enabled ? 'The public sees the Launching Soon page.' : 'Everyone sees the full site.'}</span>
@@ -292,7 +292,7 @@ function MaintenanceForm({ data, onChange }: { data: any; onChange: (path: strin
         <div>
           <label className="block text-[10px] font-bold uppercase tracking-widest text-content/70 mb-1.5">Shareable preview link</label>
           <div className="flex gap-2">
-            <input readOnly value={link} onFocus={(e) => e.target.select()} className="flex-1 bg-bg border border-[#c5a059]/20 px-3 py-2 text-xs text-content/80 font-mono" />
+            <input readOnly value={link} onFocus={(e) => e.target.select()} className="flex-1 bg-bg border border-line px-3 py-2 text-xs text-content/80 font-mono" />
             <button type="button" onClick={() => { navigator.clipboard?.writeText(link); toast.success('Preview link copied'); }} className="border border-[#c5a059]/40 text-[#c5a059] px-4 text-[10px] uppercase tracking-widest font-bold hover:bg-[#c5a059] hover:text-bg transition-colors">Copy</button>
           </div>
           <p className="text-[10px] text-muted mt-1.5 leading-relaxed">Opening this link unlocks the full site in that browser (remembered), even while Launching Soon is on. Save your changes first — the link uses the current secret.</p>
@@ -404,10 +404,10 @@ export function AdminContentEditorPage() {
   const renderField = (key: string, value: any, path: string[]) => {
     if (Array.isArray(value)) {
       return (
-        <div key={key} className="mb-6 border border-[#c5a059]/20 p-4">
+        <div key={key} className="mb-6 border border-line p-4">
           <label className="block text-xs font-bold text-content tracking-widest uppercase mb-4">{key}</label>
           {value.map((item, index) => (
-            <div key={index} className="mb-4 pb-4 border-b border-[#c5a059]/10 relative">
+            <div key={index} className="mb-4 pb-4 border-b border-line relative">
               <div className="absolute right-0 top-0">
                  <button onClick={() => {
                    const newArr = [...value];
@@ -428,7 +428,7 @@ export function AdminContentEditorPage() {
                           newArr[index] = { ...item, [k]: e.target.value };
                           handleChange(path, newArr);
                         }}
-                        className="w-full bg-surface border border-[#c5a059]/20 px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none min-h-[100px]"
+                        className="w-full bg-surface border border-line px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none min-h-[100px]"
                        />
                      ) : (
                        <input 
@@ -439,7 +439,7 @@ export function AdminContentEditorPage() {
                           newArr[index] = { ...item, [k]: e.target.value };
                           handleChange(path, newArr);
                          }}
-                         className="w-full bg-surface border border-[#c5a059]/20 px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none"
+                         className="w-full bg-surface border border-line px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none"
                        />
                      )}
                   </div>
@@ -453,7 +453,7 @@ export function AdminContentEditorPage() {
                      newArr[index] = e.target.value;
                      handleChange(path, newArr);
                    }}
-                   className="w-full bg-surface border border-[#c5a059]/20 px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none"
+                   className="w-full bg-surface border border-line px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none"
                  />
               )}
             </div>
@@ -512,21 +512,21 @@ export function AdminContentEditorPage() {
               placeholder="Or enter media URL manually"
               value={typeof value === 'string' ? value : ((value as any)?.light || '')}
               onChange={(e) => handleChange(path, e.target.value)}
-              className="w-full bg-surface border border-[#c5a059]/20 px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none font-mono tracking-widest text-[#c5a059] placeholder:text-muted/50"
+              className="w-full bg-surface border border-line px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none font-mono tracking-widest text-[#c5a059] placeholder:text-muted/50"
             />
           </div>
         ) : typeof value === 'string' && (value.length > 50 || key === 'body' || key === 'copy' || key === 'address') ? (
           <textarea
             value={value as string}
             onChange={(e) => handleChange(path, e.target.value)}
-            className="w-full bg-surface border border-[#c5a059]/20 px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none min-h-[100px] font-mono whitespace-pre"
+            className="w-full bg-surface border border-line px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none min-h-[100px] font-mono whitespace-pre"
           />
         ) : (
           <input
             type={typeof value === 'number' ? 'number' : 'text'}
             value={value !== undefined ? value : ''}
             onChange={(e) => handleChange(path, typeof value === 'number' ? Number(e.target.value) : e.target.value)}
-            className="w-full bg-surface border border-[#c5a059]/20 px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none font-mono"
+            className="w-full bg-surface border border-line px-3 py-2 text-sm focus:border-[#c5a059] focus:outline-none font-mono"
           />
         )}
       </div>
@@ -537,13 +537,13 @@ export function AdminContentEditorPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-[0.2em] text-content uppercase flex items-center gap-3">
-            <Box className="w-6 h-6 text-[#c5a059]" />
+      <div className="sticky top-0 z-sticky-section bg-bg flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-5 border-b border-line pt-2 pb-3">
+        <div className="min-w-0">
+          <h1 className="text-lg md:text-xl font-bold tracking-wide text-content">
+            <span className="text-muted font-normal text-sm">Content & System / </span>
             Site Content
           </h1>
-          <p className="text-muted text-xs tracking-widest uppercase mt-2">Manage website copy and structure</p>
+          <p className="text-xs text-muted mt-1">Manage website copy and structure.</p>
         </div>
         <div className="flex items-center gap-4">
           {isDirty && (
@@ -573,44 +573,42 @@ export function AdminContentEditorPage() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="w-full md:w-64 shrink-0">
-          <div className="bg-surface/50 border border-[#c5a059]/20 p-2 flex flex-col gap-1 sticky top-4">
-            {areas.map(area => (
-              <button
-                key={area}
-                onClick={() => handleAreaChange(area)}
-                className={`text-left px-4 py-3 text-xs font-bold tracking-widest uppercase transition-colors ${
-                  activeArea === area ? 'bg-[#c5a059] text-bg' : 'text-content hover:bg-[#c5a059]/10'
-                }`}
-              >
-                {AREA_META[area]?.label || area}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        <div className="flex-1 bg-surface border border-[#c5a059]/20 p-6">
-          <div className="mb-6 pb-4 border-b border-[#c5a059]/20">
-            <h2 className="text-lg font-bold tracking-[0.2em] text-[#c5a059] uppercase">
-              {AREA_META[activeArea]?.label || activeArea}
-            </h2>
-            {AREA_META[activeArea]?.desc && (
-              <p className="text-[10px] text-muted tracking-widest uppercase mt-1">{AREA_META[activeArea].desc}</p>
-            )}
-          </div>
+      {/* Section chips */}
+      <div className="flex flex-wrap gap-1.5 mb-6">
+        {areas.map(area => (
+          <button
+            key={area}
+            onClick={() => handleAreaChange(area)}
+            className={`px-3.5 py-2 text-[10px] font-bold tracking-widest uppercase rounded-sm border transition-colors ${
+              activeArea === area ? 'bg-[#c5a059] text-bg border-[#c5a059]' : 'border-line text-muted hover:text-content hover:border-[#c5a059]/40'
+            }`}
+          >
+            {AREA_META[area]?.label || area}
+          </button>
+        ))}
+      </div>
 
-          {(() => {
-            const FormComp = SECTION_FORMS[activeArea];
-            return FormComp ? (
-              <FormComp data={editorData} onChange={handleChange} />
-            ) : (
-              <div className="space-y-2">
-                {Object.entries(editorData).map(([key, value]) => renderField(key, value, [key]))}
-              </div>
-            );
-          })()}
+      {/* Active section — open form, no box */}
+      <div className="max-w-3xl">
+        <div className="mb-5 pb-3 border-b border-line">
+          <h2 className="text-sm font-bold tracking-widest text-content uppercase">
+            {AREA_META[activeArea]?.label || activeArea}
+          </h2>
+          {AREA_META[activeArea]?.desc && (
+            <p className="text-xs text-muted mt-1">{AREA_META[activeArea].desc}</p>
+          )}
         </div>
+
+        {(() => {
+          const FormComp = SECTION_FORMS[activeArea];
+          return FormComp ? (
+            <FormComp data={editorData} onChange={handleChange} />
+          ) : (
+            <div className="space-y-2">
+              {Object.entries(editorData).map(([key, value]) => renderField(key, value, [key]))}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

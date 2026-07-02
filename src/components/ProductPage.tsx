@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Minus, Plus, Check, ChevronUp, ChevronDown, ArrowLeftRight, Star } from 'lucide-react';
+import { Minus, Plus, Check, ChevronUp, ChevronDown, ArrowLeftRight, Star, Truck, ShieldCheck, Hammer } from 'lucide-react';
 import { BRAND } from '../types';
 import { RevealSection } from './Reveal';
 import { useOrder } from '../context/OrderContext';
@@ -513,48 +513,16 @@ export function ProductPage() {
                 )}
               </div>
               
-              <div className="flex flex-wrap gap-3 mb-8">
-                {(product as any).badge || baseProduct?.badge ? (
-                  <div className="px-3 py-1.5 border border-[#c5a059]/20 bg-[#c5a059]/5 inline-flex items-center">
-                    <span className="text-[9px] text-[#c5a059] font-bold tracking-widest uppercase">{(product as any).badge || baseProduct?.badge}</span>
-                  </div>
-                ) : null}
-                {product.idealFor && (
-                  <div className="px-3 py-1.5 border border-[#c5a059]/20 bg-[#c5a059]/5 inline-flex items-center">
-                    <span className="text-[9px] text-[#c5a059] font-bold tracking-widest uppercase">Best For: {product.idealFor}</span>
-                  </div>
-                )}
-                {product.tier === 'Premium' && (
-                  <div className="px-3 py-1.5 border border-[#c5a059]/20 bg-[#c5a059]/5 inline-flex items-center">
-                    <span className="text-[9px] text-[#c5a059] font-bold tracking-widest uppercase">Premium Choice</span>
-                  </div>
-                )}
-                {baseProduct?.slug === 'immortal' && (
-                  <div className="px-3 py-1.5 border border-[#c5a059]/20 bg-[#c5a059]/5 inline-flex items-center">
-                    <span className="text-[9px] text-[#c5a059] font-bold tracking-widest uppercase">Full Custom Build</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-8 text-[11px] text-content/80 uppercase tracking-widest">
                 {product.estimatedDeliveryDays && (
-                  <div className="p-3 border border-[#c5a059]/10 bg-surface/30 flex flex-col items-start gap-1">
-                    <span className="text-[9px] text-[#c5a059] font-bold tracking-widest uppercase">Delivery</span>
-                    <span className="text-[11px] text-content uppercase">{product.estimatedDeliveryDays} Days</span>
-                  </div>
+                  <span className="flex items-center gap-2"><Truck size={14} className="text-[#c5a059]" /> Ships in ~{product.estimatedDeliveryDays} days</span>
                 )}
                 {product.warrantyMonths && (
-                  <div className="p-3 border border-[#c5a059]/10 bg-surface/30 flex flex-col items-start gap-1">
-                    <span className="text-[9px] text-[#c5a059] font-bold tracking-widest uppercase">Warranty</span>
-                    <span className="text-[11px] text-content uppercase">{product.warrantyMonths} Months</span>
-                  </div>
+                  <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-[#c5a059]" /> {product.warrantyMonths}-month warranty</span>
                 )}
-                <div className="p-3 border border-[#c5a059]/10 bg-surface/30 flex flex-col items-start gap-1">
-                  <span className="text-[9px] text-[#c5a059] font-bold tracking-widest uppercase">Status</span>
-                  <span className="text-[11px] text-content uppercase">{product.active !== false ? 'Made to Order' : 'Unavailable'}</span>
-                </div>
+                <span className="flex items-center gap-2"><Hammer size={14} className="text-[#c5a059]" /> {product.active !== false ? 'Made to order' : 'Unavailable'}</span>
               </div>
-              
+
               <div className="h-px w-full bg-line mb-8"></div>
               
               <div className="mb-12">

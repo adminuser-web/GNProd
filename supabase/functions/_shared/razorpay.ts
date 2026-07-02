@@ -39,6 +39,22 @@ export async function createRazorpayOrder(
   return (await res.json()) as RazorpayOrder;
 }
 
+/** Fetch an order from Razorpay — used to check whether an old order is still payable. */
+export async function fetchRazorpayOrder(
+  keyId: string,
+  keySecret: string,
+  orderId: string,
+): Promise<RazorpayOrder> {
+  const res = await fetch(`${RZP_API}/orders/${orderId}`, {
+    headers: { Authorization: basicAuth(keyId, keySecret) },
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`razorpay order fetch failed ${res.status}: ${t.slice(0, 150)}`);
+  }
+  return (await res.json()) as RazorpayOrder;
+}
+
 export interface RazorpayPayment {
   id: string;
   order_id: string;

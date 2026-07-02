@@ -61,8 +61,8 @@ export function AdminDetailsTab({
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="border-b border-[#c5a059]/10 pb-4 mb-6">
-        <h2 className="text-xl font-bold tracking-[0.2em] uppercase text-content">
+      <div className="border-b border-line pb-4 mb-6">
+        <h2 className="text-sm font-bold tracking-widest uppercase text-content">
           Core Details
         </h2>
         <p className="text-sm text-muted">
@@ -80,7 +80,7 @@ export function AdminDetailsTab({
               type="text"
               value={subSeries.sku || ""}
               onChange={(e) => handleChange("sku", e.target.value)}
-              className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+              className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
               placeholder="e.g. DEB-001"
             />
           </div>
@@ -92,7 +92,7 @@ export function AdminDetailsTab({
               type="text"
               value={subSeries.slug || ""}
               onChange={(e) => handleChange("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-              className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+              className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
               placeholder="e.g. pro-edition"
             />
           </div>
@@ -106,7 +106,7 @@ export function AdminDetailsTab({
             type="text"
             value={subSeries.name || ""}
             onChange={(e) => handleChange("name", e.target.value)}
-            className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+            className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
             placeholder="e.g. Master Series Pro"
           />
         </div>
@@ -133,7 +133,7 @@ export function AdminDetailsTab({
             type="number"
             value={subSeries.basePrice || 0}
             onChange={(e) => handleChange("basePrice", Number(e.target.value))}
-            className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+            className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
           />
         </div>
 
@@ -150,7 +150,7 @@ export function AdminDetailsTab({
                 e.target.value ? Number(e.target.value) : null,
               )
             }
-            className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+            className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
             placeholder="Showing a higher price creates a 'sale' effect"
           />
         </div>
@@ -162,7 +162,7 @@ export function AdminDetailsTab({
           <select
             value={subSeries.badge || ""}
             onChange={(e) => handleChange("badge", e.target.value)}
-            className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none appearance-none"
+            className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none appearance-none"
           >
             <option value="">None</option>
             {BADGES.map((b) => (
@@ -180,7 +180,7 @@ export function AdminDetailsTab({
           <select
             value={subSeries.playerLevel || ""}
             onChange={(e) => handleChange("playerLevel", e.target.value)}
-            className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none appearance-none"
+            className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none appearance-none"
           >
             <option value="">Select Level...</option>
             {PLAYER_LEVELS.map((p) => (
@@ -198,7 +198,7 @@ export function AdminDetailsTab({
           <select
             value={subSeries.playingStyle || ""}
             onChange={(e) => handleChange("playingStyle", e.target.value)}
-            className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none appearance-none"
+            className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none appearance-none"
           >
             <option value="">Select Style...</option>
             {PLAYING_STYLES.map((s) => (
@@ -220,7 +220,7 @@ export function AdminDetailsTab({
               onChange={(e) =>
                 handleChange("estimatedDeliveryDays", Number(e.target.value))
               }
-              className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+              className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
             />
           </div>
           <div className="flex-1">
@@ -233,20 +233,20 @@ export function AdminDetailsTab({
               onChange={(e) =>
                 handleChange("warrantyMonths", Number(e.target.value))
               }
-              className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+              className="w-full bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
             />
           </div>
         </div>
       </div>
 
-      <div className="pt-4 border-t border-[#c5a059]/10">
+      <div className="pt-4 border-t border-line">
         <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">
           Short Description
         </label>
         <textarea
           value={subSeries.shortDescription || ""}
           onChange={(e) => handleChange("shortDescription", e.target.value)}
-          className="w-full h-20 bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+          className="w-full h-20 bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
           placeholder="Brief summary used in cards..."
         />
       </div>
@@ -262,12 +262,12 @@ export function AdminDetailsTab({
               : subSeries.longDescription || ""
           }
           onChange={(e) => handleChange("longDescription", e.target.value)}
-          className="w-full h-40 bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+          className="w-full h-40 bg-bg border border-line p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
           placeholder="Detailed description, use double newlines for paragraphs..."
         />
       </div>
 
-      <div className="pt-4 border-t border-[#c5a059]/10 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="pt-4 border-t border-line grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <label className="block text-[10px] uppercase tracking-widest text-muted mb-4">
             Included Accessories
@@ -334,7 +334,7 @@ export function AdminDetailsTab({
                   onChange={(e) =>
                     handleArrayChange("idealFor", idx, e.target.value)
                   }
-                  className="flex-1 bg-bg border border-[#c5a059]/20 p-2 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
+                  className="flex-1 bg-bg border border-line p-2 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors rounded-none"
                 />
                 <button
                   onClick={() => removeFromArray("idealFor", idx)}

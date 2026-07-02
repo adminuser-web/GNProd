@@ -52,11 +52,11 @@ export function AdminProductsPage() {
   if (checkingEmpty) return null;
 
   return (
-    <div className="pb-16">
+    <div className="pb-10">
       <RevealSection>
         <PageHeader eyebrow="Catalogue" title="Series Architecture" description="The Grainood collection — English Willow only." />
         {import.meta.env.MODE !== 'production' && (
-          <details className="-mt-4 mb-8 group">
+          <details className="-mt-2 mb-5 group">
             <summary className="text-[10px] text-red-500 uppercase tracking-widest cursor-pointer list-none flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
               Danger Zone
@@ -76,86 +76,92 @@ export function AdminProductsPage() {
           <div className="w-8 h-8 border-2 border-[#c5a059] border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : productsError || checkError ? (
-        <RevealSection delay={100} className="bg-surface border border-red-500/20 p-16 text-center shadow-sm">
+        <RevealSection delay={100} className="bg-surface border border-red-500/20 p-16 text-center shadow-sm rounded-xl">
           <h3 className="text-xl font-bold tracking-[0.15em] uppercase mb-4 text-red-500">Error Loading Series</h3>
           <p className="text-muted mb-8 max-w-md mx-auto text-sm">{productsError?.message || checkError}</p>
           <GoldButton onClick={() => window.location.reload()} variant="outline">
             Retry Connection
           </GoldButton>
         </RevealSection>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((p, i) => {
-            const count = p.subSeries?.length || 0;
-            const activeCount = p.subSeries?.filter(s => s.active)?.length || 0;
-            let gradeLabel = p.gradeLabel || p.subSeries?.[0]?.gradeLabel || 'Grade 1';
-            let gradeText = p.subSeries?.[0]?.specs?.willowGrade || `${gradeLabel} English Willow`;
-
-            let totalSubSeriesFields = 0;
-            let filledSubSeriesFields = 0;
-            
-            p.subSeries?.forEach(sub => {
-               totalSubSeriesFields += 12;
-               if (sub.name) filledSubSeriesFields++;
-               if (sub.slug) filledSubSeriesFields++;
-               if (sub.sku) filledSubSeriesFields++;
-               if (sub.gradeLabel || sub.grade) filledSubSeriesFields++;
-               if (typeof sub.basePrice === 'number' && sub.basePrice > 0) filledSubSeriesFields++;
-               if (sub.media?.primaryImage) filledSubSeriesFields++;
-               if (sub.shortDescription) filledSubSeriesFields++;
-               if (typeof sub.estimatedDeliveryDays === 'number') filledSubSeriesFields++;
-               if (typeof sub.warrantyMonths === 'number') filledSubSeriesFields++;
-               if (sub.specs && Object.keys(sub.specs).length > 5) filledSubSeriesFields++;
-               if (sub.performance && Object.keys(sub.performance).length > 2) filledSubSeriesFields++;
-               if (sub.customizationGroups && sub.customizationGroups.length > 0) filledSubSeriesFields++;
-            });
-
-            const completionScore = totalSubSeriesFields > 0 ? Math.round((filledSubSeriesFields / totalSubSeriesFields) * 100) : 0;
-
-
-            return (
-              <RevealSection key={p.id || p.slug} delay={i * 100}>
-                <Link to={`/admin/products/${p.slug}`} className="block group h-full">
-                  <div className="bg-surface border border-[#c5a059]/10 p-6 shadow-sm group-hover:border-[#c5a059]/30 transition-colors h-full flex flex-col">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h3 className="font-bold tracking-[0.2em] uppercase text-content text-xl mb-1">{p.name}</h3>
-                        <span className="text-[10px] text-muted tracking-widest uppercase">{p.tagline}</span>
-                      </div>
-                      <Box size={20} className="text-[#c5a059]/50 group-hover:text-[#c5a059] transition-colors" />
-                    </div>
-
-                    <div className="mb-4">
-                       <div className="flex justify-between items-center mb-1">
-                          <p className="text-xs font-bold tracking-widest text-[#c5a059] uppercase">{gradeLabel}</p>
-                          {totalSubSeriesFields > 0 && (
-                            <span className={`text-[10px] tracking-widest font-mono ${completionScore === 100 ? 'text-green-500' : 'text-amber-500'}`}>
-                              SCORE {completionScore}%
-                            </span>
-                          )}
-                       </div>
-                       <p className="text-[10px] text-muted tracking-wide mt-1">{gradeText}</p>
-                    </div>
-
-                    <div className="mt-auto flex justify-between items-end">
-                       <div>
-                         <p className="text-[10px] text-muted uppercase tracking-widest mb-1">Products</p>
-                         <p className="text-sm font-bold tracking-wider text-content">{count} variants</p>
-                         <p className="text-[10px] text-content/70 tracking-widest uppercase mt-1">{activeCount} Active / {count} Total</p>
-                       </div>
-                       <ChevronRight size={20} className="text-muted group-hover:text-[#c5a059] group-hover:translate-x-1 transition-all" />
-                    </div>
-                  </div>
-                </Link>
-              </RevealSection>
-            );
-          })}
-          {products.length === 0 && !collectionEmpty && (
-            <div className="col-span-full bg-surface border border-[#c5a059]/20">
-              <EmptyState icon={Box} title="No series found" description="Seed the catalogue from the Danger Zone, or check your connection." />
-            </div>
-          )}
+      ) : products.length === 0 && !collectionEmpty ? (
+        <div className="bg-surface border border-line rounded-xl">
+          <EmptyState icon={Box} title="No series found" description="Seed the catalogue from the Danger Zone, or check your connection." />
         </div>
+      ) : (
+        <RevealSection delay={50}>
+          <div className="rounded-xl border border-line overflow-hidden">
+            {/* Desktop header */}
+            <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-2.5 text-[9px] uppercase tracking-[0.2em] font-bold text-muted bg-bg border-b border-line">
+              <div className="col-span-5">Series</div>
+              <div className="col-span-3">Grade</div>
+              <div className="col-span-2 text-center">Variants</div>
+              <div className="col-span-2 text-right">Completion</div>
+            </div>
+
+            <div className="divide-y divide-line">
+              {products.map((p) => {
+                const count = p.subSeries?.length || 0;
+                const activeCount = p.subSeries?.filter(s => s.active)?.length || 0;
+                const gradeLabel = p.gradeLabel || p.subSeries?.[0]?.gradeLabel || 'Grade 1';
+                const gradeText = p.subSeries?.[0]?.specs?.willowGrade || `${gradeLabel} English Willow`;
+
+                let totalFields = 0;
+                let filledFields = 0;
+                p.subSeries?.forEach(sub => {
+                  totalFields += 12;
+                  if (sub.name) filledFields++;
+                  if (sub.slug) filledFields++;
+                  if (sub.sku) filledFields++;
+                  if (sub.gradeLabel || sub.grade) filledFields++;
+                  if (typeof sub.basePrice === 'number' && sub.basePrice > 0) filledFields++;
+                  if (sub.media?.primaryImage) filledFields++;
+                  if (sub.shortDescription) filledFields++;
+                  if (typeof sub.estimatedDeliveryDays === 'number') filledFields++;
+                  if (typeof sub.warrantyMonths === 'number') filledFields++;
+                  if (sub.specs && Object.keys(sub.specs).length > 5) filledFields++;
+                  if (sub.performance && Object.keys(sub.performance).length > 2) filledFields++;
+                  if (sub.customizationGroups && sub.customizationGroups.length > 0) filledFields++;
+                });
+                const completion = totalFields > 0 ? Math.round((filledFields / totalFields) * 100) : 0;
+
+                return (
+                  <Link key={p.id || p.slug} to={`/admin/products/${p.slug}`} className="block px-4 py-3 hover:bg-[#c5a059]/[0.04] transition-colors group">
+                    {/* Desktop row */}
+                    <div className="hidden md:grid grid-cols-12 gap-3 items-center">
+                      <div className="col-span-5 min-w-0 leading-tight">
+                        <span className="block text-sm font-bold tracking-[0.15em] uppercase text-content group-hover:text-[#c5a059] transition-colors truncate">{p.name}</span>
+                        {p.tagline && <span className="block text-[10px] text-muted truncate mt-0.5">{p.tagline}</span>}
+                      </div>
+                      <div className="col-span-3 min-w-0 leading-tight">
+                        <span className="block text-xs text-content">{gradeLabel}</span>
+                        <span className="block text-[10px] text-muted truncate mt-0.5">{gradeText}</span>
+                      </div>
+                      <div className="col-span-2 text-center">
+                        <span className="text-xs font-mono text-content">{activeCount}<span className="text-muted">/{count} active</span></span>
+                      </div>
+                      <div className="col-span-2 flex items-center justify-end gap-3">
+                        <span className={`text-xs font-mono ${completion === 100 ? 'text-emerald-500' : 'text-amber-500'}`}>{completion}%</span>
+                        <ChevronRight size={16} className="text-muted group-hover:text-[#c5a059] group-hover:translate-x-0.5 transition-all" />
+                      </div>
+                    </div>
+
+                    {/* Mobile row */}
+                    <div className="md:hidden space-y-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-bold tracking-[0.15em] uppercase text-content truncate">{p.name}</span>
+                        <span className={`text-xs font-mono shrink-0 ${completion === 100 ? 'text-emerald-500' : 'text-amber-500'}`}>{completion}%</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-[10px] text-muted">
+                        <span className="truncate">{gradeLabel} · {gradeText}</span>
+                        <span className="shrink-0 font-mono">{activeCount}/{count} active</span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </RevealSection>
       )}
     </div>
   );

@@ -120,27 +120,27 @@ const OrderContext = createContext<OrderContextProps | undefined>(undefined);
 const CART_VERSION = 1;
 
 export function OrderProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(orderReducer, initialState);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  // Load from local storage
-  useEffect(() => {
+  // Hydrate synchronously (lazy init) — an effect-based load runs AFTER child
+  // effects, so a refresh on /order saw an empty cart and bounced the customer
+  // to /collection before the stored items ever arrived.
+  const [state, dispatch] = useReducer(orderReducer, initialState, (init) => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.version === CART_VERSION) {
-          dispatch({ type: 'LOAD_CART', payload: parsed.items || [] });
-        } else {
-          // Version mismatch, discard cart
-          localStorage.removeItem(STORAGE_KEY);
+          return { ...init, items: parsed.items || [] };
         }
+        // Version mismatch, discard cart
+        localStorage.removeItem(STORAGE_KEY);
       }
     } catch (e) {
       console.error("Could not load cart from local storage", e);
       localStorage.removeItem(STORAGE_KEY);
     }
-  }, []);
+    return init;
+  });
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Save to local storage
   useEffect(() => {

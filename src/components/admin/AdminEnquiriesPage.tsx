@@ -92,7 +92,7 @@ export function AdminEnquiriesPage() {
             <select
               value={filter}
               onChange={e => setFilter(e.target.value as any)}
-              className="bg-bg border border-[#c5a059]/20 text-content text-xs uppercase tracking-widest px-3 py-2 focus:outline-none focus:border-[#c5a059]"
+              className="bg-bg border border-line text-content text-xs uppercase tracking-widest px-3 py-2 focus:outline-none focus:border-[#c5a059]"
             >
               <option value="all">All Enquiries</option>
               <option value="new">New</option>
@@ -106,9 +106,9 @@ export function AdminEnquiriesPage() {
         }
       />
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {filteredEnquiries.length === 0 ? (
-          <div className="bg-surface border border-[#c5a059]/20">
+          <div className="bg-surface border border-line rounded-xl">
             <EmptyState icon={MessageSquare} title="No enquiries found" description={search || filter !== 'all' ? 'Try clearing the search or filter.' : 'New customer enquiries will appear here.'} />
           </div>
         ) : (
@@ -120,8 +120,8 @@ export function AdminEnquiriesPage() {
             const productDisplay = enq.productRef ? `${enq.productRef.seriesName} ${enq.productRef.subSeriesName || ''}` : (enq.productOfInterest || 'General Enquiry');
 
             return (
-              <div key={enq.id} className="bg-surface border border-[#c5a059]/20 p-6 flex flex-col md:flex-row gap-6 justify-between items-start">
-                <div className="space-y-3 flex-1 w-full relative z-0">
+              <div key={enq.id} className="bg-surface border border-line p-4 flex flex-col md:flex-row gap-4 justify-between items-start">
+                <div className="space-y-2.5 flex-1 w-full relative z-0">
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -129,7 +129,7 @@ export function AdminEnquiriesPage() {
                           {enq.type?.replace(/_/g, ' ') || 'General Enquiry'}
                         </span>
                       </div>
-                      <h3 className="text-lg font-bold text-content tracking-wider uppercase mb-1">{name}</h3>
+                      <h3 className="text-sm font-bold text-content tracking-wider uppercase mb-0.5">{name}</h3>
                       <p className="text-xs text-muted font-mono">{productDisplay}</p>
                       
                       <div className="mt-2 flex items-center gap-2">
@@ -148,17 +148,17 @@ export function AdminEnquiriesPage() {
                     <a href={`tel:${phone}`} className="flex items-center gap-2 hover:text-[#c5a059] transition-colors"><Phone className="w-3 h-3" /> {phone || 'N/A'}</a>
                   </div>
                   
-                  <div className="bg-bg/50 border border-line p-4 text-sm text-content/90 font-light italic leading-relaxed">
+                  <div className="bg-bg/50 border border-line p-3 text-xs text-content/90 font-light italic leading-relaxed">
                     "{enq.message}"
                   </div>
                   
-                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted mt-4">
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted">
                     <Calendar className="w-3 h-3" />
                     {fmtDate(enq.createdAt)}
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-4 w-full md:w-auto mt-4 md:mt-0 relative z-10 shrink-0">
+                <div className="flex flex-col gap-3 w-full md:w-auto relative z-10 shrink-0">
                   <div className="hidden md:block self-end text-right">
                     <StatusPill label={enq.status.replace(/_/g, ' ')} color={statusColors[enq.status] || '#6b7280'} />
                   </div>
@@ -168,7 +168,7 @@ export function AdminEnquiriesPage() {
                     <select
                       value={enq.status}
                       onChange={(e) => handleStatusChange(enq.id!, e.target.value as EnquiryStatus)}
-                      className="bg-bg border border-[#c5a059]/30 text-content text-xs px-3 py-2 w-full md:w-40 focus:border-[#c5a059] focus:outline-none"
+                      className="bg-bg border border-line text-content text-xs px-3 py-2 w-full md:w-40 focus:border-[#c5a059] focus:outline-none"
                     >
                       <option value="new">New</option>
                       <option value="in_review">In Review</option>

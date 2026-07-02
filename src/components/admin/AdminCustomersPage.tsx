@@ -129,7 +129,7 @@ function Customer360({
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-4 pb-10">
       <button
         onClick={onBack}
         className="text-[10px] uppercase tracking-widest text-muted hover:text-[#c5a059] flex items-center transition-colors mb-4 font-bold border border-transparent px-2 -ml-2 py-1"
@@ -138,8 +138,8 @@ function Customer360({
       </button>
 
       {/* Customer Header */}
-      <RevealSection className="bg-surface border border-[#c5a059]/20 p-6 md:p-8 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 relative">
-        <div className="flex items-start md:items-center gap-6 w-full xl:w-auto">
+      <RevealSection className="bg-surface border border-line p-4 md:p-5 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 relative">
+        <div className="flex items-start md:items-center gap-4 w-full xl:w-auto">
           <div className="w-16 h-16 rounded-full bg-[#c5a059]/10 border border-[#c5a059]/30 flex items-center justify-center shrink-0">
             <User className="w-8 h-8 text-[#c5a059]" />
           </div>
@@ -267,7 +267,7 @@ function Customer360({
         delay={100}
         className="grid grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        <div className="bg-surface border border-[#c5a059]/10 p-5 flex flex-col justify-between">
+        <div className="bg-surface border border-line p-4 flex flex-col justify-between">
           <h3 className="text-[10px] tracking-widest uppercase text-muted font-bold flex items-center gap-2 mb-3">
             <ShoppingBag className="w-3.5 h-3.5 text-[#c5a059]" /> Total Orders
           </h3>
@@ -275,7 +275,7 @@ function Customer360({
             {customer.orders.length}
           </p>
         </div>
-        <div className="bg-surface border border-[#c5a059]/10 p-5 flex flex-col justify-between">
+        <div className="bg-surface border border-line p-4 flex flex-col justify-between">
           <h3 className="text-[10px] tracking-widest uppercase text-muted font-bold flex items-center gap-2 mb-3">
             <DollarSign className="w-3.5 h-3.5 text-[#c5a059]" /> Avg Order
           </h3>
@@ -283,7 +283,7 @@ function Customer360({
             ₹{Math.round(customer.averageOrderValue).toLocaleString()}
           </p>
         </div>
-        <div className="bg-surface border border-[#c5a059]/10 p-5 flex flex-col justify-between">
+        <div className="bg-surface border border-line p-4 flex flex-col justify-between">
           <h3 className="text-[10px] tracking-widest uppercase text-muted font-bold mb-3">
             Pref. Series
           </h3>
@@ -294,7 +294,7 @@ function Customer360({
             {customer.preferredSubSeries}
           </p>
         </div>
-        <div className="bg-surface border border-[#c5a059]/10 p-5 flex flex-col justify-between">
+        <div className="bg-surface border border-line p-4 flex flex-col justify-between">
           <h3 className="text-[10px] tracking-widest uppercase text-muted font-bold mb-3">
             Saved Builds
           </h3>
@@ -306,7 +306,7 @@ function Customer360({
       )}
 
       {activeTab === 'Orders' && (
-        <div className="space-y-8">
+        <div className="space-y-4">
           <RevealSection delay={150}>
             <div className="flex items-center justify-between mb-4 border-b border-[#c5a059]/10 pb-2">
               <h3 className="text-[11px] font-bold tracking-widest text-[#c5a059] uppercase">
@@ -377,7 +377,7 @@ function Customer360({
       )}
 
       {activeTab === 'Saved Builds' && (
-        <div className="space-y-8">
+        <div className="space-y-4">
           <RevealSection delay={200}>
             <div className="flex items-center justify-between mb-4 border-b border-[#c5a059]/10 pb-2">
               <h3 className="text-[11px] font-bold tracking-widest text-[#c5a059] uppercase">
@@ -424,7 +424,7 @@ function Customer360({
       )}
 
       {activeTab === 'Support' && (
-        <div className="space-y-8">
+        <div className="space-y-4">
           <RevealSection delay={250}>
             <div className="flex items-center justify-between mb-4 border-b border-[#c5a059]/10 pb-2">
               <h3 className="text-[11px] font-bold tracking-widest text-[#c5a059] uppercase">
@@ -476,7 +476,7 @@ function Customer360({
 
       {activeTab === 'Notes' && (
         <RevealSection delay={300}>
-          <div className="bg-surface border border-[#c5a059]/20 p-6 flex flex-col shadow-sm max-w-3xl">
+          <div className="bg-surface border border-line p-4 flex flex-col shadow-sm max-w-3xl">
             <h3 className="text-[11px] font-bold tracking-widest text-[#c5a059] uppercase mb-4 flex items-center justify-between border-b border-[#c5a059]/10 pb-2">
               Admin Internal Notes
               {loadingNote && (
@@ -688,7 +688,7 @@ export function AdminCustomersPage() {
   }
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-16 font-sans border-t border-transparent h-full flex flex-col">
+    <div className="space-y-4 pb-10 font-sans border-t border-transparent h-full flex flex-col">
       <RevealSection className="shrink-0">
         <PageHeader
           eyebrow="Relationships"
@@ -701,7 +701,7 @@ export function AdminCustomersPage() {
             <select
               value={activeFilter}
               onChange={(e) => setActiveFilter(e.target.value as FilterOption)}
-              className="w-full appearance-none bg-surface border border-[#c5a059]/30 px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
+              className="w-full appearance-none bg-surface border border-line px-3 py-2 pr-8 text-[10px] min-h-[36px] font-bold tracking-widest uppercase transition-colors text-[#c5a059] focus:outline-none focus:border-[#c5a059] cursor-pointer"
             >
               {[
                 { id: "all", label: "All Customers" },
@@ -731,7 +731,7 @@ export function AdminCustomersPage() {
               placeholder="Search name, email, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-surface border border-[#c5a059]/20 pl-9 pr-4 py-2 text-[10px] min-h-[36px] uppercase tracking-widest focus:outline-none focus:border-[#c5a059] transition-colors text-content placeholder-muted"
+              className="w-full bg-surface border border-line pl-9 pr-4 py-2 text-[10px] min-h-[36px] uppercase tracking-widest focus:outline-none focus:border-[#c5a059] transition-colors text-content placeholder-muted"
             />
             <Search className="w-3.5 h-3.5 text-[#c5a059] absolute left-3 top-1/2 -translate-y-1/2" />
           </div>
@@ -742,13 +742,13 @@ export function AdminCustomersPage() {
 
       <div className="flex-1 overflow-hidden flex flex-col w-full pb-10">
         {filteredCustomers.length === 0 ? (
-          <div className="border border-[#c5a059]/10 border-dashed bg-surface/30">
+          <div className="border border-line border-dashed bg-surface/30">
             <EmptyState icon={User} title="No customers found" description="Try adjusting your filters or search query." />
           </div>
         ) : (
-          <div className="flex flex-col w-full h-full overflow-y-auto mt-2">
+          <div className="flex flex-col w-full h-full overflow-y-auto rounded-xl border border-line">
             {/* Desktop Table Header */}
-            <div className="hidden lg:grid grid-cols-12 gap-4 p-4 text-[9px] font-bold tracking-[0.2em] uppercase text-muted border-b border-[#c5a059]/20 sticky top-0 bg-bg z-raised w-full mb-2">
+            <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2.5 text-[9px] font-bold tracking-[0.2em] uppercase text-muted border-b border-line sticky top-0 bg-bg z-raised w-full">
               <div className="col-span-4">Customer</div>
               <div className="col-span-1 text-center">Orders</div>
               <div className="col-span-2 text-right">Confirmed Spend</div>
@@ -758,15 +758,15 @@ export function AdminCustomersPage() {
             </div>
 
             {/* List Body (Table rows on Desktop, Cards on Mobile) */}
-            <div className="flex flex-col gap-4 lg:gap-2 w-full relative">
+            <div className="divide-y divide-line w-full relative">
               {filteredCustomers.map((c) => (
                 <div
                   key={c.id}
                   onClick={() => setSelectedCustomerId(c.id)}
-                  className="group bg-surface/40 hover:bg-surface/80 border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-colors p-5 lg:p-4 flex flex-col lg:grid lg:grid-cols-12 gap-y-4 lg:gap-4 items-start lg:items-center cursor-pointer relative"
+                  className="group hover:bg-[#c5a059]/[0.04] transition-colors px-4 py-3 lg:py-2.5 flex flex-col lg:grid lg:grid-cols-12 gap-y-3 lg:gap-3 items-start lg:items-center cursor-pointer relative"
                 >
-                  <div className="col-span-4 hover:opacity-80 transition-opacity w-full flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-full bg-bg border border-[#c5a059]/20 flex flex-shrink-0 items-center justify-center group-hover:border-[#c5a059]/50 transition-colors">
+                  <div className="col-span-4 hover:opacity-80 transition-opacity w-full flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-full bg-bg border border-[#c5a059]/20 flex flex-shrink-0 items-center justify-center group-hover:border-[#c5a059]/50 transition-colors">
                        <User className="w-4 h-4 text-[#c5a059]" />
                      </div>
                      <div className="flex-1 min-w-0">

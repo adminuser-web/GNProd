@@ -8,6 +8,8 @@ import { Skeleton } from './Skeleton';
 import { PackageOpen, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import { mapLegacyStatus, stageIndex, STAGE_LABELS, STATUS_COLORS } from '../lib/orderStatus';
+import { retryOrderPayment } from '../features/orders/retryPayment';
+import { toast } from 'sonner';
 
 type Tab = 'active' | 'past';
 
@@ -40,6 +42,7 @@ function MiniTracker({ status }: { status: string }) {
 }
 
 function OrderCard({ order, idx }: { order: any; idx: number }) {
+  const [paying, setPaying] = useState(false);
   const mapped = mapLegacyStatus(order.status || 'Processing');
   const color = STATUS_COLORS[mapped];
   const cancelled = mapped === 'Cancelled';
@@ -88,7 +91,25 @@ function OrderCard({ order, idx }: { order: any; idx: number }) {
             {cancelled ? (
               order.cancellation?.reason && <p className="text-[11px] text-muted mt-2 line-clamp-1">Cancelled: {order.cancellation.reason}</p>
             ) : awaiting ? (
-              <p className="text-[11px] text-amber-500 mt-2">Payment not completed — please reorder to pay securely.</p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <p className="text-[11px] text-amber-500">Payment not completed.</p>
+                <button
+                  disabled={paying}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setPaying(true);
+                    const res = await retryOrderPayment(order.id);
+                    setPaying(false);
+                    if (res.status === 'paid') toast.success('Payment confirmed — crafting begins!');
+                    else if (res.status === 'pending') toast.success('Payment received — confirming your order…');
+                    else if (res.status === 'failed' && res.message) toast.error(res.message);
+                  }}
+                  className="text-[10px] font-bold uppercase tracking-widest text-bg bg-[#c5a059] px-3 py-1.5 rounded-sm hover:bg-[#d4b271] transition-colors disabled:opacity-50"
+                >
+                  {paying ? 'Opening…' : 'Complete Payment'}
+                </button>
+              </div>
             ) : !delivered ? (
               <MiniTracker status={order.status} />
             ) : null}

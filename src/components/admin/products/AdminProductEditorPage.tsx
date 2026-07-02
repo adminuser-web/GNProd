@@ -96,30 +96,30 @@ function AiAssistantPanel({ series, subSeries, updateSubSeries }: { series: any,
   };
 
   return (
-    <div className="bg-surface border border-purple-500/30 p-4 mt-6">
-      <div className="flex justify-between items-center mb-4 border-b border-purple-500/20 pb-2">
-         <h3 className="text-[10px] uppercase tracking-widest font-bold text-purple-400 flex items-center gap-2">
-            <Sparkles className="w-3 h-3" /> AI Workspace
+    <div className="border border-line rounded-xl p-4">
+      <div className="flex justify-between items-center mb-4 border-b border-line pb-2">
+         <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted flex items-center gap-2">
+            <Sparkles className="w-3 h-3 text-[#c5a059]" /> AI Workspace
          </h3>
       </div>
       
       <div className="grid grid-cols-2 gap-2 mb-4">
-         <button onClick={handleReviewCompleteness} disabled={working} className="text-[9px] uppercase tracking-wider bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 py-2 border border-purple-500/30 transition-colors text-center disabled:opacity-50">Review Setup</button>
-         <button onClick={handleSuggestDescription} disabled={working} className="text-[9px] uppercase tracking-wider bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 py-2 border border-purple-500/30 transition-colors text-center disabled:opacity-50">Draft Desc</button>
-         <button onClick={handleSuggestSeo} disabled={working} className="text-[9px] uppercase tracking-wider bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 py-2 border border-purple-500/30 transition-colors text-center disabled:opacity-50">Suggest SEO</button>
-         <button onClick={handleSuggestPrice} disabled={working} className="text-[9px] uppercase tracking-wider bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 py-2 border border-purple-500/30 transition-colors text-center disabled:opacity-50">Price Check</button>
+         <button onClick={handleReviewCompleteness} disabled={working} className="text-[9px] uppercase tracking-wider text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/5 py-2 border border-line rounded-sm transition-colors text-center disabled:opacity-50">Review Setup</button>
+         <button onClick={handleSuggestDescription} disabled={working} className="text-[9px] uppercase tracking-wider text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/5 py-2 border border-line rounded-sm transition-colors text-center disabled:opacity-50">Draft Desc</button>
+         <button onClick={handleSuggestSeo} disabled={working} className="text-[9px] uppercase tracking-wider text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/5 py-2 border border-line rounded-sm transition-colors text-center disabled:opacity-50">Suggest SEO</button>
+         <button onClick={handleSuggestPrice} disabled={working} className="text-[9px] uppercase tracking-wider text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/5 py-2 border border-line rounded-sm transition-colors text-center disabled:opacity-50">Price Check</button>
       </div>
 
       {working && (
-        <div className="text-[10px] text-purple-400 uppercase tracking-widest flex items-center gap-2 justify-center py-4 animate-pulse">
+        <div className="text-[10px] text-muted uppercase tracking-widest flex items-center gap-2 justify-center py-4 animate-pulse">
           <RefreshCw className="w-3 h-3 animate-spin" /> Analyzing...
         </div>
       )}
 
       {suggestion && !working && (
-        <div className="bg-bg border border-purple-500/30 p-3 relative mt-2 animate-fade-in">
+        <div className="bg-bg border border-line rounded-sm p-3 relative mt-2 animate-fade-in">
            <button onClick={() => setSuggestion(null)} className="absolute top-1 right-2 text-muted hover:text-content text-xs">&times;</button>
-           <p className="text-[9px] uppercase tracking-widest text-purple-400 mb-2 font-bold">{suggestion.message || 'AI Review Result'}</p>
+           <p className="text-[9px] uppercase tracking-widest text-[#c5a059] mb-2 font-bold">{suggestion.message || 'AI Review Result'}</p>
            
            {suggestion.type === 'completeness' && (
              <div className="space-y-2">
@@ -137,25 +137,25 @@ function AiAssistantPanel({ series, subSeries, updateSubSeries }: { series: any,
            )}
 
            {suggestion.type === 'description' && (
-             <p className="text-xs text-muted leading-relaxed italic border-l-2 border-purple-500/50 pl-2 py-1">{suggestion.data}</p>
+             <p className="text-xs text-muted leading-relaxed italic border-l-2 border-[#c5a059]/50 pl-2 py-1">{suggestion.data}</p>
            )}
 
            {suggestion.type === 'seo' && (
              <div className="space-y-2">
-               <p className="text-[10px]"><strong className="text-purple-300">Title:</strong> {suggestion.data.title}</p>
-               <p className="text-[10px] text-muted leading-relaxed"><strong className="text-purple-300">Desc:</strong> {suggestion.data.description}</p>
+               <p className="text-[10px]"><strong className="text-content">Title:</strong> {suggestion.data.title}</p>
+               <p className="text-[10px] text-muted leading-relaxed"><strong className="text-content">Desc:</strong> {suggestion.data.description}</p>
              </div>
            )}
 
            {suggestion.type === 'price' && (
              <div className="space-y-2">
-               <p className="text-[10px]"><strong className="text-purple-300">Range:</strong> ₹{suggestion.data.min.toLocaleString('en-IN')} – ₹{suggestion.data.max.toLocaleString('en-IN')}</p>
-               <p className="text-[10px] text-muted italic border-l-2 border-purple-500/50 pl-2 py-1">{suggestion.data.reason}</p>
+               <p className="text-[10px]"><strong className="text-content">Range:</strong> ₹{suggestion.data.min.toLocaleString('en-IN')} – ₹{suggestion.data.max.toLocaleString('en-IN')}</p>
+               <p className="text-[10px] text-muted italic border-l-2 border-[#c5a059]/50 pl-2 py-1">{suggestion.data.reason}</p>
              </div>
            )}
 
            {['description', 'seo', 'price'].includes(suggestion.type) && (
-             <button onClick={applySuggestion} className="w-full mt-3 bg-purple-500 text-bg py-2 text-[9px] uppercase tracking-widest font-bold hover:bg-purple-400 transition-colors">
+             <button onClick={applySuggestion} className="w-full mt-3 bg-[#c5a059] text-bg py-2 text-[9px] uppercase tracking-widest font-bold hover:bg-premium-gold-text transition-colors rounded-sm">
                Apply Draft
              </button>
            )}
@@ -187,6 +187,8 @@ export function AdminProductEditorPage() {
   const [activeTab, setActiveTab] = useState<
     "details" | "attributes" | "media" | "pricing" | "seo"
   >("details");
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [showAi, setShowAi] = useState(false);
 
   // Load (or reload, when navigating to a different sub-series such as after a
   // duplicate) the editable copy. Keyed on the resolved id so a save→refresh
@@ -356,34 +358,22 @@ export function AdminProductEditorPage() {
       )}
 
       {/* Sticky Header */}
-      <div className="sticky top-0 z-sticky-section bg-bg border-b border-[#c5a059]/10 pt-4 pb-4 mb-8">
-        <div className="flex justify-between items-center">
-          <div className="flex flex-col">
-            <Link
-              to={`/admin/products/${series.slug}`}
-              className="text-muted hover:text-[#c5a059] flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors mb-4 w-max"
-            >
-              <ArrowLeft size={12} /> Back to {series.name}
-            </Link>
-            <div className="flex items-center gap-2 text-[10px] tracking-widest uppercase font-bold text-muted mb-2">
-              <Link to="/admin/products" className="hover:text-content">
-                Products
-              </Link>
+      <div className="sticky top-0 z-sticky-section bg-bg border-b border-line pt-3 pb-3 mb-5">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div className="min-w-0">
+            <nav className="flex items-center gap-2 text-[10px] tracking-widest uppercase text-muted mb-1.5 flex-wrap">
+              <Link to="/admin/products" className="hover:text-content transition-colors">Products</Link>
               <ChevronRight size={10} />
-              <Link
-                to={`/admin/products/${series.slug}`}
-                className="hover:text-content"
-              >
-                {series.name}
-              </Link>
+              <Link to={`/admin/products/${series.slug}`} className="hover:text-content transition-colors flex items-center gap-1"><ArrowLeft size={11} /> {series.name}</Link>
               <ChevronRight size={10} />
-              <span className="text-[#c5a059]">{activeSubSeries.name}</span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content flex items-center gap-4">
-              Editing: {series.name} — {activeSubSeries.name}
+              <span className="text-content">{activeSubSeries.name}</span>
+            </nav>
+            <h1 className="text-lg md:text-xl font-bold tracking-wide text-content flex items-center gap-3 flex-wrap">
+              {activeSubSeries.name}
+              <span className="text-sm text-muted font-normal">· {series.name}</span>
               {hasUnsavedChanges && attrErrors.length === 0 && (
-                <span className="text-[10px] text-red-400 bg-red-400/10 px-2 py-1 rounded-sm flex items-center gap-1">
-                  <AlertCircle size={12} /> Unsaved Changes
+                <span className="text-[10px] text-amber-400 bg-amber-400/10 px-2 py-1 rounded-sm flex items-center gap-1">
+                  <AlertCircle size={12} /> Unsaved changes
                 </span>
               )}
               {attrErrors.length > 0 && (
@@ -398,19 +388,19 @@ export function AdminProductEditorPage() {
               )}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <Link
               to={`/collection/${series.slug}/${activeSubSeries.slug}`}
               target="_blank"
-              className="text-[10px] tracking-widest uppercase font-bold text-[#c5a059] hover:text-white transition-colors border border-[#c5a059] px-4 py-3 bg-[#c5a059]/5 hover:bg-[#c5a059]/20"
+              className="text-[10px] tracking-widest uppercase font-bold text-muted hover:text-[#c5a059] border border-line hover:border-[#c5a059]/50 px-4 py-2 rounded-sm transition-colors"
             >
-               Preview Page
+               Preview
             </Link>
             <button
               onClick={handleDuplicate}
               disabled={saving || hasUnsavedChanges}
               title={hasUnsavedChanges ? "Save your changes first" : "Duplicate this product (reuses images, starts as draft)"}
-              className="text-[10px] tracking-widest uppercase font-bold text-[#c5a059] hover:text-white transition-colors border border-[#c5a059] px-4 py-3 bg-[#c5a059]/5 hover:bg-[#c5a059]/20 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-[10px] tracking-widest uppercase font-bold text-muted hover:text-[#c5a059] border border-line hover:border-[#c5a059]/50 px-4 py-2 rounded-sm transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Copy size={12} /> Duplicate
             </button>
@@ -418,108 +408,132 @@ export function AdminProductEditorPage() {
               onClick={handleSave}
               disabled={saving || !hasUnsavedChanges || attrErrors.length > 0}
               variant="solid"
-              className="px-8 py-3 text-[10px]"
+              className="px-5 py-2 text-[10px]"
             >
-              {saving ? "Saving..." : attrErrors.length > 0 ? "Fix Issues to Save" : "Save Product"}
+              {saving ? "Saving…" : attrErrors.length > 0 ? "Fix Issues to Save" : "Save Product"}
             </GoldButton>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        <div className="w-full lg:w-64 shrink-0 flex flex-col gap-4 sticky top-[140px]">
-          <div className="bg-surface border border-[#c5a059]/10 p-2 flex flex-col gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`text-left px-4 py-3 text-[10px] tracking-widest uppercase transition-colors ${activeTab === tab.id ? "bg-[#c5a059]/10 text-[#c5a059] font-bold border-l-2 border-[#c5a059]" : "text-muted hover:text-content hover:bg-[#c5a059]/5"}`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+      {/* Tab bar */}
+      <div className="border-b border-line mb-5 flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
+        <div className="flex gap-1 overflow-x-auto hide-scrollbar">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`relative px-3.5 pb-2.5 pt-1 text-[10px] tracking-widest uppercase font-bold whitespace-nowrap transition-colors ${activeTab === tab.id ? "text-[#c5a059]" : "text-muted hover:text-content"}`}
+            >
+              {tab.label}
+              {tab.id === "attributes" && attrErrors.length > 0 && <span className="absolute -top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-red-500" aria-hidden />}
+              {activeTab === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#c5a059]" aria-hidden />}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 pb-2 shrink-0">
+          <button
+            onClick={() => setShowChecklist((v) => !v)}
+            className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-sm border transition-colors ${completionScore === 100 ? "border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10" : "border-amber-500/30 text-amber-500 hover:bg-amber-500/10"}`}
+            title={completionScore === 100 ? "All set — ready to publish" : "Show what's missing"}
+          >
+            {completionScore}%{completionScore === 100 ? " · Ready" : ` · ${missingFields.length} missing`}
+          </button>
+          <button
+            onClick={() => setShowAi((v) => !v)}
+            className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold px-2.5 py-1.5 rounded-sm border transition-colors ${showAi ? "border-[#c5a059]/50 text-[#c5a059] bg-[#c5a059]/10" : "border-line text-muted hover:text-[#c5a059] hover:border-[#c5a059]/50"}`}
+            title="AI workspace"
+          >
+            <Sparkles size={12} /> AI
+          </button>
+        </div>
+      </div>
 
-          <div className="bg-surface border border-[#c5a059]/10 p-4">
-             <div className="flex justify-between items-center mb-3">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-content">Completion</h3>
-                <span className={`text-[10px] font-mono tracking-wider ${completionScore === 100 ? 'text-green-500' : 'text-amber-500'}`}>{completionScore}%</span>
-             </div>
-             <div className="w-full bg-bg h-1 mb-4">
-                <div className={`h-full ${completionScore === 100 ? 'bg-green-500' : 'bg-amber-500'}`} style={{ width: `${completionScore}%` }}></div>
-             </div>
-             
-             {missingFields.length > 0 && (
-               <>
-                 <p className="text-[9px] uppercase tracking-widest text-red-400 font-bold mb-2">Missing Fields:</p>
-                 <ul className="space-y-1">
-                   {missingFields.map((field) => (
-                     <li key={field} className="text-[10px] text-muted flex items-start gap-1">
-                       <span className="text-red-500">&bull;</span> {field}
-                     </li>
-                   ))}
-                 </ul>
-               </>
-             )}
-             {missingFields.length === 0 && (
-               <p className="text-[10px] text-green-500 uppercase tracking-widest text-center mt-2">Ready to publish</p>
-             )}
+      {showChecklist && (
+        <div className="mb-5 border border-line rounded-xl p-4 max-w-md">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted">Completion</h3>
+            <span className={`text-[10px] font-mono ${completionScore === 100 ? "text-emerald-500" : "text-amber-500"}`}>{completionScore}%</span>
           </div>
-          
+          <div className="w-full bg-surface h-1 mb-3 rounded-full overflow-hidden">
+            <div className={`h-full ${completionScore === 100 ? "bg-emerald-500" : "bg-amber-500"}`} style={{ width: `${completionScore}%` }}></div>
+          </div>
+          {missingFields.length > 0 ? (
+            <ul className="space-y-1">
+              {missingFields.map((field) => (
+                <li key={field} className="text-[11px] text-muted flex items-start gap-1.5">
+                  <span className="text-amber-500">&bull;</span> {field}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[11px] text-emerald-500">Ready to publish — every field is filled in.</p>
+          )}
+        </div>
+      )}
+
+      {showAi && (
+        <div className="mb-5 max-w-md">
           <AiAssistantPanel series={series} subSeries={activeSubSeries} updateSubSeries={updateSubSeries} />
         </div>
+      )}
 
-        {/* Content */}
-        <div className="flex-1 min-w-0 bg-surface border border-[#c5a059]/10 p-6 md:p-8 shadow-sm">
-          {activeTab === "details" && (
+      {/* Content — full width */}
+      <div className="min-w-0">
+        {activeTab === "details" && (
+          <div className="max-w-4xl">
             <AdminDetailsTab
               series={series}
               subSeries={activeSubSeries}
               updateSubSeries={updateSubSeries}
             />
-          )}
-          {activeTab === "attributes" && (
-            <AdminAttributesTab
-              attributes={getAttributes(activeSubSeries)}
-              onChange={(attrs) => updateSubSeries({ ...activeSubSeries, attributes: attrs })}
-              storagePath={`products/${series.slug}/${activeSubSeries.slug}/swatches`}
-              template={series.attributes}
-              onApplyDefaults={() => {
-                const { attributes, added } = applySeriesDefaults(
-                  getAttributes(activeSubSeries),
-                  series.attributes,
-                );
-                if (!added.length) {
-                  toast("Already up to date with series defaults.");
-                  return;
-                }
-                updateSubSeries({ ...activeSubSeries, attributes });
-                toast.success(`Added ${added.length} attribute(s) from series defaults (inactive — enable per option).`);
-              }}
-            />
-          )}
-          {activeTab === "media" && (
-            <AdminMediaTab
-              series={series}
-              subSeries={activeSubSeries}
-              updateSubSeries={updateSubSeries}
-            />
-          )}
-          {activeTab === "pricing" && (
+          </div>
+        )}
+        {activeTab === "attributes" && (
+          <AdminAttributesTab
+            attributes={getAttributes(activeSubSeries)}
+            onChange={(attrs) => updateSubSeries({ ...activeSubSeries, attributes: attrs })}
+            storagePath={`products/${series.slug}/${activeSubSeries.slug}/swatches`}
+            template={series.attributes}
+            onApplyDefaults={() => {
+              const { attributes, added } = applySeriesDefaults(
+                getAttributes(activeSubSeries),
+                series.attributes,
+              );
+              if (!added.length) {
+                toast("Already up to date with series defaults.");
+                return;
+              }
+              updateSubSeries({ ...activeSubSeries, attributes });
+              toast.success(`Added ${added.length} attribute(s) from series defaults (inactive — enable per option).`);
+            }}
+          />
+        )}
+        {activeTab === "media" && (
+          <AdminMediaTab
+            series={series}
+            subSeries={activeSubSeries}
+            updateSubSeries={updateSubSeries}
+          />
+        )}
+        {activeTab === "pricing" && (
+          <div className="max-w-4xl">
             <AdminPricingTab
               series={series}
               subSeries={activeSubSeries}
               updateSubSeries={updateSubSeries}
             />
-          )}
-          {activeTab === "seo" && (
+          </div>
+        )}
+        {activeTab === "seo" && (
+          <div className="max-w-4xl">
             <AdminSeoTab
               series={series}
               subSeries={activeSubSeries}
               updateSubSeries={updateSubSeries}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

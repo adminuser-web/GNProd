@@ -155,11 +155,11 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
   const accepts = isVideoField ? "video/*" : (specKey === 'supportAttachment' ? "image/*,application/pdf" : "image/*");
 
   return (
-    <div className={clsx("flex flex-col gap-2 p-3 bg-elevated border border-[#c5a059]/10 rounded-sm relative", className)}>
+    <div className={clsx("flex flex-col gap-2 p-3 bg-elevated border border-line rounded-sm relative", className)}>
       {label && <div className="text-xs uppercase tracking-widest text-[#c5a059] font-bold mb-1">{label}</div>}
       <div className="flex gap-4 items-start w-full">
         {/* Preview Area */}
-        <div className="shrink-0 w-24 h-24 bg-surface border border-[#c5a059]/10 p-1 flex items-center justify-center relative overflow-hidden group">
+        <div className="shrink-0 w-24 h-24 bg-surface border border-line p-1 flex items-center justify-center relative overflow-hidden group">
           {pendingPreviewUrl ? (
              isVideoField || pendingPreviewUrl.endsWith('.mp4') ? (
                 <video src={pendingPreviewUrl} className="w-full h-full object-cover" muted />
@@ -209,7 +209,7 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
         {/* Upload Controls */}
         <div className="flex-1 min-w-0 flex flex-col items-start pt-1">
           {isUploading ? (
-            <div className="w-full relative h-[38px] bg-surface border border-[#c5a059]/20 flex items-center px-4">
+            <div className="w-full relative h-[38px] bg-surface border border-line flex items-center px-4">
               <div 
                 className="absolute left-0 top-0 bottom-0 bg-[#c5a059]/20 transition-all duration-300"
                 style={{ width: `${progress}%` }}
@@ -224,7 +224,7 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
                 disabled={!canUpload}
                 className={clsx(
                   "h-[38px] px-4 font-bold text-[10px] uppercase tracking-widest border transition-colors flex items-center gap-2",
-                  canUpload ? "bg-[#c5a059] text-white hover:bg-yellow-600 border-transparent" : "bg-surface border-[#c5a059]/20 text-muted opacity-50 cursor-not-allowed"
+                  canUpload ? "bg-[#c5a059] text-white hover:bg-yellow-600 border-transparent" : "bg-surface border-line text-muted opacity-50 cursor-not-allowed"
                 )}
               >
                 <Upload size={14} /> Upload Now
@@ -240,7 +240,7 @@ function SingleImageUpload({ specKey, value, onChange, storagePath, className, l
               )}
             </div>
           ) : (
-            <label className="h-[38px] px-6 text-[#c5a059] hover:text-content hover:bg-[#c5a059]/10 cursor-pointer border border-[#c5a059]/20 flex items-center justify-center bg-surface transition-colors">
+            <label className="h-[38px] px-6 text-[#c5a059] hover:text-content hover:bg-[#c5a059]/10 cursor-pointer border border-line flex items-center justify-center bg-surface transition-colors">
               <input 
                 ref={fileInputRef}
                 type="file" 

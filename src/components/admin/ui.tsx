@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 
 /**
- * Shared admin UI kit.
+ * Shared admin UI kit — ops-console edition.
  *
- * One visual language for the whole back office: calm dark + gold surfaces,
- * uppercase tracked labels, restrained borders. Extracted from the Content
- * Studio so every admin page reads the same. Tokens used: bg / surface /
- * content / muted / premium-gold-text and gold #c5a059.
+ * Chrome is neutral: hairline `border-line` dividers and whitespace instead
+ * of boxes. Gold (#c5a059) is a signal, not decoration — money, primary
+ * actions, attention counts, active states. Tokens: bg / surface / content /
+ * muted / line / premium-gold-text.
  */
 
 const GOLD = '#c5a059';
@@ -29,15 +29,13 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8 border-b border-[#c5a059]/10 pb-6">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-5 border-b border-line pb-4">
       <div className="min-w-0">
-        {eyebrow && (
-          <p className="text-[11px] tracking-[0.4em] uppercase text-premium-gold-text mb-2">{eyebrow}</p>
-        )}
-        <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content">{title}</h1>
-        {description && (
-          <p className="text-xs text-muted tracking-widest uppercase mt-2 leading-relaxed">{description}</p>
-        )}
+        <h1 className="text-lg md:text-xl font-bold tracking-wide text-content">
+          {eyebrow && <span className="text-muted font-normal text-sm">{eyebrow} / </span>}
+          {title}
+        </h1>
+        {description && <p className="text-xs text-muted mt-1">{description}</p>}
       </div>
       {actions && <div className="flex items-center gap-2 shrink-0 flex-wrap">{actions}</div>}
     </div>
@@ -50,7 +48,7 @@ export function PageHeader({
 
 export function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <h3 className={clsx('text-[10px] font-bold uppercase tracking-widest text-[#c5a059]', className)}>
+    <h3 className={clsx('text-[10px] font-bold uppercase tracking-widest text-muted', className)}>
       {children}
     </h3>
   );
@@ -76,17 +74,17 @@ export function Card({
   bodyClassName?: string;
 }) {
   return (
-    <div className={clsx('bg-surface border border-[#c5a059]/20 shadow-sm', className)}>
+    <div className={clsx('bg-surface/40 border border-line rounded-xl', className)}>
       {(title || actions) && (
-        <div className="px-5 py-4 border-b border-[#c5a059]/10 flex items-center justify-between gap-3">
+        <div className="px-4 py-3 border-b border-line flex items-center justify-between gap-3">
           <div className="min-w-0">
             {title && <SectionLabel>{title}</SectionLabel>}
-            {desc && <p className="text-[10px] text-muted mt-1 leading-relaxed">{desc}</p>}
+            {desc && <p className="text-[10px] text-muted mt-0.5 leading-relaxed">{desc}</p>}
           </div>
           {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
         </div>
       )}
-      <div className={clsx('p-5', bodyClassName)}>{children}</div>
+      <div className={clsx('p-4', bodyClassName)}>{children}</div>
     </div>
   );
 }
@@ -123,7 +121,7 @@ export function Field({
           onChange={(e) => onChange(e.target.value)}
           rows={rows}
           placeholder={placeholder}
-          className="w-full bg-bg border border-[#c5a059]/20 px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors placeholder-muted/60"
+          className="w-full bg-bg border border-line px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors placeholder-muted/60 rounded-sm"
         />
       ) : (
         <input
@@ -131,7 +129,7 @@ export function Field({
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-bg border border-[#c5a059]/20 px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors placeholder-muted/60"
+          className="w-full bg-bg border border-line px-3 py-2 text-sm text-content focus:outline-none focus:border-[#c5a059] transition-colors placeholder-muted/60 rounded-sm"
         />
       )}
       {help && <p className="text-[10px] text-muted mt-1 leading-relaxed">{help}</p>}
@@ -140,7 +138,7 @@ export function Field({
 }
 
 /* ------------------------------------------------------------------ */
-/* Stat card                                                           */
+/* Stat — boxless number, label below                                  */
 /* ------------------------------------------------------------------ */
 
 export function StatCard({
@@ -149,42 +147,32 @@ export function StatCard({
   subLabel,
   icon: Icon,
   alert = false,
+  accent = false,
   to,
 }: {
   label: string;
   value: string | number;
   subLabel?: React.ReactNode;
-  icon: any;
+  icon?: any;
   alert?: boolean;
+  accent?: boolean;
   to?: string;
 }) {
   const body = (
-    <div
-      className={clsx(
-        'bg-surface border p-6 shadow-sm h-full transition-all flex flex-col justify-between',
-        alert ? 'border-red-500/20 hover:border-red-500/40' : 'border-[#c5a059]/20 hover:border-[#c5a059]/40',
-      )}
-    >
-      <div>
-        <div className="flex justify-between items-start mb-4">
-          <span
-            className={clsx(
-              'text-[10px] uppercase tracking-widest',
-              alert ? 'text-red-400' : 'text-muted',
-              to && 'group-hover:text-premium-gold-text transition-colors',
-            )}
-          >
-            {label}
-          </span>
-          {Icon && <Icon className={clsx('w-4 h-4 shrink-0', alert ? 'text-red-500' : 'text-[#c5a059]')} />}
-        </div>
-        <div className={clsx('text-xl md:text-2xl font-bold tracking-wider mb-1', alert ? 'text-red-500' : 'text-content')}>
-          {value}
-        </div>
+    <div className="h-full flex flex-col py-1 min-w-0">
+      <div
+        className={clsx(
+          'text-xl md:text-2xl font-bold tracking-wide truncate',
+          alert ? 'text-red-500' : accent ? 'text-premium-gold-text' : 'text-content',
+        )}
+      >
+        {value}
       </div>
-      {subLabel && (
-        <div className="text-[10px] lg:text-xs text-muted/80 uppercase tracking-widest mt-2 block">{subLabel}</div>
-      )}
+      <div className={clsx('flex items-center gap-1.5 text-[11px] mt-1', alert ? 'text-red-400' : 'text-muted', to && 'group-hover:text-content transition-colors')}>
+        {label}
+        {Icon && <Icon className="w-3.5 h-3.5 opacity-50 shrink-0" />}
+      </div>
+      {subLabel && <div className="text-[10px] text-muted/70 mt-0.5">{subLabel}</div>}
     </div>
   );
   if (to)
@@ -227,14 +215,14 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-16 px-6">
+    <div className="flex flex-col items-center justify-center text-center py-12 px-6">
       {Icon && (
-        <div className="w-12 h-12 rounded-full border border-[#c5a059]/20 flex items-center justify-center mb-4">
-          <Icon className="w-5 h-5 text-[#c5a059]/60" />
+        <div className="w-12 h-12 rounded-full border border-line flex items-center justify-center mb-4">
+          <Icon className="w-5 h-5 text-muted" />
         </div>
       )}
-      <p className="text-sm font-bold uppercase tracking-widest text-content">{title}</p>
-      {description && <p className="text-xs text-muted tracking-wide mt-2 max-w-sm">{description}</p>}
+      <p className="text-sm font-bold tracking-wide text-content">{title}</p>
+      {description && <p className="text-xs text-muted mt-2 max-w-sm">{description}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
@@ -272,7 +260,7 @@ export function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-bg border border-[#c5a059]/20 pl-10 pr-4 py-2 text-xs text-content focus:border-[#c5a059] focus:outline-none placeholder-muted uppercase tracking-widest transition-colors"
+        className="w-full bg-bg border border-line pl-10 pr-4 py-2 text-xs text-content focus:border-[#c5a059] focus:outline-none placeholder-muted transition-colors rounded-sm"
       />
     </div>
   );
@@ -292,13 +280,13 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex bg-surface border border-[#c5a059]/20 p-1 rounded-sm">
+    <div className="flex bg-surface/50 border border-line p-1 rounded-sm">
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           className={clsx(
-            'px-4 py-2 text-[10px] font-bold tracking-widest uppercase transition-colors rounded-sm',
+            'px-3.5 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-colors rounded-sm',
             value === o.value ? 'bg-[#c5a059] text-bg' : 'text-muted hover:text-content',
           )}
         >
