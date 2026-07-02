@@ -22,6 +22,7 @@ export function AdminSeriesDetailPage() {
   const navigate = useNavigate();
   const { products, refresh, loading } = useProducts();
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'products' | 'settings' | 'attributes'>('products');
 
   // New product modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -328,7 +329,7 @@ export function AdminSeriesDetailPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-5 border-b border-line pb-4">
+      <div className="sticky top-0 z-sticky-section bg-bg flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-5 border-b border-line pt-2 pb-3">
          <div className="min-w-0">
             <nav className="flex items-center gap-2 text-[10px] tracking-widest uppercase text-muted mb-1.5">
                <Link to="/admin/products" className="hover:text-content flex items-center gap-1 transition-colors"><ArrowLeft size={11} /> Products</Link>
@@ -347,225 +348,230 @@ export function AdminSeriesDetailPage() {
              >
                Preview
              </Link>
-             <GoldButton onClick={handleSaveSettings} disabled={saving} variant="outline" className="px-4 py-2 text-[10px]">
-                {saving ? 'Saving…' : 'Save Settings'}
+             <GoldButton onClick={handleSaveSettings} disabled={saving} variant="solid" className="px-5 py-2 text-[10px]">
+                {saving ? 'Saving…' : 'Save Series'}
              </GoldButton>
+         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-line mb-5 flex gap-1 overflow-x-auto hide-scrollbar">
+        {[
+          { id: 'products', label: `Products (${subSeriesList.length})` },
+          { id: 'settings', label: 'Settings' },
+          { id: 'attributes', label: 'Default Attributes' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`relative px-3.5 pb-2.5 pt-1 text-[10px] tracking-widest uppercase font-bold whitespace-nowrap transition-colors ${activeTab === tab.id ? 'text-[#c5a059]' : 'text-muted hover:text-content'}`}
+          >
+            {tab.label}
+            {activeTab === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#c5a059]" aria-hidden />}
+          </button>
+        ))}
+      </div>
+
+      {/* PRODUCTS */}
+      {activeTab === 'products' && (
+        <div className="rounded-xl border border-line overflow-hidden">
+          <div className="px-4 py-2.5 bg-bg border-b border-line flex justify-between items-center">
+             <h2 className="text-[9px] tracking-[0.2em] uppercase font-bold text-muted">Products ({subSeriesList.length})</h2>
              {formData.slug !== 'immortal' && (
-               <GoldButton
+               <button
                  onClick={() => {
                    setNewProductName('');
                    setNewProductPrice('');
                    setNewProductImage('');
                    setIsAddModalOpen(true);
                  }}
-                 variant="solid"
-                 className="px-4 py-2 text-[10px] flex items-center gap-2"
+                 className="text-[10px] text-[#c5a059] uppercase tracking-widest hover:text-content flex items-center gap-1 font-bold transition-colors"
                >
-                  <Plus size={14} /> Add Product
-               </GoldButton>
+                  <Plus size={13} /> Add Product
+               </button>
              )}
-         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* PRODUCTS LIST */}
-        <div className="lg:col-span-2">
-            <div className="rounded-xl border border-line overflow-hidden">
-              <div className="px-4 py-2.5 bg-bg border-b border-line flex justify-between items-center">
-                 <h2 className="text-[9px] tracking-[0.2em] uppercase font-bold text-muted">Products ({subSeriesList.length})</h2>
-              </div>
-              <div className="divide-y divide-line">
-                {subSeriesList.map(sub => {
-                  const resolvableForLive = canGoLive(sub);
-                  return (
-                  <div key={sub.id} className="px-4 py-3 flex flex-col md:flex-row md:items-center gap-4 hover:bg-[#c5a059]/[0.04] transition-colors group">
-                     {/* Thumbnail */}
-                     <div className="w-12 h-12 shrink-0 bg-bg flex items-center justify-center p-1.5 border border-line rounded-sm self-start md:self-auto">
-                        <img src={sub.media?.primaryImage || formData.imageUrl || '/product-bat.webp'} alt={sub.name} className="h-full object-contain" />
-                     </div>
-                     {/* Info */}
-                     <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold tracking-wider text-content truncate uppercase">{sub.name || 'UNNAMED PRODUCT'}</h4>
-                        <div className="flex items-center gap-3 mt-1">
-                           <span className="text-[10px] tracking-widest uppercase text-muted font-mono">{sub.sku || 'NO-SKU'}</span>
-                           <span className="text-[10px] text-muted">&bull;</span>
-                           <span className="text-[10px] font-mono tracking-wider text-content/80">₹{sub.basePrice?.toLocaleString('en-IN') || 0}</span>
-                        </div>
-                     </div>
-                     {/* Actions & Status */}
-                     <div className="flex flex-col items-end gap-2 shrink-0">
-                        <div className="flex items-center gap-3">
-                            <button 
-                              onClick={() => handleToggleSubSeriesActive(sub)}
-                              disabled={!sub.active && !resolvableForLive}
-                              className={`text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-sm transition-all focus:outline-none 
-                                ${sub.active 
-                                  ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' 
-                                  : resolvableForLive 
-                                    ? 'bg-red-500/10 text-red-400 hover:bg-green-500/10 hover:text-green-400' 
-                                    : 'bg-bg/50 text-muted/50 cursor-not-allowed border border-white/5'}`}
-                            >
-                               {sub.active ? 'Live' : 'Draft'}
-                            </button>
-                            <Link
-                               to={`/admin/products/${formData.slug}/${sub.slug || sub.id}`}
-                               className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/10 border border-line transition-colors"
-                            >
-                               <Edit2 size={14} />
-                            </Link>
-                            <button
-                               onClick={() => handleDuplicateSubSeries(sub)}
-                               disabled={saving}
-                               title="Duplicate (reuses images, starts as draft)"
-                               className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/10 border border-line transition-colors disabled:opacity-40"
-                            >
-                               <Copy size={14} />
-                            </button>
-                            <button
-                               onClick={() => handleDeleteSubSeries(sub.id, sub.name)}
-                               className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center text-muted hover:text-red-400 hover:bg-red-500/10 border border-line transition-colors"
-                            >
-                               <Trash2 size={14} />
-                            </button>
-                        </div>
-                        {/* Go-Live Checklist */}
-                        {!sub.active && !resolvableForLive && (
-                           <div className="bg-bg/50 border border-red-500/10 p-2 text-[9px] mt-2 rounded-sm w-full md:w-auto md:min-w-[140px]">
-                              <p className="text-red-400/80 uppercase tracking-widest font-bold mb-1.5">To Publish:</p>
-                              <ul className="text-muted/70 space-y-1 pl-1">
-                                 <li className={`flex gap-1.5 items-center ${sub.name ? 'line-through opacity-40 text-content' : ''}`}>
-                                   <div className={`w-1 h-1 rounded-full ${sub.name ? 'bg-[#c5a059]' : 'bg-red-500/50'}`}></div> Name
-                                 </li>
-                                 <li className={`flex gap-1.5 items-center ${(typeof sub.basePrice === 'number' && sub.basePrice > 0) ? 'line-through opacity-40 text-content' : ''}`}>
-                                   <div className={`w-1 h-1 rounded-full ${(typeof sub.basePrice === 'number' && sub.basePrice > 0) ? 'bg-[#c5a059]' : 'bg-red-500/50'}`}></div> Price
-                                 </li>
-                                 <li className={`flex gap-1.5 items-center ${sub.media?.primaryImage ? 'line-through opacity-40 text-content' : ''}`}>
-                                   <div className={`w-1 h-1 rounded-full ${sub.media?.primaryImage ? 'bg-[#c5a059]' : 'bg-red-500/50'}`}></div> Image
-                                 </li>
-                              </ul>
-                           </div>
-                        )}
-                     </div>
-                  </div>
-                )})}
-                {subSeriesList.length === 0 && (
-                   <div className="p-12 text-center text-muted tracking-widest text-[10px] uppercase">
-                     No products found in this series.
-                   </div>
-                )}
-              </div>
-            </div>
-        </div>
-
-        {/* SERIES SETTINGS */}
-        <div className="lg:col-span-1">
-           <div className="border border-line rounded-xl p-4 sticky top-24">
-              <h2 className="text-[10px] tracking-widest uppercase font-bold text-muted mb-5 pb-3 border-b border-line">Series Settings</h2>
-              
-              <div className="space-y-6">
-                 <div>
-                  <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Series Tagline</label>
-                  <input
-                    type="text"
-                    value={formData.tagline || ''}
-                    onChange={e => updateField('tagline', e.target.value)}
-                    className="w-full bg-bg border border-line rounded-sm p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
-                    placeholder="e.g. Built for the Grind"
-                  />
+          </div>
+          <div className="divide-y divide-line">
+            {subSeriesList.map(sub => {
+              const resolvableForLive = canGoLive(sub);
+              return (
+              <div key={sub.id} className="px-4 py-3 flex flex-col md:flex-row md:items-center gap-4 hover:bg-[#c5a059]/[0.04] transition-colors group">
+                 {/* Thumbnail */}
+                 <div className="w-12 h-12 shrink-0 bg-bg flex items-center justify-center p-1.5 border border-line rounded-sm self-start md:self-auto">
+                    <img src={sub.media?.primaryImage || formData.imageUrl || '/product-bat.webp'} alt={sub.name} className="h-full object-contain" />
                  </div>
-
-                 <div>
-                  <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Sort Order</label>
-                  <input
-                    type="number"
-                    value={formData.sortOrder || 0}
-                    onChange={e => updateField('sortOrder', parseInt(e.target.value))}
-                    className="w-full bg-bg border border-line rounded-sm p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
-                  />
-                 </div>
-
-                 <div>
-                  <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Primary Image URL / Thumbnail</label>
-                  <ImageUpload
-                     specKey="seriesTile"
-                     value={formData.imageUrl || ''}
-                     onChange={(url) => updateField('imageUrl', url)}
-                     storagePath={`products/${formData.slug}`}
-                  />
-                 </div>
-
-                 <div>
-                  <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Hero Image (Series Banner)</label>
-                  <ImageUpload
-                     specKey="heroImage"
-                     value={formData.heroImage || ''}
-                     onChange={(url) => updateField('heroImage', url)}
-                     storagePath={`products/${formData.slug}`}
-                  />
-                 </div>
-
-                 <div>
-                  <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Description</label>
-                  <textarea
-                    value={typeof formData.description === 'string' ? formData.description : formData.description?.join('\n') || ''}
-                    onChange={e => updateField('description', e.target.value)}
-                    rows={4}
-                    className="w-full bg-bg border border-line rounded-sm p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
-                  />
-                 </div>
-                 
-                 <div className="pt-4 border-t border-line">
-                    <h3 className="text-[10px] uppercase tracking-widest text-muted mb-4 font-bold">SEO Defaults</h3>
-                    <div className="space-y-4">
-                       <div>
-                          <label className="block text-[9px] uppercase tracking-widest text-muted/70 mb-1">SEO Title</label>
-                          <input
-                            type="text"
-                            value={formData.seoTitle || ''}
-                            onChange={e => updateField('seoTitle', e.target.value)}
-                            className="w-full bg-bg border border-line rounded-sm p-2 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
-                          />
-                       </div>
-                       <div>
-                          <label className="block text-[9px] uppercase tracking-widest text-muted/70 mb-1">SEO Description</label>
-                          <textarea
-                            value={formData.seoDescription || ''}
-                            onChange={e => updateField('seoDescription', e.target.value)}
-                            rows={3}
-                            className="w-full bg-bg border border-line rounded-sm p-2 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
-                          />
-                       </div>
+                 {/* Info */}
+                 <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold tracking-wider text-content truncate uppercase">{sub.name || 'UNNAMED PRODUCT'}</h4>
+                    <div className="flex items-center gap-3 mt-1">
+                       <span className="text-[10px] tracking-widest uppercase text-muted font-mono">{sub.sku || 'NO-SKU'}</span>
+                       <span className="text-[10px] text-muted">&bull;</span>
+                       <span className="text-[10px] font-mono tracking-wider text-content/80">₹{sub.basePrice?.toLocaleString('en-IN') || 0}</span>
                     </div>
                  </div>
-
+                 {/* Actions & Status */}
+                 <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleToggleSubSeriesActive(sub)}
+                          disabled={!sub.active && !resolvableForLive}
+                          className={`text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-sm transition-all focus:outline-none
+                            ${sub.active
+                              ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                              : resolvableForLive
+                                ? 'bg-red-500/10 text-red-400 hover:bg-green-500/10 hover:text-green-400'
+                                : 'bg-bg/50 text-muted/50 cursor-not-allowed border border-line'}`}
+                        >
+                           {sub.active ? 'Live' : 'Draft'}
+                        </button>
+                        <Link
+                           to={`/admin/products/${formData.slug}/${sub.slug || sub.id}`}
+                           className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/10 border border-line transition-colors"
+                        >
+                           <Edit2 size={14} />
+                        </Link>
+                        <button
+                           onClick={() => handleDuplicateSubSeries(sub)}
+                           disabled={saving}
+                           title="Duplicate (reuses images, starts as draft)"
+                           className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/10 border border-line transition-colors disabled:opacity-40"
+                        >
+                           <Copy size={14} />
+                        </button>
+                        <button
+                           onClick={() => handleDeleteSubSeries(sub.id, sub.name)}
+                           className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center text-muted hover:text-red-400 hover:bg-red-500/10 border border-line transition-colors"
+                        >
+                           <Trash2 size={14} />
+                        </button>
+                    </div>
+                    {/* Go-Live Checklist */}
+                    {!sub.active && !resolvableForLive && (
+                       <div className="bg-bg/50 border border-red-500/10 p-2 text-[9px] mt-2 rounded-sm w-full md:w-auto md:min-w-[140px]">
+                          <p className="text-red-400/80 uppercase tracking-widest font-bold mb-1.5">To Publish:</p>
+                          <ul className="text-muted/70 space-y-1 pl-1">
+                             <li className={`flex gap-1.5 items-center ${sub.name ? 'line-through opacity-40 text-content' : ''}`}>
+                               <div className={`w-1 h-1 rounded-full ${sub.name ? 'bg-[#c5a059]' : 'bg-red-500/50'}`}></div> Name
+                             </li>
+                             <li className={`flex gap-1.5 items-center ${(typeof sub.basePrice === 'number' && sub.basePrice > 0) ? 'line-through opacity-40 text-content' : ''}`}>
+                               <div className={`w-1 h-1 rounded-full ${(typeof sub.basePrice === 'number' && sub.basePrice > 0) ? 'bg-[#c5a059]' : 'bg-red-500/50'}`}></div> Price
+                             </li>
+                             <li className={`flex gap-1.5 items-center ${sub.media?.primaryImage ? 'line-through opacity-40 text-content' : ''}`}>
+                               <div className={`w-1 h-1 rounded-full ${sub.media?.primaryImage ? 'bg-[#c5a059]' : 'bg-red-500/50'}`}></div> Image
+                             </li>
+                          </ul>
+                       </div>
+                    )}
+                 </div>
               </div>
-           </div>
-        </div>
-
-      </div>
-
-      {/* SERIES DEFAULT ATTRIBUTES (template) */}
-      <div className="mt-6 border border-line rounded-xl p-4 md:p-5">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-3 mb-5 pb-3 border-b border-line">
-          <div>
-            <h2 className="text-[10px] tracking-widest uppercase font-bold text-muted">Series Default Attributes</h2>
-            <p className="text-sm text-muted mt-1">
-              The standard attribute set for {formData.name}. New products are seeded from this template;
-              existing products can pull in any missing ones via <span className="text-[#c5a059]">Apply Series Defaults</span> on their editor (added inactive, never overwriting).
-            </p>
+            )})}
+            {subSeriesList.length === 0 && (
+               <div className="p-12 text-center text-muted tracking-widest text-[10px] uppercase">
+                 No products found in this series.
+               </div>
+            )}
           </div>
-          <GoldButton onClick={handleSaveSettings} disabled={saving} variant="solid" className="px-6 py-2 text-[10px] shrink-0">
-            {saving ? 'Saving...' : 'Save Template'}
-          </GoldButton>
         </div>
-        <AdminAttributesTab
-          attributes={getAttributes(formData)}
-          onChange={(attrs) => updateField('attributes', attrs)}
-          storagePath={`products/${formData.slug}/template/swatches`}
-        />
-      </div>
+      )}
+
+      {/* SETTINGS */}
+      {activeTab === 'settings' && (
+        <div className="max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div className="space-y-5">
+             <div>
+              <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Series Tagline</label>
+              <input
+                type="text"
+                value={formData.tagline || ''}
+                onChange={e => updateField('tagline', e.target.value)}
+                className="w-full bg-bg border border-line rounded-sm p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                placeholder="e.g. Built for the Grind"
+              />
+             </div>
+
+             <div>
+              <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Sort Order</label>
+              <input
+                type="number"
+                value={formData.sortOrder || 0}
+                onChange={e => updateField('sortOrder', parseInt(e.target.value))}
+                className="w-full bg-bg border border-line rounded-sm p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+              />
+             </div>
+
+             <div>
+              <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Description</label>
+              <textarea
+                value={typeof formData.description === 'string' ? formData.description : formData.description?.join('\n') || ''}
+                onChange={e => updateField('description', e.target.value)}
+                rows={4}
+                className="w-full bg-bg border border-line rounded-sm p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+              />
+             </div>
+
+             <div className="pt-4 border-t border-line">
+                <h3 className="text-[10px] uppercase tracking-widest text-muted mb-4 font-bold">SEO Defaults</h3>
+                <div className="space-y-4">
+                   <div>
+                      <label className="block text-[9px] uppercase tracking-widest text-muted/70 mb-1">SEO Title</label>
+                      <input
+                        type="text"
+                        value={formData.seoTitle || ''}
+                        onChange={e => updateField('seoTitle', e.target.value)}
+                        className="w-full bg-bg border border-line rounded-sm p-2 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                      />
+                   </div>
+                   <div>
+                      <label className="block text-[9px] uppercase tracking-widest text-muted/70 mb-1">SEO Description</label>
+                      <textarea
+                        value={formData.seoDescription || ''}
+                        onChange={e => updateField('seoDescription', e.target.value)}
+                        rows={3}
+                        className="w-full bg-bg border border-line rounded-sm p-2 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                      />
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <div className="space-y-5">
+             <div>
+              <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Primary Image URL / Thumbnail</label>
+              <ImageUpload
+                 specKey="seriesTile"
+                 value={formData.imageUrl || ''}
+                 onChange={(url) => updateField('imageUrl', url)}
+                 storagePath={`products/${formData.slug}`}
+              />
+             </div>
+
+             <div>
+              <label className="block text-[10px] uppercase tracking-widest text-muted mb-2">Hero Image (Series Banner)</label>
+              <ImageUpload
+                 specKey="heroImage"
+                 value={formData.heroImage || ''}
+                 onChange={(url) => updateField('heroImage', url)}
+                 storagePath={`products/${formData.slug}`}
+              />
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEFAULT ATTRIBUTES (series template) */}
+      {activeTab === 'attributes' && (
+        <div>
+          <p className="text-xs text-muted mb-5 max-w-2xl">
+            The standard attribute set for {formData.name}. New products are seeded from this template;
+            existing products can pull in any missing ones via <span className="text-[#c5a059]">Apply Series Defaults</span> on their editor (added inactive, never overwriting).
+          </p>
+          <AdminAttributesTab
+            attributes={getAttributes(formData)}
+            onChange={(attrs) => updateField('attributes', attrs)}
+            storagePath={`products/${formData.slug}/template/swatches`}
+          />
+        </div>
+      )}
     </div>
   );
 }
-
