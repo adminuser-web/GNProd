@@ -15,7 +15,6 @@ import { EmptyState } from './EmptyState';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import { LazyImage } from './LazyImage';
-import { UpiPayBox } from './UpiPayBox';
 import { getCustomizableAttributes } from '../features/products/attributes';
 
 function StatusTracker({ status }: { status: string }) {
@@ -388,8 +387,11 @@ export function OrderDetailPage() {
 
         {order.payment?.status !== 'confirmed' && order.status !== 'Cancelled' && (
           <RevealSection delay={75}>
-            <div className="mb-8">
-              <UpiPayBox order={order} />
+            <div className="mb-8 bg-[#c5a059]/5 border border-[#c5a059]/20 p-5 text-center">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[#c5a059] mb-1">Payment Not Completed</p>
+              <p className="text-[12px] text-muted leading-relaxed max-w-md mx-auto">
+                This order wasn't paid for. If you'd still like it, please place the order again from the collection — payment is taken securely at checkout.
+              </p>
             </div>
           </RevealSection>
         )}

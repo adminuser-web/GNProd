@@ -1,15 +1,17 @@
-export type OrderStatus = 
-  | 'Order Placed' 
-  | 'Payment Pending' 
-  | 'Payment Confirmed' 
-  | 'Processing' 
+export type OrderStatus =
+  | 'Awaiting Payment'
+  | 'Order Placed'
+  | 'Payment Pending'
+  | 'Payment Confirmed'
+  | 'Processing'
   | 'Ready for Pickup'
-  | 'Shipped' 
-  | 'Delivered' 
+  | 'Shipped'
+  | 'Delivered'
   | 'Completed'
   | 'Cancelled';
 
 export const ORDER_STATUSES: OrderStatus[] = [
+  'Awaiting Payment',
   'Order Placed',
   'Payment Pending',
   'Payment Confirmed',
@@ -30,6 +32,7 @@ export function stageIndex(status: string): number {
   if (!status) return 0;
   const m = mapLegacyStatus(status);
   if (m === 'Cancelled') return -1;
+  if (m === 'Awaiting Payment') return 0;
   if (m === 'Payment Pending') return 0;
   if (m === 'Payment Confirmed') return 1;     // confirmed = into Processing
   if (m === 'Ready for Pickup') return 2;      // ~ shipped stage
@@ -41,6 +44,7 @@ export function stageIndex(status: string): number {
 export const STATUS_TRACKER_STEPS: OrderStatus[] = STAGE_FLOW;
 
 export const STATUS_COLORS: Record<OrderStatus, string> = {
+  'Awaiting Payment': '#f59e0b', // amber — unpaid
   'Order Placed': '#eab308', // yellow
   'Payment Pending': '#f59e0b', // orange-amber
   'Payment Confirmed': '#10b981', // green
@@ -53,6 +57,7 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
 };
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
+  'Awaiting Payment': 'Awaiting Payment',
   'Order Placed': 'Order Placed',
   'Payment Pending': 'Payment Pending',
   'Payment Confirmed': 'Payment Confirmed',
@@ -67,6 +72,7 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 // Unified flow: Placed → Processing → Shipped → Delivered. Cancel allowed any
 // time BEFORE delivery; Delivered is terminal (no reversal).
 export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  'Awaiting Payment': ['Processing', 'Cancelled'],
   'Order Placed': ['Processing', 'Cancelled'],
   'Payment Pending': ['Processing', 'Cancelled'],
   'Payment Confirmed': ['Processing', 'Shipped', 'Cancelled'],

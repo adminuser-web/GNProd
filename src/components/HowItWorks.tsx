@@ -1,20 +1,19 @@
 import React from 'react';
 import { clsx } from 'clsx';
-import { ClipboardCheck, MessageCircle, IndianRupee } from 'lucide-react';
+import { ClipboardCheck, ShieldCheck, Hammer } from 'lucide-react';
 
 /**
- * "How buying works" explainer for the place-order-first / pay-later model.
- * Shown on the product page, cart drawer, and checkout so customers aren't
- * surprised that no payment is taken up front.
+ * "How buying works" explainer for the pay-at-checkout model. Shown on the
+ * product page, cart drawer, and checkout.
  *
  *  - variant="full"    -> 3 cards (product page, checkout)
  *  - variant="compact" -> tight inline row (cart drawer)
  */
 
 const STEPS = [
-  { icon: ClipboardCheck, title: 'Place your order', desc: 'No payment needed now — just your details.' },
-  { icon: MessageCircle, title: 'We confirm on WhatsApp', desc: 'Our team verifies your specs & delivery.' },
-  { icon: IndianRupee, title: 'Pay via UPI / bank', desc: 'Securely, only after confirmation.' },
+  { icon: ClipboardCheck, title: 'Configure & add to cart', desc: 'Customise your bat and review the total.' },
+  { icon: ShieldCheck, title: 'Pay securely', desc: 'GPay, any UPI app, or card — encrypted.' },
+  { icon: Hammer, title: 'We craft & ship', desc: 'Hand-made to order and delivered to you.' },
 ];
 
 export function HowItWorks({ variant = 'full', className }: { variant?: 'full' | 'compact'; className?: string }) {
@@ -32,7 +31,7 @@ export function HowItWorks({ variant = 'full', className }: { variant?: 'full' |
             </React.Fragment>
           ))}
         </div>
-        <p className="text-[9px] text-center text-muted tracking-wider mt-2">No payment taken now.</p>
+        <p className="text-[9px] text-center text-muted tracking-wider mt-2">Secure payment at checkout.</p>
       </div>
     );
   }
@@ -42,7 +41,7 @@ export function HowItWorks({ variant = 'full', className }: { variant?: 'full' |
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c5a059]">How buying works</h3>
         <span className="text-[9px] uppercase tracking-widest text-content/60 border border-[#c5a059]/20 px-2 py-0.5 whitespace-nowrap">
-          Pay later
+          UPI · GPay · Card
         </span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
