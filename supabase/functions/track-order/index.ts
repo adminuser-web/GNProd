@@ -37,6 +37,15 @@ Deno.serve(async (req) => {
     if (!orderId || !email) return json({ ok: false, error: 'bad_request' }, 400);
 
     const admin = createClient(supabaseUrl, serviceKey);
+
+    // Rate limit by client IP (max 30 lookups / 10 min) to curb enumeration.
+    // Fail-open if the RPC is unavailable so legit lookups never break.
+    const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
+    const { data: allowed, error: rlErr } = await admin.rpc('rl_check', {
+      p_bucket: 'track', p_identifier: ip, p_max: 30, p_window: '10 minutes',
+    });
+    if (!rlErr && allowed === false) return json({ ok: false, error: 'rate_limited' }, 429);
+
     // Match on id OR the human receiptNumber so either works for the customer.
     let row: any = null;
     {
