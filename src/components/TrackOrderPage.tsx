@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, PackageCheck, AlertCircle, Truck, CircleCheck, Circle } from 'lucide-react';
+import { Search, PackageCheck, AlertCircle, Truck, CircleCheck, Circle, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { GoldButton } from './GoldButton';
 import { RevealSection } from './Reveal';
@@ -15,7 +15,7 @@ interface TrackedOrder {
   currency: string;
   createdAt: string | null;
   customerFirstName: string | null;
-  items: { name: string; qty: number; image: string | null }[];
+  items: { name: string; qty: number; lineTotal?: number; image: string | null }[];
   timeline: { status: string; timestamp: string; note: string | null }[];
   shipment: { carrier: string | null; trackingNumber: string | null; trackingUrl: string | null } | null;
   cancellation: { reason: string | null } | null;
@@ -64,6 +64,33 @@ export function TrackOrderPage() {
   const mapped = result ? mapLegacyStatus(result.status) : null;
   const cancelled = mapped === 'Cancelled';
   const currentStage = result ? stageIndex(result.status) : -1;
+  const isPaid = result?.paymentStatus === 'confirmed';
+
+  const esc = (s: string) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
+  const inr = (n: number) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
+
+  const downloadReceipt = () => {
+    if (!result) return;
+    const w = window.open('', '_blank');
+    if (!w) return;
+    const date = result.createdAt ? new Date(result.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    const rows = result.items.map((it) =>
+      `<tr><td>${it.qty}&times; ${esc(it.name)}</td><td style="text-align:right">${it.lineTotal ? inr(it.lineTotal) : ''}</td></tr>`).join('');
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Receipt ${esc(result.shortId)}</title>
+      <style>body{font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;max-width:600px;margin:32px auto;padding:0 24px}
+      h1{letter-spacing:6px;color:#c5a059;font-size:22px;margin:0}.muted{color:#8a8276;font-size:12px}
+      table{width:100%;border-collapse:collapse;margin:18px 0}td{padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
+      .total td{border:0;font-weight:bold;font-size:16px;padding-top:14px}.paid{display:inline-block;margin-top:8px;color:#0a7d3b;border:1px solid #0a7d3b;padding:3px 10px;border-radius:4px;font-size:11px;letter-spacing:2px;text-transform:uppercase}</style>
+      </head><body>
+      <h1>GRAINOOD</h1><p class="muted">Handcrafted English Willow · Payment Receipt</p>
+      <p style="margin:16px 0 0"><strong>Receipt No.</strong> ${esc(result.shortId)}<br><span class="muted">${date}</span><br><span class="paid">Paid</span></p>
+      <table>${rows}<tr class="total"><td>Total Paid</td><td style="text-align:right">${inr(result.total)}</td></tr></table>
+      <p class="muted">Paid securely online via Razorpay. Thank you for choosing Grainood.</p>
+      </body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
 
   return (
     <div className="min-h-screen bg-bg text-content pt-32 md:pt-40 pb-20 md:pb-28 font-sans">
@@ -116,13 +143,20 @@ export function TrackOrderPage() {
                   <p className="text-[10px] uppercase tracking-widest text-muted mb-1">Order</p>
                   <p className="font-bold tracking-widest text-content">No. {result.shortId}</p>
                 </div>
-                <span className={clsx(
-                  'text-[10px] px-3 py-1.5 uppercase tracking-widest border font-bold',
-                  cancelled ? 'border-red-500/30 text-red-400 bg-red-500/10'
-                    : 'border-[#c5a059]/30 text-[#c5a059] bg-[#c5a059]/10',
-                )}>
-                  {result.status}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                  <span className={clsx(
+                    'text-[10px] px-3 py-1.5 uppercase tracking-widest border font-bold',
+                    cancelled ? 'border-red-500/30 text-red-400 bg-red-500/10'
+                      : 'border-[#c5a059]/30 text-[#c5a059] bg-[#c5a059]/10',
+                  )}>
+                    {result.status}
+                  </span>
+                  {isPaid && (
+                    <button onClick={downloadReceipt} className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[#c5a059] hover:underline">
+                      <Download size={13} /> Receipt
+                    </button>
+                  )}
+                </div>
               </div>
 
               {cancelled ? (

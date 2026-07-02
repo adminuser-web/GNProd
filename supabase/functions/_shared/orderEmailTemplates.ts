@@ -125,11 +125,12 @@ export function renderTemplate(
       subject: `Payment received — ${order.shortId} is now in processing`,
       html: layout(
         'Payment received — thank you!',
-        `<p style="font-size:14px;line-height:1.6;">Hi ${name}, we've received your payment for order <strong>${esc(order.shortId)}</strong>. Your order is now <strong>in processing</strong> and your bat is being hand-crafted.</p>
+        `<p style="font-size:14px;line-height:1.6;">Hi ${name}, we've received your payment for order <strong>${esc(order.shortId)}</strong>. Your order is now <strong>confirmed and in processing</strong> — your bat is being hand-crafted.</p>
          ${itemsTable(order.items)}
          ${totalRow(order.total)}
-         <p style="margin:16px 0;">${button('Track your order', track)}</p>
-         <p style="font-size:14px;line-height:1.6;margin-top:16px;">We'll be in touch with shipping details. Thank you for choosing ${esc(brand)}.</p>`,
+         <p style="margin:16px 0;">${button('Track order & download receipt', track)}</p>
+         <p style="font-size:12px;color:#8a8276;line-height:1.6;">Tap above to follow your order and download your receipt anytime with your order number and this email.</p>
+         <p style="font-size:14px;line-height:1.6;margin-top:16px;">We'll share shipping details as soon as it's on the way. Thank you for choosing ${esc(brand)}.</p>`,
         brand,
         site,
       ),

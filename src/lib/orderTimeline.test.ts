@@ -17,33 +17,33 @@ describe('formatDuration', () => {
 describe('buildStatusTimeline', () => {
   const now = Date.parse('2026-06-10T00:00:00Z');
   const order = {
-    status: 'Processing',
+    status: 'Ready for Shipment',
     createdAt: '2026-06-01T00:00:00Z',
     timeline: [
-      { status: 'Order Placed', timestamp: '2026-06-01T00:00:00Z', note: 'placed' },
-      { status: 'Processing', timestamp: '2026-06-03T00:00:00Z', note: 'paid' },
+      { status: 'Processing', timestamp: '2026-06-01T00:00:00Z', note: 'paid' },
+      { status: 'Ready for Shipment', timestamp: '2026-06-03T00:00:00Z', note: 'ready' },
     ],
   };
 
   it('computes duration per bucket, live for the current one', () => {
     const t = buildStatusTimeline(order, now);
     expect(t).toHaveLength(2);
-    expect(t[0].status).toBe('Order Placed');
-    expect(t[0].durationMs).toBe(2 * DAY);       // placed -> processing = 2 days
+    expect(t[0].status).toBe('Processing');
+    expect(t[0].durationMs).toBe(2 * DAY);       // processing -> ready = 2 days
     expect(t[0].isCurrent).toBe(false);
-    expect(t[1].status).toBe('Processing');
+    expect(t[1].status).toBe('Ready for Shipment');
     expect(t[1].isCurrent).toBe(true);
     expect(t[1].end).toBeNull();
-    expect(t[1].durationMs).toBe(7 * DAY);        // processing -> now = 7 days (live)
+    expect(t[1].durationMs).toBe(7 * DAY);        // ready -> now = 7 days (live)
   });
 
   it('sorts out-of-order events', () => {
     const t = buildStatusTimeline({ ...order, timeline: [order.timeline[1], order.timeline[0]] }, now);
-    expect(t.map((s) => s.status)).toEqual(['Order Placed', 'Processing']);
+    expect(t.map((s) => s.status)).toEqual(['Processing', 'Ready for Shipment']);
   });
 
   it('synthesizes a stage from createdAt when timeline is empty', () => {
-    const t = buildStatusTimeline({ status: 'Order Placed', createdAt: '2026-06-08T00:00:00Z', timeline: [] }, now);
+    const t = buildStatusTimeline({ status: 'Processing', createdAt: '2026-06-08T00:00:00Z', timeline: [] }, now);
     expect(t).toHaveLength(1);
     expect(t[0].isCurrent).toBe(true);
     expect(t[0].durationMs).toBe(2 * DAY);

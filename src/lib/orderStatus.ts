@@ -4,6 +4,7 @@ export type OrderStatus =
   | 'Payment Pending'
   | 'Payment Confirmed'
   | 'Processing'
+  | 'Ready for Shipment'
   | 'Ready for Pickup'
   | 'Shipped'
   | 'Delivered'
@@ -16,6 +17,7 @@ export const ORDER_STATUSES: OrderStatus[] = [
   'Payment Pending',
   'Payment Confirmed',
   'Processing',
+  'Ready for Shipment',
   'Ready for Pickup',
   'Shipped',
   'Delivered',
@@ -23,20 +25,17 @@ export const ORDER_STATUSES: OrderStatus[] = [
   'Cancelled'
 ];
 
-// Unified 4-stage customer/admin journey (payment is folded into stage 1→2).
-export const STAGE_FLOW: OrderStatus[] = ['Order Placed', 'Processing', 'Shipped', 'Delivered'];
-export const STAGE_LABELS = ['Placed', 'Processing', 'Shipped', 'Delivered'];
+// Online order journey after payment: Processing → Ready → Shipped → Delivered.
+// (Payment happens at checkout via the gateway, so "confirmed" == Processing.)
+export const STAGE_FLOW: OrderStatus[] = ['Processing', 'Ready for Shipment', 'Shipped', 'Delivered'];
+export const STAGE_LABELS = ['Confirmed', 'Ready to Ship', 'Shipped', 'Delivered'];
 
-/** Index of an order in the 4-stage flow (legacy statuses mapped in). -1 = cancelled. */
+/** Index of an order in the post-payment flow. -1 = cancelled or not-yet-paid. */
 export function stageIndex(status: string): number {
-  if (!status) return 0;
-  const m = mapLegacyStatus(status);
+  const m = mapLegacyStatus(status || 'Processing');
   if (m === 'Cancelled') return -1;
-  if (m === 'Awaiting Payment') return 0;
-  if (m === 'Payment Pending') return 0;
-  if (m === 'Payment Confirmed') return 1;     // confirmed = into Processing
-  if (m === 'Ready for Pickup') return 2;      // ~ shipped stage
-  if (m === 'Completed') return 3;
+  if (m === 'Awaiting Payment' || m === 'Payment Pending') return -1; // pre-payment
+  if (m === 'Delivered' || m === 'Completed') return 3;
   const i = STAGE_FLOW.indexOf(m);
   return i === -1 ? 0 : i;
 }
@@ -49,7 +48,8 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
   'Payment Pending': '#f59e0b', // orange-amber
   'Payment Confirmed': '#10b981', // green
   'Processing': '#8b5cf6', // purple
-  'Ready for Pickup': '#0ea5e9', // sky
+  'Ready for Shipment': '#0ea5e9', // sky
+  'Ready for Pickup': '#0ea5e9', // sky (legacy)
   'Shipped': '#14b8a6', // teal
   'Delivered': '#64748b', // slate
   'Completed': '#22c55e', // distinct green for completion
@@ -62,6 +62,7 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   'Payment Pending': 'Payment Pending',
   'Payment Confirmed': 'Payment Confirmed',
   'Processing': 'Processing',
+  'Ready for Shipment': 'Ready for Shipment',
   'Ready for Pickup': 'Ready for Pickup',
   'Shipped': 'Shipped',
   'Delivered': 'Delivered',
@@ -69,15 +70,17 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   'Cancelled': 'Cancelled'
 };
 
-// Unified flow: Placed → Processing → Shipped → Delivered. Cancel allowed any
-// time BEFORE delivery; Delivered is terminal (no reversal).
+// Online flow: Awaiting Payment → Processing → Ready for Shipment → Shipped →
+// Delivered. Cancel (with refund) allowed any time BEFORE delivery; Delivered
+// is terminal.
 export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   'Awaiting Payment': ['Processing', 'Cancelled'],
   'Order Placed': ['Processing', 'Cancelled'],
   'Payment Pending': ['Processing', 'Cancelled'],
-  'Payment Confirmed': ['Processing', 'Shipped', 'Cancelled'],
-  'Processing': ['Shipped', 'Cancelled'],
-  'Ready for Pickup': ['Delivered', 'Cancelled'],
+  'Payment Confirmed': ['Processing', 'Cancelled'],
+  'Processing': ['Ready for Shipment', 'Cancelled'],
+  'Ready for Shipment': ['Shipped', 'Cancelled'],
+  'Ready for Pickup': ['Shipped', 'Cancelled'],
   'Shipped': ['Delivered', 'Cancelled'],
   'Delivered': [],
   'Completed': [],
@@ -86,21 +89,26 @@ export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 
 export function mapLegacyStatus(status: string): OrderStatus {
   switch (status) {
-    case 'Received': return 'Payment Pending';
-    case 'Confirmed': return 'Payment Confirmed';
-    case 'Payment Submitted': return 'Payment Pending';
+    case 'Received': return 'Processing';
+    case 'Confirmed': return 'Processing';
+    case 'Payment Confirmed': return 'Processing';
+    case 'Order Placed': return 'Processing';
+    case 'Payment Submitted': return 'Awaiting Payment';
+    case 'Payment Pending': return 'Awaiting Payment';
     case 'Crafting': return 'Processing';
     case 'In Production': return 'Processing';
     case 'Quality Check': return 'Processing';
-    case 'Ready to Ship': return 'Processing';
+    case 'Ready to Ship': return 'Ready for Shipment';
+    case 'Ready for Pickup': return 'Ready for Shipment';
     case 'Shipped': return 'Shipped';
     case 'Delivered': return 'Delivered';
+    case 'Completed': return 'Delivered';
     case 'Cancelled': return 'Cancelled';
     default:
       if (ORDER_STATUSES.includes(status as OrderStatus)) {
         return status as OrderStatus;
       }
-      return 'Payment Pending'; 
+      return 'Processing';
   }
 }
 

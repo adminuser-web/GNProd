@@ -39,6 +39,24 @@ export async function createRazorpayOrder(
   return (await res.json()) as RazorpayOrder;
 }
 
+export async function createRazorpayRefund(
+  keyId: string,
+  keySecret: string,
+  paymentId: string,
+  amountPaise?: number,
+): Promise<{ id: string; status: string; amount: number }> {
+  const res = await fetch(`${RZP_API}/payments/${paymentId}/refund`, {
+    method: 'POST',
+    headers: { Authorization: basicAuth(keyId, keySecret), 'Content-Type': 'application/json' },
+    body: JSON.stringify(amountPaise ? { amount: amountPaise, speed: 'normal' } : { speed: 'normal' }),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`razorpay refund failed ${res.status}: ${t.slice(0, 200)}`);
+  }
+  return (await res.json()) as { id: string; status: string; amount: number };
+}
+
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     'raw',
