@@ -10,6 +10,7 @@ import { orderService } from '../../features/orders/services/orderService';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 import { PageHeader, EmptyState } from './ui';
+import { AttachmentLink } from '../AttachmentLink';
 
 function StatusPill({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -242,9 +243,10 @@ function AdminTicketDetailDrawer({ ticket, onBack }: { ticket: SupportTicket, on
                         <p className="text-[9px] font-bold tracking-widest uppercase text-muted mb-2">Attachments</p>
                         <div className="flex overflow-x-auto gap-2 pb-2">
                             {ticket.attachments.map((att, i) => (
-                                <a key={i} href={att.url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 border border-[#c5a059]/20 relative group bg-bg flex flex-col items-center justify-center shrink-0">
+                                <AttachmentLink key={i} att={att} className="block w-20 h-20 border border-[#c5a059]/20 relative group bg-bg flex flex-col items-center justify-center shrink-0">
+                                    {(url) => (<>
                                     {att.contentType?.startsWith('image/') ? (
-                                      <img src={att.url} alt="Attachment" className="w-full h-full object-cover" />
+                                      <img src={url || ''} alt="Attachment" className="w-full h-full object-cover" />
                                     ) : (
                                       <>
                                         <FileText className="w-5 h-5 text-muted mb-1" />
@@ -252,7 +254,8 @@ function AdminTicketDetailDrawer({ ticket, onBack }: { ticket: SupportTicket, on
                                       </>
                                     )}
                                     <div className="absolute inset-0 bg-bg/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[#c5a059] text-[9px] font-bold tracking-widest uppercase">View</div>
-                                </a>
+                                    </>)}
+                                </AttachmentLink>
                             ))}
                         </div>
                     </div>
@@ -329,16 +332,18 @@ function AdminTicketDetailDrawer({ ticket, onBack }: { ticket: SupportTicket, on
                                 {msg.attachments && msg.attachments.length > 0 && (
                                    <div className="mt-3 flex gap-2 overflow-x-auto">
                                      {msg.attachments.map((att, i) => (
-                                        <a key={i} href={att.url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 border border-line flex-shrink-0 relative group bg-bg flex flex-col items-center justify-center">
+                                        <AttachmentLink key={i} att={att} className="block w-16 h-16 border border-line flex-shrink-0 relative group bg-bg flex flex-col items-center justify-center">
+                                          {(url) => (<>
                                           {att.contentType?.startsWith('image/') ? (
-                                            <img src={att.url} alt={att.name || "Attachment"} className="w-full h-full object-cover" />
+                                            <img src={url || ''} alt={att.name || "Attachment"} className="w-full h-full object-cover" />
                                           ) : (
                                             <>
                                               <FileText className="w-5 h-5 text-muted mb-1" />
                                               <span className="text-[7px] text-muted truncate w-[90%] text-center">{att.name || 'File'}</span>
                                             </>
                                           )}
-                                        </a>
+                                          </>)}
+                                        </AttachmentLink>
                                      ))}
                                    </div>
                                 )}

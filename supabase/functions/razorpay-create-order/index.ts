@@ -72,6 +72,8 @@ Deno.serve(async (req) => {
       rules = (ruleRows ?? []).map((r: any) => (r.data ? { id: r.id, ...r.data } : r)) as SRule[];
     } catch { rules = []; }
     let codes: SCode[] = [];
+    let appliedCode: string | undefined;   // persisted on the order for redemption counting
+    let codeMaxUses: number | undefined;   // F-02: optional per-code redemption cap
     if (discountCode) {
       try {
         const { data: c } = await admin.from('discount_codes').select('*').ilike('code', discountCode).maybeSingle();
@@ -82,8 +84,22 @@ Deno.serve(async (req) => {
             active: cd.active !== false,
             expiresAt: cd.expiresAt ?? cd.expires_at ?? undefined,
           }];
+          appliedCode = String(cd.code ?? discountCode);
+          const mu = cd.maxUses ?? cd.max_uses;
+          if (mu !== undefined && mu !== null && mu !== '') codeMaxUses = Number(mu);
         }
       } catch { codes = []; }
+    }
+
+    // F-02: enforce the redemption cap server-side (counts confirmed-payment
+    // orders that used this code). Codes without maxUses stay unlimited.
+    if (appliedCode && codeMaxUses !== undefined && Number.isFinite(codeMaxUses)) {
+      try {
+        const { data: used } = await admin.rpc('discount_redemptions', { p_code: appliedCode });
+        if (Number(used ?? 0) >= codeMaxUses) {
+          return json({ ok: false, error: 'code_exhausted' }, 409);
+        }
+      } catch { /* fail-open on RPC hiccup — don't block legit checkout */ }
     }
 
     // Recompute each line authoritatively.
@@ -149,6 +165,7 @@ Deno.serve(async (req) => {
       fulfillmentMode: 'delivery',
       orderSource: 'website',
       items: snapItems,
+      ...(appliedCode ? { discount: { code: appliedCode } } : {}),
       customer: { name: shipping.name, email: shipping.email, phone: shipping.phone },
       shippingDetails: {
         name: shipping.name, email: shipping.email, phone: shipping.phone,

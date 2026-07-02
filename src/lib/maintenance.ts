@@ -24,11 +24,24 @@ export function capturePreviewFromUrl(): void {
   }
 }
 
+/**
+ * The effective preview secret. Prefers a build-time `VITE_PREVIEW_SECRET` so
+ * the secret need not live in the world-readable `content` table (F-06); falls
+ * back to the content-supplied secret for back-compat. The maintenance gate is
+ * a cosmetic "coming soon" splash, not a data boundary — all data is RLS-
+ * protected regardless of this check.
+ */
+function effectiveSecret(contentSecret: string | undefined): string | undefined {
+  const envSecret = (import.meta as any).env?.VITE_PREVIEW_SECRET as string | undefined;
+  return (envSecret && envSecret.trim()) || contentSecret || undefined;
+}
+
 /** True when the stored preview token matches the current bypass secret. */
 export function hasPreviewBypass(secret: string | undefined): boolean {
-  if (!secret) return false;
+  const effective = effectiveSecret(secret);
+  if (!effective) return false;
   try {
-    return localStorage.getItem(PREVIEW_KEY) === secret;
+    return localStorage.getItem(PREVIEW_KEY) === effective;
   } catch {
     return false;
   }
