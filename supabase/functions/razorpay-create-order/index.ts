@@ -16,12 +16,6 @@ import { createRazorpayOrder } from '../_shared/razorpay.ts';
 const log = (m: string) => console.log(`[razorpay-create-order] ${m}`);
 const round = (n: number) => Math.round(Number(n) || 0);
 
-function genOrderId(): string {
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `GRN-${date}-${rand}`;
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   const json = (b: unknown, s = 200) =>
@@ -141,8 +135,12 @@ Deno.serve(async (req) => {
     }
     if (grandTotal <= 0) return json({ ok: false, error: 'invalid_amount' }, 400);
 
-    const orderId = genOrderId();
-    const receiptNumber = Math.floor(10000000 + Math.random() * 90000000).toString();
+    // Sequential, human-friendly order number (atomic — no collisions). Both
+    // the internal id and the customer-facing number are unified as GRN-<n>.
+    const { data: seq, error: seqErr } = await admin.rpc('next_order_number');
+    if (seqErr || seq == null) { log(`order-number seq failed: ${seqErr?.message}`); return json({ ok: false, error: 'server_error' }, 500); }
+    const orderId = `GRN-${seq}`;
+    const receiptNumber = orderId;
 
     const rzp = await createRazorpayOrder(keyId, keySecret, {
       amountPaise: grandTotal * 100,

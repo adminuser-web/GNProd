@@ -134,7 +134,9 @@ export const orderService = {
 
     if (payment.status === 'confirmed' && data.payment?.status !== 'confirmed') {
       if (!data.receiptNumber) {
-        newData.receiptNumber = `REC-${Date.now().toString(36).toUpperCase()}`;
+        // Fallback for any legacy order without a number — reuse its id
+        // (new orders are created with receiptNumber === id === GRN-<n>).
+        newData.receiptNumber = orderId;
         newData.receiptUrl = `/my-orders/${orderId}/receipt`;
       }
       // Unified flow: confirming payment moves the order straight into Processing.

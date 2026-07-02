@@ -110,7 +110,7 @@ export function TrackOrderPage() {
               <input
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
-                placeholder="e.g. GRN-20260702-AB12 or 12345678"
+                placeholder="e.g. GRN-1001"
                 className="w-full bg-elevated border border-[#c5a059]/20 text-content px-4 py-3 text-sm tracking-wide focus:outline-none focus:border-[#c5a059]"
               />
             </div>
