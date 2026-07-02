@@ -13,6 +13,9 @@
 drop policy if exists "media auth insert" on storage.objects;
 drop policy if exists "media auth update" on storage.objects;
 drop policy if exists "media auth delete" on storage.objects;
+drop policy if exists "media insert admin or own support" on storage.objects;
+drop policy if exists "media update admin" on storage.objects;
+drop policy if exists "media delete admin" on storage.objects;
 
 -- Admins upload anywhere; a signed-in customer may upload ONLY into their own
 -- support-ticket folder. (Public read policy "media public read" is unchanged.)
