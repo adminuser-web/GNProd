@@ -537,7 +537,7 @@ export function AdminContentEditorPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-5 border-b border-line pb-4">
+      <div className="sticky top-0 z-sticky-section bg-bg flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-5 border-b border-line pt-2 pb-3">
         <div className="min-w-0">
           <h1 className="text-lg md:text-xl font-bold tracking-wide text-content">
             <span className="text-muted font-normal text-sm">Content & System / </span>
@@ -573,44 +573,42 @@ export function AdminContentEditorPage() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-64 shrink-0">
-          <div className="border border-line rounded-xl p-1.5 flex flex-col gap-1 sticky top-4">
-            {areas.map(area => (
-              <button
-                key={area}
-                onClick={() => handleAreaChange(area)}
-                className={`text-left px-4 py-2.5 text-[10px] font-bold tracking-widest uppercase transition-colors border-l-2 ${
-                  activeArea === area ? 'border-[#c5a059] bg-[#c5a059]/10 text-[#c5a059]' : 'border-transparent text-muted hover:text-content hover:bg-surface/60'
-                }`}
-              >
-                {AREA_META[area]?.label || area}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        <div className="flex-1 border border-line rounded-xl p-5">
-          <div className="mb-5 pb-3 border-b border-line">
-            <h2 className="text-sm font-bold tracking-widest text-content uppercase">
-              {AREA_META[activeArea]?.label || activeArea}
-            </h2>
-            {AREA_META[activeArea]?.desc && (
-              <p className="text-xs text-muted mt-1">{AREA_META[activeArea].desc}</p>
-            )}
-          </div>
+      {/* Section chips */}
+      <div className="flex flex-wrap gap-1.5 mb-6">
+        {areas.map(area => (
+          <button
+            key={area}
+            onClick={() => handleAreaChange(area)}
+            className={`px-3.5 py-2 text-[10px] font-bold tracking-widest uppercase rounded-sm border transition-colors ${
+              activeArea === area ? 'bg-[#c5a059] text-bg border-[#c5a059]' : 'border-line text-muted hover:text-content hover:border-[#c5a059]/40'
+            }`}
+          >
+            {AREA_META[area]?.label || area}
+          </button>
+        ))}
+      </div>
 
-          {(() => {
-            const FormComp = SECTION_FORMS[activeArea];
-            return FormComp ? (
-              <FormComp data={editorData} onChange={handleChange} />
-            ) : (
-              <div className="space-y-2">
-                {Object.entries(editorData).map(([key, value]) => renderField(key, value, [key]))}
-              </div>
-            );
-          })()}
+      {/* Active section — open form, no box */}
+      <div className="max-w-3xl">
+        <div className="mb-5 pb-3 border-b border-line">
+          <h2 className="text-sm font-bold tracking-widest text-content uppercase">
+            {AREA_META[activeArea]?.label || activeArea}
+          </h2>
+          {AREA_META[activeArea]?.desc && (
+            <p className="text-xs text-muted mt-1">{AREA_META[activeArea].desc}</p>
+          )}
         </div>
+
+        {(() => {
+          const FormComp = SECTION_FORMS[activeArea];
+          return FormComp ? (
+            <FormComp data={editorData} onChange={handleChange} />
+          ) : (
+            <div className="space-y-2">
+              {Object.entries(editorData).map(([key, value]) => renderField(key, value, [key]))}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
