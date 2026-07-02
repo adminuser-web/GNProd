@@ -9,6 +9,7 @@ import { PackageOpen, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import { mapLegacyStatus, stageIndex, STAGE_LABELS, STATUS_COLORS } from '../lib/orderStatus';
 import { retryOrderPayment } from '../features/orders/retryPayment';
+import { orderService } from '../features/orders/services/orderService';
 import { toast } from 'sonner';
 
 type Tab = 'active' | 'past';
@@ -43,6 +44,7 @@ function MiniTracker({ status }: { status: string }) {
 
 function OrderCard({ order, idx }: { order: any; idx: number }) {
   const [paying, setPaying] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const mapped = mapLegacyStatus(order.status || 'Processing');
   const color = STATUS_COLORS[mapped];
   const cancelled = mapped === 'Cancelled';
@@ -108,6 +110,22 @@ function OrderCard({ order, idx }: { order: any; idx: number }) {
                   className="text-[10px] font-bold uppercase tracking-widest text-bg bg-[#c5a059] px-3 py-1.5 rounded-sm hover:bg-[#d4b271] transition-colors disabled:opacity-50"
                 >
                   {paying ? 'Opening…' : 'Complete Payment'}
+                </button>
+                <button
+                  disabled={cancelling || paying}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!confirm('Cancel this order? Your bat specs will be lost.')) return;
+                    setCancelling(true);
+                    const res = await orderService.selfCancel(order.id, 'Cancelled before payment');
+                    setCancelling(false);
+                    if (res.ok) toast.success('Order cancelled.');
+                    else toast.error(res.error === 'not_cancellable' ? 'This order can no longer be cancelled here.' : 'Could not cancel — please try again.');
+                  }}
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted hover:text-red-400 transition-colors disabled:opacity-50"
+                >
+                  {cancelling ? 'Cancelling…' : 'Cancel'}
                 </button>
               </div>
             ) : !delivered ? (

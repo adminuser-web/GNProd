@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Navigate, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { LayoutDashboard, ShoppingBag, Box, LifeBuoy, Menu, X, DollarSign, Shield, Users, Search, FileText, Store, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Box, LifeBuoy, Menu, X, DollarSign, Shield, Users, Search, FileText, Store, LogOut, Tag } from 'lucide-react';
 import { NotificationBell } from '../NotificationBell';
 import { clsx } from 'clsx';
 import { useAllOrders } from '../../features/orders/hooks/useOrders';
@@ -24,6 +24,7 @@ const NAV_GROUPS: { heading: string; links: AdminLink[] }[] = [
     links: [
       { path: '/admin/products', label: 'Products', icon: Box },
       { path: '/admin/orders', label: 'Sales / Orders', icon: ShoppingBag, badge: 'orders' },
+      { path: '/admin/discounts', label: 'Discounts', icon: Tag },
     ],
   },
   {

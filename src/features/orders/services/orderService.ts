@@ -209,6 +209,14 @@ export const orderService = {
     } catch { /* non-blocking */ }
   },
 
+  // Customer self-cancel (pre-payment only). RLS blocks direct customer order
+  // updates, so this goes through the owner-gated cancel-order edge function.
+  async selfCancel(orderId: string, reason: string): Promise<{ ok: boolean; error?: string }> {
+    const { data, error } = await supabase.functions.invoke('cancel-order', { body: { orderId, reason } });
+    if (error || !(data as any)?.ok) return { ok: false, error: (data as any)?.error || error?.message };
+    return { ok: true };
+  },
+
   async updateAdminNote(orderId: string, adminNote: string) {
     const row = await fetchOrderRow(orderId);
     if (!row) throw new Error('Order not found');

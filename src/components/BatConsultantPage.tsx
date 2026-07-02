@@ -11,16 +11,28 @@ import { BRAND } from '../types';
 import { toast } from 'sonner';
 import { EnquiryDrawer } from './EnquiryDrawer';
 import { motion, AnimatePresence } from 'motion/react';
+import { buildService } from '../features/builds/services/buildService';
+
+// AI recommended setup (camelCase) → the app's kebab-case build selections.
+const SETUP_KEYS: { field: keyof BatConsultantRecommendation['recommendedSetup']; groupId: string; groupLabel: string }[] = [
+  { field: 'batSize', groupId: 'bat-size', groupLabel: 'Bat Size' },
+  { field: 'weightProfile', groupId: 'weight-profile', groupLabel: 'Weight Profile' },
+  { field: 'batProfile', groupId: 'bat-profile', groupLabel: 'Bat Profile' },
+  { field: 'sweetSpot', groupId: 'sweet-spot', groupLabel: 'Sweet Spot' },
+  { field: 'handleShape', groupId: 'handle-shape', groupLabel: 'Handle Shape' },
+  { field: 'gripColor', groupId: 'grip-color', groupLabel: 'Grip Colour' },
+];
 
 export function BatConsultantPage() {
   const { products: activeProducts } = useProducts();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const [step, setStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<BatConsultantRecommendation | null>(null);
   const [isEnquiryDrawerOpen, setIsEnquiryDrawerOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [input, setInput] = useState<BatConsultantInput>({
     playerProfile: 'Club Cricketer',
@@ -105,13 +117,48 @@ export function BatConsultantPage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!user) {
-      toast.error("Please login to save your recommendation");
+      navigate('/login', { state: { from: '/bat-consultant' } });
+      toast.error("Please sign in to save your recommendation");
       return;
     }
-    // We would normally call buildService.saveBuild here with the result details
-    toast.success("Recommendation saved to your profile!");
+    if (!result || saving) return;
+    setSaving(true);
+    try {
+      const selections = SETUP_KEYS
+        .filter(({ field }) => result.recommendedSetup?.[field])
+        .map(({ field, groupId, groupLabel }) => ({
+          groupId, groupLabel,
+          optionLabel: String(result.recommendedSetup![field]),
+          type: 'single_select' as const,
+          priceDelta: 0,
+        }));
+
+      await buildService.saveBuild({
+        userId: user.uid,
+        name: `AI Pick — ${result.subSeriesName || result.seriesName}`,
+        seriesId: result.seriesSlug,
+        seriesSlug: result.seriesSlug,
+        seriesName: result.seriesName,
+        subSeriesId: result.subSeriesSlug || result.seriesSlug,
+        subSeriesSlug: result.subSeriesSlug || result.seriesSlug,
+        subSeriesName: result.subSeriesName || result.seriesName,
+        productSnapshot: { gradeLabel: result.gradeLabel, price: result.price },
+        selections,
+        priceSnapshot: { basePrice: result.price ?? 0, customizationTotal: 0, total: result.price ?? 0, currency: 'INR' },
+        source: 'ai_consultant',
+      } as any);
+
+      toast.success('Saved to your Garage.', {
+        action: { label: 'View', onClick: () => navigate('/my-builds') },
+      });
+    } catch (e: any) {
+      console.error('saveBuild failed', e);
+      toast.error('Could not save — please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (step === 10 && result) {
@@ -196,8 +243,8 @@ export function BatConsultantPage() {
             </div>
             
             <div className="flex flex-col justify-center gap-4">
-              <button onClick={handleSave} className="flex items-center justify-center gap-3 w-full border border-[#c5a059]/40 py-4 text-sm font-bold tracking-widest uppercase hover:bg-[#c5a059]/10 transition-colors text-content">
-                <Save size={16} /> Save Recommendation
+              <button onClick={handleSave} disabled={saving} className="flex items-center justify-center gap-3 w-full border border-[#c5a059]/40 py-4 text-sm font-bold tracking-widest uppercase hover:bg-[#c5a059]/10 transition-colors text-content disabled:opacity-50">
+                <Save size={16} /> {saving ? 'Saving…' : 'Save Recommendation'}
               </button>
               <button onClick={handleShare} className="flex items-center justify-center gap-3 w-full border border-[#c5a059]/40 py-4 text-sm font-bold tracking-widest uppercase hover:bg-[#c5a059]/10 transition-colors text-content">
                 <Share2 size={16} /> Share Result

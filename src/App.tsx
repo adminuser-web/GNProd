@@ -46,6 +46,7 @@ const AdminContentEditorPage = lazy(() => import('./components/admin/content/Adm
 const AdminSupportPage = lazy(() => import('./components/admin/AdminSupportPage').then(m => ({ default: m.AdminSupportPage })));
 const AdminEnquiriesPage = lazy(() => import('./components/admin/AdminEnquiriesPage').then(m => ({ default: m.AdminEnquiriesPage })));
 const AdminAuditPage = lazy(() => import('./components/admin/AdminAuditPage').then(m => ({ default: m.AdminAuditPage })));
+const AdminDiscountsPage = lazy(() => import('./components/admin/AdminDiscountsPage').then(m => ({ default: m.AdminDiscountsPage })));
 
 
 
@@ -144,6 +145,7 @@ export default function App() {
                         <Route path="customers" element={<AdminCustomersPage />} />
                         <Route path="orders" element={<AdminOrdersBoard />} />
                         <Route path="orders/:id" element={<AdminOrderDetailsPage />} />
+                        <Route path="discounts" element={<AdminDiscountsPage />} />
                         <Route path="products" element={<AdminProductsPage />} />
                       <Route path="products/:seriesSlug" element={<AdminSeriesDetailPage />} />
                       <Route path="products/:seriesSlug/:productSlug" element={<AdminProductEditorPage />} />
