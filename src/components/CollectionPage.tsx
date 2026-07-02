@@ -217,6 +217,20 @@ export function CollectionPage() {
             startingPrice = Math.min(...series.subSeries.map(s => s.basePrice || 9999999));
           }
 
+          // Badge labels — primary is the descriptive tag; secondary only shows
+          // when it's genuinely different (avoids the same badge appearing twice).
+          const primaryTag =
+            series.slug === 'debutant' ? 'Best for Beginners' :
+            series.slug === 'millennium' ? 'Club Match Ready' :
+            series.slug === 'legend' ? 'Best Pickup' :
+            series.slug === 'eternal' ? 'Power Hitter Choice' :
+            series.slug === 'immortal' ? 'Pro Reserve' :
+            (series.isFlagship ? 'Premium Choice' : 'New Arrival');
+          const norm = (s?: string) => (s || '').trim().toLowerCase();
+          const secondaryTag =
+            series.badge && norm(series.badge) !== norm(primaryTag) ? series.badge :
+            (series.isFlagship && !/premium|flagship|reserve|pro/i.test(primaryTag) ? 'Flagship' : null);
+
           return (
             <Reveal key={series.id} delay={idx * 150} className="h-full">
               <Link to={`/collection/${series.slug}`} className="block h-full outline-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] rounded-3xl">
@@ -224,16 +238,11 @@ export function CollectionPage() {
 
                   <div className="flex justify-between gap-2 mb-4">
                     <span className="px-3 py-1 border border-[#c5a059]/30 text-[#c5a059] text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
-                      {series.slug === 'debutant' && 'Best for Beginners'}
-                      {series.slug === 'millennium' && 'Club Match Ready'}
-                      {series.slug === 'legend' && 'Best Pickup'}
-                      {series.slug === 'eternal' && 'Power Hitter Choice'}
-                      {series.slug === 'immortal' && 'Pro Reserve'}
-                      {!['debutant', 'millennium', 'legend', 'eternal', 'immortal'].includes(series.slug) && (series.isFlagship ? 'Premium Choice' : 'New Arrival')}
+                      {primaryTag}
                     </span>
-                    {(series.badge || series.isFlagship) && (
+                    {secondaryTag && (
                       <span className="px-3 py-1 border border-[#c5a059]/30 text-content text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
-                        {series.badge || 'Flagship'}
+                        {secondaryTag}
                       </span>
                     )}
                   </div>
