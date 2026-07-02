@@ -254,7 +254,7 @@ export function AdminAttributesTab({ attributes, onChange, storagePath, template
       {/* Header + add actions */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-[#c5a059]/10 pb-4">
         <div>
-          <h2 className="text-xl font-bold tracking-[0.2em] uppercase text-content">Attributes</h2>
+          <h2 className="text-sm font-bold tracking-widest uppercase text-content">Attributes</h2>
           <p className="text-sm text-muted">Fixed specs (spec sheet) + customizable options (buy configurator), in one place.</p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">

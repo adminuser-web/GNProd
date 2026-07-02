@@ -239,7 +239,7 @@ export function AdminSeriesDetailPage() {
       {/* ADD PRODUCT MODAL */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-bg/80 ">
-          <div className="bg-surface border border-[#c5a059]/30 w-full max-w-md shadow-2xl relative">
+          <div className="bg-surface border border-line rounded-xl w-full max-w-md shadow-2xl relative">
             <button 
               onClick={() => setIsAddModalOpen(false)}
               className="absolute top-4 right-4 text-muted hover:text-content transition-colors"
@@ -247,7 +247,7 @@ export function AdminSeriesDetailPage() {
               <X size={20} />
             </button>
             
-            <div className="p-6 border-b border-[#c5a059]/10 block">
+            <div className="p-6 border-b border-line block">
               <h2 className="text-sm font-bold tracking-[0.2em] uppercase text-content">
                 Add a product to {formData.name}
               </h2>
@@ -261,7 +261,7 @@ export function AdminSeriesDetailPage() {
                   required
                   value={newProductName}
                   onChange={e => setNewProductName(e.target.value)}
-                  className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                  className="w-full bg-bg border border-line rounded-sm p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors"
                   placeholder={`e.g. ${formData.name} Pro`}
                 />
               </div>
@@ -274,7 +274,7 @@ export function AdminSeriesDetailPage() {
                   min="1"
                   value={newProductPrice}
                   onChange={e => setNewProductPrice(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                  className="w-full bg-bg border border-line rounded-sm p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors"
                   placeholder="e.g. 19999"
                 />
               </div>
@@ -287,17 +287,17 @@ export function AdminSeriesDetailPage() {
                     required
                     value={newProductImage} 
                     onChange={e => setNewProductImage(e.target.value)} 
-                    className="flex-1 bg-bg border border-[#c5a059]/20 p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors" 
+                    className="flex-1 bg-bg border border-line rounded-sm p-3 text-sm text-content focus:border-[#c5a059] focus:outline-none transition-colors" 
                     placeholder="https://..."
                   />
-                  <label className="shrink-0 h-[46px] px-4 text-[#c5a059] hover:text-content hover:bg-[#c5a059]/10 cursor-pointer border border-[#c5a059]/20 flex items-center justify-center bg-bg relative transition-colors">
+                  <label className="shrink-0 h-[46px] px-4 text-[#c5a059] hover:text-content hover:bg-[#c5a059]/10 cursor-pointer border border-line flex items-center justify-center bg-bg relative transition-colors">
                     <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                     {uploadProgress !== null ? <span className="text-[10px] tracking-widest uppercase">{Math.round(uploadProgress)}%</span> : <Upload size={16} />}
                   </label>
                 </div>
                 {uploadError && <p className="text-red-500 text-[10px] mt-1">{uploadError}</p>}
                 {newProductImage && (
-                  <div className="mt-3 w-16 h-16 bg-bg border border-[#c5a059]/20 p-1 flex items-center justify-center">
+                  <div className="mt-3 w-16 h-16 bg-bg border border-line p-1 flex items-center justify-center">
                     <img src={newProductImage} alt="Preview" className="h-full object-contain" />
                   </div>
                 )}
@@ -310,7 +310,7 @@ export function AdminSeriesDetailPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#c5a059]/10 flex justify-end gap-3">
+              <div className="pt-4 border-t border-line flex justify-end gap-3">
                 <button 
                   type="button" 
                   onClick={() => setIsAddModalOpen(false)}
@@ -327,43 +327,39 @@ export function AdminSeriesDetailPage() {
         </div>
       )}
 
-      {/* Breadcrumbs */}
-      <div className="flex justify-between items-center mb-5">
-         <div className="flex flex-col">
-            <Link to="/admin/products" className="text-muted hover:text-[#c5a059] flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors mb-4 w-max">
-               <ArrowLeft size={12} /> Back to Products
-            </Link>
-            <div className="flex items-center gap-2 text-[10px] tracking-widest uppercase font-bold text-muted mb-2">
-               <Link to="/admin/products" className="hover:text-content">Products</Link>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-5 border-b border-line pb-4">
+         <div className="min-w-0">
+            <nav className="flex items-center gap-2 text-[10px] tracking-widest uppercase text-muted mb-1.5">
+               <Link to="/admin/products" className="hover:text-content flex items-center gap-1 transition-colors"><ArrowLeft size={11} /> Products</Link>
                <ChevronRight size={10} />
-               <span className="text-[#c5a059]">{formData.name}</span>
-            </div>
-            <h1 className="text-3xl font-bold tracking-[0.2em] uppercase text-content">
-               {formData.name}
+               <span className="text-content">{formData.name}</span>
+            </nav>
+            <h1 className="text-lg md:text-xl font-bold tracking-wide text-content">
+               {formData.name} <span className="text-sm text-muted font-normal">· {gradeLabel}</span>
             </h1>
-            <p className="text-xs text-premium-gold-text tracking-widest uppercase mt-2">{gradeLabel}</p>
          </div>
-         <div className="flex items-center gap-3">
+         <div className="flex items-center gap-2 shrink-0 flex-wrap">
              <Link
                to={`/collection/${formData.slug}`}
                target="_blank"
-               className="text-[10px] tracking-widest uppercase font-bold text-[#c5a059] hover:text-white transition-colors border border-[#c5a059] px-4 py-2 bg-[#c5a059]/5 hover:bg-[#c5a059]/20 flex items-center"
+               className="text-[10px] tracking-widest uppercase font-bold text-muted hover:text-[#c5a059] border border-line hover:border-[#c5a059]/50 px-4 py-2 rounded-sm transition-colors"
              >
                Preview
              </Link>
-             <GoldButton onClick={handleSaveSettings} disabled={saving} variant="outline" className="px-6 py-2 text-[10px]">
-                {saving ? 'Saving...' : 'Save Context Settings'}
+             <GoldButton onClick={handleSaveSettings} disabled={saving} variant="outline" className="px-4 py-2 text-[10px]">
+                {saving ? 'Saving…' : 'Save Settings'}
              </GoldButton>
              {formData.slug !== 'immortal' && (
-               <GoldButton 
+               <GoldButton
                  onClick={() => {
                    setNewProductName('');
                    setNewProductPrice('');
                    setNewProductImage('');
                    setIsAddModalOpen(true);
-                 }} 
-                 variant="solid" 
-                 className="px-6 py-2 text-[10px] flex items-center gap-2"
+                 }}
+                 variant="solid"
+                 className="px-4 py-2 text-[10px] flex items-center gap-2"
                >
                   <Plus size={14} /> Add Product
                </GoldButton>
@@ -375,17 +371,17 @@ export function AdminSeriesDetailPage() {
         
         {/* PRODUCTS LIST */}
         <div className="lg:col-span-2">
-            <div className="bg-surface border border-[#c5a059]/10 shadow-sm">
-              <div className="p-6 border-b border-[#c5a059]/10 flex justify-between items-center">
-                 <h2 className="text-xs tracking-[0.2em] uppercase font-bold text-content">Products ({subSeriesList.length})</h2>
+            <div className="rounded-xl border border-line overflow-hidden">
+              <div className="px-4 py-2.5 bg-bg border-b border-line flex justify-between items-center">
+                 <h2 className="text-[9px] tracking-[0.2em] uppercase font-bold text-muted">Products ({subSeriesList.length})</h2>
               </div>
-              <div className="divide-y divide-[#c5a059]/5">
+              <div className="divide-y divide-line">
                 {subSeriesList.map(sub => {
                   const resolvableForLive = canGoLive(sub);
                   return (
-                  <div key={sub.id} className="p-4 flex flex-col md:flex-row md:items-center gap-4 hover:bg-[#c5a059]/[0.02] transition-colors group">
+                  <div key={sub.id} className="px-4 py-3 flex flex-col md:flex-row md:items-center gap-4 hover:bg-[#c5a059]/[0.04] transition-colors group">
                      {/* Thumbnail */}
-                     <div className="w-16 h-16 shrink-0 bg-bg flex items-center justify-center p-2 border border-[#c5a059]/10 self-start md:self-auto">
+                     <div className="w-12 h-12 shrink-0 bg-bg flex items-center justify-center p-1.5 border border-line rounded-sm self-start md:self-auto">
                         <img src={sub.media?.primaryImage || formData.imageUrl || '/product-bat.webp'} alt={sub.name} className="h-full object-contain" />
                      </div>
                      {/* Info */}
@@ -414,7 +410,7 @@ export function AdminSeriesDetailPage() {
                             </button>
                             <Link
                                to={`/admin/products/${formData.slug}/${sub.slug || sub.id}`}
-                               className="w-8 h-8 rounded shrink-0 flex items-center justify-center bg-[#c5a059]/10 text-[#c5a059] hover:bg-[#c5a059] hover:text-bg transition-colors"
+                               className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/10 border border-line transition-colors"
                             >
                                <Edit2 size={14} />
                             </Link>
@@ -422,13 +418,13 @@ export function AdminSeriesDetailPage() {
                                onClick={() => handleDuplicateSubSeries(sub)}
                                disabled={saving}
                                title="Duplicate (reuses images, starts as draft)"
-                               className="w-8 h-8 rounded shrink-0 flex items-center justify-center bg-[#c5a059]/10 text-[#c5a059] hover:bg-[#c5a059] hover:text-bg transition-colors disabled:opacity-40"
+                               className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center text-muted hover:text-[#c5a059] hover:bg-[#c5a059]/10 border border-line transition-colors disabled:opacity-40"
                             >
                                <Copy size={14} />
                             </button>
                             <button
                                onClick={() => handleDeleteSubSeries(sub.id, sub.name)}
-                               className="w-8 h-8 rounded shrink-0 flex items-center justify-center bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                               className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center text-muted hover:text-red-400 hover:bg-red-500/10 border border-line transition-colors"
                             >
                                <Trash2 size={14} />
                             </button>
@@ -464,8 +460,8 @@ export function AdminSeriesDetailPage() {
 
         {/* SERIES SETTINGS */}
         <div className="lg:col-span-1">
-           <div className="bg-surface border border-[#c5a059]/10 p-6 shadow-sm sticky top-24">
-              <h2 className="text-xs tracking-[0.2em] uppercase font-bold text-content mb-6 pb-4 border-b border-[#c5a059]/10">Series Context Settings</h2>
+           <div className="border border-line rounded-xl p-4 sticky top-24">
+              <h2 className="text-[10px] tracking-widest uppercase font-bold text-muted mb-5 pb-3 border-b border-line">Series Settings</h2>
               
               <div className="space-y-6">
                  <div>
@@ -474,7 +470,7 @@ export function AdminSeriesDetailPage() {
                     type="text"
                     value={formData.tagline || ''}
                     onChange={e => updateField('tagline', e.target.value)}
-                    className="w-full bg-bg border border-[#c5a059]/20 p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                    className="w-full bg-bg border border-line rounded-sm p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
                     placeholder="e.g. Built for the Grind"
                   />
                  </div>
@@ -485,7 +481,7 @@ export function AdminSeriesDetailPage() {
                     type="number"
                     value={formData.sortOrder || 0}
                     onChange={e => updateField('sortOrder', parseInt(e.target.value))}
-                    className="w-full bg-bg border border-[#c5a059]/20 p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                    className="w-full bg-bg border border-line rounded-sm p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
                   />
                  </div>
 
@@ -515,11 +511,11 @@ export function AdminSeriesDetailPage() {
                     value={typeof formData.description === 'string' ? formData.description : formData.description?.join('\n') || ''}
                     onChange={e => updateField('description', e.target.value)}
                     rows={4}
-                    className="w-full bg-bg border border-[#c5a059]/20 p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                    className="w-full bg-bg border border-line rounded-sm p-3 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
                   />
                  </div>
                  
-                 <div className="pt-4 border-t border-[#c5a059]/10">
+                 <div className="pt-4 border-t border-line">
                     <h3 className="text-[10px] uppercase tracking-widest text-muted mb-4 font-bold">SEO Defaults</h3>
                     <div className="space-y-4">
                        <div>
@@ -528,7 +524,7 @@ export function AdminSeriesDetailPage() {
                             type="text"
                             value={formData.seoTitle || ''}
                             onChange={e => updateField('seoTitle', e.target.value)}
-                            className="w-full bg-bg border border-[#c5a059]/20 p-2 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                            className="w-full bg-bg border border-line rounded-sm p-2 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
                           />
                        </div>
                        <div>
@@ -537,7 +533,7 @@ export function AdminSeriesDetailPage() {
                             value={formData.seoDescription || ''}
                             onChange={e => updateField('seoDescription', e.target.value)}
                             rows={3}
-                            className="w-full bg-bg border border-[#c5a059]/20 p-2 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
+                            className="w-full bg-bg border border-line rounded-sm p-2 text-xs text-content focus:border-[#c5a059] focus:outline-none transition-colors"
                           />
                        </div>
                     </div>
@@ -550,10 +546,10 @@ export function AdminSeriesDetailPage() {
       </div>
 
       {/* SERIES DEFAULT ATTRIBUTES (template) */}
-      <div className="mt-6 bg-surface border border-[#c5a059]/10 shadow-sm p-5 md:p-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-3 mb-6 pb-4 border-b border-[#c5a059]/10">
+      <div className="mt-6 border border-line rounded-xl p-4 md:p-5">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-3 mb-5 pb-3 border-b border-line">
           <div>
-            <h2 className="text-xs tracking-[0.2em] uppercase font-bold text-content">Series Default Attributes</h2>
+            <h2 className="text-[10px] tracking-widest uppercase font-bold text-muted">Series Default Attributes</h2>
             <p className="text-sm text-muted mt-1">
               The standard attribute set for {formData.name}. New products are seeded from this template;
               existing products can pull in any missing ones via <span className="text-[#c5a059]">Apply Series Defaults</span> on their editor (added inactive, never overwriting).

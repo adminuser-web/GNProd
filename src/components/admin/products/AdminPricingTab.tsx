@@ -19,7 +19,7 @@ export function AdminPricingTab({ subSeries, updateSubSeries }: Props) {
   return (
     <div className="space-y-8 animate-fade-in relative pb-12">
       <div className="border-b border-[#c5a059]/10 pb-4 mb-6">
-        <h2 className="text-xl font-bold tracking-[0.2em] uppercase text-content">
+        <h2 className="text-sm font-bold tracking-widest uppercase text-content">
           Pricing & Delivery
         </h2>
         <p className="text-sm text-muted">
