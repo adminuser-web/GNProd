@@ -16,7 +16,7 @@ import { orderService } from '../../features/orders/services/orderService';
 import { useAllOrders } from '../../features/orders/hooks/useOrders';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ImageUpload } from './ImageUpload';
+import { supabase } from '../../lib/supabase';
 import { PageHeader, EmptyState, Segmented } from './ui';
 
 const DATE_RANGES = ['All Time', 'Today', 'Last 7 Days', 'Last 30 Days', 'This Month'];
@@ -62,134 +62,27 @@ function StatusBadge({ status, type = 'order' }: { status: string, type?: 'order
   );
 }
 
-function PaymentPanel({ order, onUpdate }: { order: any, onUpdate: (o: any) => void }) {
-  const { user } = useAuth();
-  const defaultAmount = order.totalPrice || order.grandTotal || 0;
-  const currentPayment = order.payment || { status: order.paymentStatus || 'pending', paidAmount: 0 };
-  
-  const [status, setStatus] = useState<string>(currentPayment.status || 'pending');
-  const [method, setMethod] = useState<string>(currentPayment.method || 'upi');
-  const [reference, setReference] = useState<string>(currentPayment.reference || '');
-  const [paidAmount, setPaidAmount] = useState<number>(currentPayment.paidAmount || defaultAmount);
-  const [notes, setNotes] = useState<string>(currentPayment.notes || '');
-  const [saving, setSaving] = useState(false);
-  const [proofUrl, setProofUrl] = useState<string>(currentPayment.proofImageUrl || '');
-
-  const handleUpdate = async (newStatus: string) => {
-    setSaving(true);
-    try {
-      const paymentUpdate: any = {
-        status: newStatus,
-        method,
-        reference,
-        paidAmount,
-        notes,
-        proofImageUrl: proofUrl
-      };
-
-      if (newStatus === 'confirmed') {
-        paymentUpdate.confirmedAt = new Date();
-        paymentUpdate.confirmedBy = user?.email || 'Admin';
-      }
-
-      if (newStatus === 'confirmed') {
-        await orderService.updatePaymentStatus(order.id, paymentUpdate);
-        onUpdate({ 
-          ...order, 
-          status: 'Payment Confirmed',
-          payment: { ...paymentUpdate, confirmedAt: { toDate: () => new Date() } }
-        });
-        toast.success("Payment confirmed successfully");
-      } else {
-        await orderService.updatePaymentStatus(order.id, paymentUpdate);
-        onUpdate({ ...order, payment: { ...paymentUpdate } });
-        toast.success(`Payment status updated to ${newStatus}`);
-      }
-    } catch (err) {
-      console.error('Failed to update payment:', err);
-      toast.error("Failed to update payment.");
-    }
-    setSaving(false);
-  };
-
+function PaymentPanel({ order }: { order: any }) {
+  const p = order.payment || { status: order.paymentStatus || 'pending' };
+  const refunded = p.status === 'refunded' || !!order.refund?.status;
+  const paid = p.status === 'confirmed';
+  const amount = order.totalPrice || order.pricing?.total || order.grandTotal || 0;
+  const inr = (n: number) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
   return (
     <div className="bg-bg p-4 border border-[#c5a059]/10">
-       <div className="flex items-center gap-2 mb-4">
-         <CreditCard className="w-4 h-4 text-[#c5a059]" />
-         <p className="text-xs text-content uppercase tracking-widest font-bold">Payment Details</p>
-       </div>
-       
-       <div className="space-y-4">
-         <div className="grid grid-cols-2 gap-4">
-           <div>
-             <label className="text-[10px] text-muted uppercase tracking-widest mb-1 block">Status</label>
-             <select 
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full bg-surface border border-[#c5a059]/30 text-xs px-2 py-1.5 focus:outline-none focus:border-[#c5a059] uppercase"
-             >
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
-             </select>
-           </div>
-           <div>
-             <label className="text-[10px] text-muted uppercase tracking-widest mb-1 block">Method</label>
-             <select 
-                value={method}
-                onChange={(e) => setMethod(e.target.value)}
-                className="w-full bg-surface border border-[#c5a059]/30 text-xs px-2 py-1.5 focus:outline-none focus:border-[#c5a059] uppercase"
-             >
-                <option value="upi">UPI</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="cash">Cash</option>
-                <option value="other">Other</option>
-             </select>
-           </div>
-         </div>
-
-         <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] text-muted uppercase tracking-widest mb-1 block">Reference / UTR</label>
-              <input type="text" value={reference} onChange={(e) => setReference(e.target.value)} className="w-full bg-surface border border-[#c5a059]/30 text-xs px-2 py-1.5 focus:outline-none text-content" placeholder="e.g. 129381..." />
-            </div>
-            <div>
-              <label className="text-[10px] text-muted uppercase tracking-widest mb-1 block">Amount (₹)</label>
-              <input type="number" value={paidAmount} onChange={(e) => setPaidAmount(Number(e.target.value))} className="w-full bg-surface border border-[#c5a059]/30 text-xs px-2 py-1.5 focus:outline-none text-content" />
-            </div>
-         </div>
-
-         <div>
-           <label className="text-[10px] text-muted uppercase tracking-widest mb-1 block">Notes / Info</label>
-           <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full bg-surface border border-[#c5a059]/30 text-xs px-2 py-1.5 focus:outline-none text-content" placeholder="E.g. Sent via GPay" />
-         </div>
-
-         <div>
-           <label className="text-[10px] text-muted uppercase tracking-widest mb-1 block">Proof Image</label>
-           {currentPayment.proofImageUrl ? (
-              <a href={currentPayment.proofImageUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 underline block mb-2">View current proof</a>
-           ) : null}
-           <ImageUpload
-              specKey="supportAttachment"
-              supportThemes={false}
-              value={proofUrl}
-              onChange={(url) => setProofUrl(typeof url === 'string' ? url : (url.light || url.dark || ''))}
-              storagePath={`payments/${order.id}`}
-           />
-         </div>
-
-         <div className="flex justify-end gap-2 pt-2 border-t border-[#c5a059]/10">
-           {status !== 'confirmed' && (
-              <GoldButton onClick={() => handleUpdate(status)} disabled={saving} className="text-[10px] py-1.5 px-3 uppercase text-xs" variant="outline">
-                {saving ? '...' : `Update to ${status}`}
-              </GoldButton>
-           )}
-           <GoldButton onClick={() => handleUpdate('confirmed')} disabled={saving || currentPayment.status === 'confirmed'} className="text-[10px] py-1.5 px-3 uppercase text-xs border border-[#c5a059]/30">
-             {saving ? '...' : 'Confirm Payment'}
-           </GoldButton>
-         </div>
-       </div>
+      <div className="flex items-center gap-2 mb-4">
+        <CreditCard className="w-4 h-4 text-[#c5a059]" />
+        <p className="text-xs text-content uppercase tracking-widest font-bold">Payment</p>
+      </div>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1">Status</p>
+          <p className={refunded ? 'text-red-400 font-bold' : paid ? 'text-emerald-500 font-bold' : 'text-amber-500 font-bold'}>{refunded ? 'Refunded' : paid ? 'Confirmed' : 'Pending'}</p></div>
+        <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1">Amount</p><p className="text-content">{inr(p.paidAmount || amount)}</p></div>
+        <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1">Method</p><p className="text-content">{paid || refunded ? 'Razorpay' : '—'}</p></div>
+        <div><p className="text-[10px] text-muted uppercase tracking-widest mb-1">Payment ID</p><p className="text-content font-mono text-[11px] break-all">{p.razorpayPaymentId || '—'}</p></div>
+      </div>
+      {order.refund?.status && <p className="text-[11px] text-red-400 mt-3">Refund {order.refund.status} · {inr(order.refund.amount)} · ref {order.refund.id}</p>}
+      <p className="text-[10px] text-muted mt-3 leading-relaxed">Payments are collected & confirmed automatically via Razorpay at checkout. Refunds are issued on cancellation.</p>
     </div>
   );
 }
@@ -326,13 +219,19 @@ export function AdminOrdersBoard() {
   const handleStatusChange = async (order: any, status: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     try {
+      const wasPaid = order.payment?.status === 'confirmed';
+      const refunded = order.payment?.status === 'refunded' || !!order.refund?.status;
+      if (status === 'Cancelled' && wasPaid && !refunded) {
+        const { data, error } = await supabase.functions.invoke('razorpay-refund', { body: { orderId: order.id } });
+        if (error || !(data as any)?.ok) { toast.error('Refund failed — order NOT cancelled.'); return; }
+      }
       await orderService.updateOrderStatus(order.id, status as OrderStatus, user?.uid || 'Admin');
-      toast.success(`Order status updated to ${status}`);
+      toast.success(status === 'Cancelled' ? `Order cancelled${wasPaid ? ' & refunded' : ''}` : `Order status updated to ${status}`);
       if (selectedOrder?.id === order.id) {
         setSelectedOrder({...selectedOrder, status});
       }
     } catch (err) {
-      console.error('Error updating state via select:', err);
+      console.error('status update failed', err);
       toast.error('Failed to update status');
     }
   };
@@ -681,7 +580,7 @@ export function AdminOrdersBoard() {
                   </div>
 
                   {/* Payment Info */}
-                  <PaymentPanel order={selectedOrder} onUpdate={(newOrder) => setSelectedOrder(newOrder)} />
+                  <PaymentPanel order={selectedOrder} />
 
                   {/* Customer Info */}
                   <div>
@@ -870,12 +769,12 @@ export function AdminOrdersBoard() {
                
                {/* Quick Bottom Action Bar in Drawer */}
                <div className="absolute flex flex-col md:flex-row gap-2 bottom-0 left-0 w-full p-4 border-t border-[#c5a059]/20 bg-[#141414] shadow-[0_-5px_20px_rgba(0,0,0,0.5)] z-sticky-section">
-                 <button 
-                    onClick={() => handleStatusChange(selectedOrder, 'Processing')}
-                    disabled={!ALLOWED_TRANSITIONS[mapLegacyStatus(selectedOrder.status as OrderStatus || 'Order Placed')]?.includes('Processing')}
+                 <button
+                    onClick={() => handleStatusChange(selectedOrder, 'Ready for Shipment')}
+                    disabled={!ALLOWED_TRANSITIONS[mapLegacyStatus(selectedOrder.status as OrderStatus || 'Processing')]?.includes('Ready for Shipment')}
                     className="w-full md:flex-1 text-[10px] font-bold uppercase tracking-widest border border-purple-500/50 text-purple-500 p-3 hover:bg-purple-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                  >
-                    Move to Processing
+                    Mark Ready for Shipment
                  </button>
                  {ALLOWED_TRANSITIONS[mapLegacyStatus(selectedOrder.status || 'Order Placed') as OrderStatus]?.includes('Cancelled') && (
                      <button 

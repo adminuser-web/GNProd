@@ -74,7 +74,9 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 // Delivered. Cancel (with refund) allowed any time BEFORE delivery; Delivered
 // is terminal.
 export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  'Awaiting Payment': ['Processing', 'Cancelled'],
+  // Awaiting Payment → Processing happens ONLY via the gateway (server-side),
+  // never a manual admin action. Admins may only cancel an unpaid order.
+  'Awaiting Payment': ['Cancelled'],
   'Order Placed': ['Processing', 'Cancelled'],
   'Payment Pending': ['Processing', 'Cancelled'],
   'Payment Confirmed': ['Processing', 'Cancelled'],
