@@ -441,7 +441,7 @@ export function AdminSupportPage() {
   });
 
   return (
-    <div className="w-full animate-fade-in pb-16 space-y-6 md:space-y-8 min-h-screen">
+    <div className="w-full animate-fade-in pb-10 space-y-4 min-h-screen">
        <PageHeader
           eyebrow="Customer Care"
           title="Support Hub"
@@ -545,9 +545,9 @@ export function AdminSupportPage() {
               <EmptyState icon={MessageSquare} title="No requests found" description="Try adjusting your search or filters to see more results." />
            </div>
        ) : (
-           <div className="flex flex-col w-full">
+           <div className="rounded-xl border border-[#c5a059]/15 overflow-hidden w-full">
               {/* Desktop Header */}
-              <div className="hidden lg:grid grid-cols-12 gap-4 p-4 text-[9px] font-bold tracking-[0.2em] uppercase text-muted border-b border-[#c5a059]/20 sticky top-0 bg-bg z-raised w-full mb-2">
+              <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2.5 text-[9px] font-bold tracking-[0.2em] uppercase text-muted bg-bg border-b border-[#c5a059]/15 sticky top-0 z-raised w-full">
                   <div className="col-span-5">Ticket Summary</div>
                   <div className="col-span-2 text-center">Status</div>
                   <div className="col-span-3">Customer</div>
@@ -555,7 +555,7 @@ export function AdminSupportPage() {
               </div>
 
               {/* Rows */}
-              <div className="flex flex-col gap-4 lg:gap-2">
+              <div className="divide-y divide-[#c5a059]/10">
                   {filteredTickets.map(ticket => {
                       const date = ticket.updatedAt?.toDate ? ticket.updatedAt.toDate() : new Date();
                       const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -564,7 +564,7 @@ export function AdminSupportPage() {
                           <div 
                               key={ticket.id}
                               onClick={() => setSelectedTicketId(ticket.id!)}
-                              className="group bg-surface/40 hover:bg-surface/80 border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-colors p-5 lg:p-4 flex flex-col lg:grid lg:grid-cols-12 gap-y-4 lg:gap-4 items-start lg:items-center cursor-pointer relative"
+                              className="group hover:bg-[#c5a059]/[0.04] transition-colors px-4 py-3 flex flex-col lg:grid lg:grid-cols-12 gap-y-3 lg:gap-3 items-start lg:items-center cursor-pointer relative"
                           >
                               {/* Summary Column */}
                               <div className="col-span-5 w-full pr-4">
@@ -574,8 +574,8 @@ export function AdminSupportPage() {
                                         {ticket.subject}
                                       </span>
                                   </div>
-                                  <div className="text-[10px] text-muted truncate mt-1 w-full lg:max-w-md">{ticket.description}</div>
-                                  <div className="text-[9px] font-mono text-[#c5a059]/60 tracking-widest uppercase mt-2">
+                                  <div className="text-[10px] text-muted truncate mt-0.5 w-full lg:max-w-md">{ticket.description}</div>
+                                  <div className="text-[9px] font-mono text-[#c5a059]/60 tracking-widest uppercase mt-1">
                                      #{ticket.id?.slice(0,8)} {ticket.orderCode && `• ORD: ${ticket.orderCode}`}
                                   </div>
                               </div>

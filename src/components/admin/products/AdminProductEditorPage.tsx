@@ -356,7 +356,7 @@ export function AdminProductEditorPage() {
       )}
 
       {/* Sticky Header */}
-      <div className="sticky top-0 z-sticky-section bg-bg border-b border-[#c5a059]/10 pt-4 pb-4 mb-8">
+      <div className="sticky top-0 z-sticky-section bg-bg border-b border-[#c5a059]/10 pt-3 pb-3 mb-5">
         <div className="flex justify-between items-center">
           <div className="flex flex-col">
             <Link
@@ -426,7 +426,7 @@ export function AdminProductEditorPage() {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
         <div className="w-full lg:w-64 shrink-0 flex flex-col gap-4 sticky top-[140px]">
           <div className="bg-surface border border-[#c5a059]/10 p-2 flex flex-col gap-1">
             {tabs.map((tab) => (
@@ -470,7 +470,7 @@ export function AdminProductEditorPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 bg-surface border border-[#c5a059]/10 p-6 md:p-8 shadow-sm">
+        <div className="flex-1 min-w-0 bg-surface border border-[#c5a059]/10 p-5 md:p-6 shadow-sm">
           {activeTab === "details" && (
             <AdminDetailsTab
               series={series}

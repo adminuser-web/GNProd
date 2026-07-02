@@ -29,14 +29,14 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8 border-b border-[#c5a059]/10 pb-6">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-5 border-b border-[#c5a059]/10 pb-4">
       <div className="min-w-0">
-        {eyebrow && (
-          <p className="text-[11px] tracking-[0.4em] uppercase text-premium-gold-text mb-2">{eyebrow}</p>
-        )}
-        <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] uppercase text-content">{title}</h1>
+        <h1 className="text-xl md:text-2xl font-bold tracking-[0.2em] uppercase text-content">
+          {eyebrow && <span className="text-[10px] tracking-[0.4em] text-premium-gold-text mr-3 align-middle">{eyebrow} /</span>}
+          {title}
+        </h1>
         {description && (
-          <p className="text-xs text-muted tracking-widest uppercase mt-2 leading-relaxed">{description}</p>
+          <p className="text-[11px] text-muted tracking-widest uppercase mt-1">{description}</p>
         )}
       </div>
       {actions && <div className="flex items-center gap-2 shrink-0 flex-wrap">{actions}</div>}
@@ -78,15 +78,15 @@ export function Card({
   return (
     <div className={clsx('bg-surface border border-[#c5a059]/20 shadow-sm', className)}>
       {(title || actions) && (
-        <div className="px-5 py-4 border-b border-[#c5a059]/10 flex items-center justify-between gap-3">
+        <div className="px-4 py-3 border-b border-[#c5a059]/10 flex items-center justify-between gap-3">
           <div className="min-w-0">
             {title && <SectionLabel>{title}</SectionLabel>}
-            {desc && <p className="text-[10px] text-muted mt-1 leading-relaxed">{desc}</p>}
+            {desc && <p className="text-[10px] text-muted mt-0.5 leading-relaxed">{desc}</p>}
           </div>
           {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
         </div>
       )}
-      <div className={clsx('p-5', bodyClassName)}>{children}</div>
+      <div className={clsx('p-4', bodyClassName)}>{children}</div>
     </div>
   );
 }
@@ -161,12 +161,12 @@ export function StatCard({
   const body = (
     <div
       className={clsx(
-        'bg-surface border p-6 shadow-sm h-full transition-all flex flex-col justify-between',
+        'bg-surface border p-4 shadow-sm h-full transition-all flex flex-col justify-between',
         alert ? 'border-red-500/20 hover:border-red-500/40' : 'border-[#c5a059]/20 hover:border-[#c5a059]/40',
       )}
     >
       <div>
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex justify-between items-start mb-2">
           <span
             className={clsx(
               'text-[10px] uppercase tracking-widest',
@@ -183,7 +183,7 @@ export function StatCard({
         </div>
       </div>
       {subLabel && (
-        <div className="text-[10px] lg:text-xs text-muted/80 uppercase tracking-widest mt-2 block">{subLabel}</div>
+        <div className="text-[10px] text-muted/80 uppercase tracking-widest mt-1.5 block">{subLabel}</div>
       )}
     </div>
   );
@@ -227,7 +227,7 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-16 px-6">
+    <div className="flex flex-col items-center justify-center text-center py-12 px-6">
       {Icon && (
         <div className="w-12 h-12 rounded-full border border-[#c5a059]/20 flex items-center justify-center mb-4">
           <Icon className="w-5 h-5 text-[#c5a059]/60" />
@@ -298,7 +298,7 @@ export function Segmented<T extends string>({
           key={o.value}
           onClick={() => onChange(o.value)}
           className={clsx(
-            'px-4 py-2 text-[10px] font-bold tracking-widest uppercase transition-colors rounded-sm',
+            'px-3.5 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-colors rounded-sm',
             value === o.value ? 'bg-[#c5a059] text-bg' : 'text-muted hover:text-content',
           )}
         >

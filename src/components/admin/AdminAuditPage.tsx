@@ -107,7 +107,7 @@ export function AdminAuditPage() {
         <Card bodyClassName="p-0">
           <div className="divide-y divide-[#c5a059]/10">
             {logs.map((log, idx) => (
-              <div key={log.id || idx} className="p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <div key={log.id || idx} className="px-4 py-2.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <StatusPill label={ACTION_LABELS[log.action] || log.action} />

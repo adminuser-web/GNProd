@@ -328,7 +328,7 @@ export function AdminSeriesDetailPage() {
       )}
 
       {/* Breadcrumbs */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-5">
          <div className="flex flex-col">
             <Link to="/admin/products" className="text-muted hover:text-[#c5a059] flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors mb-4 w-max">
                <ArrowLeft size={12} /> Back to Products
@@ -371,7 +371,7 @@ export function AdminSeriesDetailPage() {
          </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* PRODUCTS LIST */}
         <div className="lg:col-span-2">
@@ -550,7 +550,7 @@ export function AdminSeriesDetailPage() {
       </div>
 
       {/* SERIES DEFAULT ATTRIBUTES (template) */}
-      <div className="mt-8 bg-surface border border-[#c5a059]/10 shadow-sm p-6 md:p-8">
+      <div className="mt-6 bg-surface border border-[#c5a059]/10 shadow-sm p-5 md:p-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-3 mb-6 pb-4 border-b border-[#c5a059]/10">
           <div>
             <h2 className="text-xs tracking-[0.2em] uppercase font-bold text-content">Series Default Attributes</h2>

@@ -56,7 +56,7 @@ export function AdminProductsPage() {
       <RevealSection>
         <PageHeader eyebrow="Catalogue" title="Series Architecture" description="The Grainood collection — English Willow only." />
         {import.meta.env.MODE !== 'production' && (
-          <details className="-mt-4 mb-8 group">
+          <details className="-mt-2 mb-5 group">
             <summary className="text-[10px] text-red-500 uppercase tracking-widest cursor-pointer list-none flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
               Danger Zone
@@ -84,7 +84,7 @@ export function AdminProductsPage() {
           </GoldButton>
         </RevealSection>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map((p, i) => {
             const count = p.subSeries?.length || 0;
             const activeCount = p.subSeries?.filter(s => s.active)?.length || 0;
@@ -116,10 +116,10 @@ export function AdminProductsPage() {
             return (
               <RevealSection key={p.id || p.slug} delay={i * 100}>
                 <Link to={`/admin/products/${p.slug}`} className="block group h-full">
-                  <div className="bg-surface border border-[#c5a059]/10 p-6 shadow-sm group-hover:border-[#c5a059]/30 transition-colors h-full flex flex-col">
-                    <div className="flex justify-between items-start mb-6">
+                  <div className="bg-surface border border-[#c5a059]/10 p-4 shadow-sm group-hover:border-[#c5a059]/30 transition-colors h-full flex flex-col">
+                    <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="font-bold tracking-[0.2em] uppercase text-content text-xl mb-1">{p.name}</h3>
+                        <h3 className="font-bold tracking-[0.2em] uppercase text-content text-lg mb-1">{p.name}</h3>
                         <span className="text-[10px] text-muted tracking-widest uppercase">{p.tagline}</span>
                       </div>
                       <Box size={20} className="text-[#c5a059]/50 group-hover:text-[#c5a059] transition-colors" />

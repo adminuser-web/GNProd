@@ -336,9 +336,9 @@ export function AdminLayout() {
 
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-col w-64 border-r border-[#c5a059]/20 bg-surface/30 min-h-screen sticky top-0 shrink-0">
-        <div className="p-8">
-          <span className="text-[10px] tracking-[0.4em] uppercase text-premium-gold-text font-bold block mb-8">Admin Panel</span>
-          <div className="flex flex-col gap-6">
+        <div className="p-6">
+          <span className="text-[10px] tracking-[0.4em] uppercase text-premium-gold-text font-bold block mb-6">Admin Panel</span>
+          <div className="flex flex-col gap-5">
             {NAV_GROUPS.map(group => (
               <div key={group.heading} className="flex flex-col gap-1.5">
                 <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-muted/50 px-3 mb-1">{group.heading}</span>
@@ -358,10 +358,10 @@ export function AdminLayout() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-4 md:p-8 min-w-0">
-        
+      <div className="flex-1 p-4 md:p-6 min-w-0">
+
         {/* Global Admin Search & Notifications */}
-        <div className="mb-6 relative z-header flex items-center justify-between gap-4">
+        <div className="mb-5 relative z-header flex items-center justify-between gap-4">
            <AdminOrderSearch />
            <div className="flex items-center gap-2 shrink-0">
              <Link

@@ -330,7 +330,7 @@ export function AdminOrdersBoard() {
         ) : (
           <div className="rounded-xl border border-[#c5a059]/15 overflow-hidden">
             {/* Desktop header */}
-            <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2.5 text-[9px] uppercase tracking-[0.2em] font-bold text-muted bg-surface/40 border-b border-[#c5a059]/15 sticky top-0 z-raised">
+            <div className="hidden lg:grid grid-cols-12 gap-3 px-4 py-2.5 text-[9px] uppercase tracking-[0.2em] font-bold text-muted bg-bg border-b border-[#c5a059]/15 sticky top-0 z-raised">
               <div className="col-span-2">Order</div>
               <div className="col-span-3">Customer</div>
               <div className="col-span-3">Product</div>

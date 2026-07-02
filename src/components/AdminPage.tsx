@@ -11,7 +11,6 @@ import {
   Layers,
   Tag,
   Share2,
-  Info,
   CheckCircle2,
   ChevronRight,
 } from "lucide-react";
@@ -61,8 +60,8 @@ function BarChart({
 }) {
   const maxVal = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="bg-surface border border-[#c5a059]/20 p-6 flex flex-col h-full min-h-[250px]">
-      <h3 className="text-[10px] text-muted uppercase tracking-widest mb-6">
+    <div className="bg-surface border border-[#c5a059]/20 p-4 flex flex-col h-full min-h-[210px]">
+      <h3 className="text-[10px] text-muted uppercase tracking-widest mb-4">
         {title}
       </h3>
       <div className="flex-1 flex items-end gap-1 md:gap-2 justify-between mt-auto">
@@ -109,14 +108,14 @@ function DonutChart({
   ];
 
   return (
-    <div className="bg-surface border border-[#c5a059]/20 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-8 h-full">
+    <div className="bg-surface border border-[#c5a059]/20 p-4 flex flex-col sm:flex-row items-center sm:items-start gap-6 h-full">
       <div className="flex-1 flex flex-col justify-center items-center relative">
         <h3 className="text-[10px] text-muted uppercase tracking-widest absolute top-0 left-0 w-full text-left">
           {title}
         </h3>
         <svg
           viewBox="0 0 100 100"
-          className="w-[140px] h-[140px] transform -rotate-90 mt-8"
+          className="w-[120px] h-[120px] transform -rotate-90 mt-7"
         >
           {data.length === 0 ? (
             <circle
@@ -151,7 +150,7 @@ function DonutChart({
           )}
         </svg>
       </div>
-      <div className="flex-1 flex flex-col justify-center gap-2 mt-4 sm:mt-8 w-full">
+      <div className="flex-1 flex flex-col justify-center gap-1.5 mt-3 sm:mt-7 w-full">
         {data.length === 0 && <div className="text-xs text-muted">No data</div>}
         {data.map((d, i) => (
           <div key={i} className="flex justify-between items-center text-xs">
@@ -190,8 +189,8 @@ function LineChart({
     .join(" ");
 
   return (
-    <div className="bg-surface border border-[#c5a059]/20 p-6 flex flex-col h-full min-h-[250px]">
-      <h3 className="text-[10px] text-muted uppercase tracking-widest mb-6">
+    <div className="bg-surface border border-[#c5a059]/20 p-4 flex flex-col h-full min-h-[210px]">
+      <h3 className="text-[10px] text-muted uppercase tracking-widest mb-4">
         {title}
       </h3>
       <div className="flex-1 relative mt-4">
@@ -242,26 +241,26 @@ function LineChart({
 }
 
 function ActionQueue({
-  newOrders,
-  paymentsToVerify,
+  crafting,
+  readyToShip,
   openSupport,
 }: {
-  newOrders: number;
-  paymentsToVerify: number;
+  crafting: number;
+  readyToShip: number;
   openSupport: number;
 }) {
   const items = [
     {
-      label: "New orders to confirm",
-      count: newOrders,
+      label: "Paid orders in crafting",
+      count: crafting,
       icon: ShoppingBag,
-      to: "/admin/orders?status=Order Placed",
+      to: "/admin/orders?status=Processing",
     },
     {
-      label: "Payments to verify",
-      count: paymentsToVerify,
+      label: "Ready to ship",
+      count: readyToShip,
       icon: IndianRupee,
-      to: "/admin/orders?payment=pending",
+      to: "/admin/orders?status=Ready for Shipment",
     },
     {
       label: "Open support requests",
@@ -273,13 +272,10 @@ function ActionQueue({
 
   return (
     <div className="bg-surface border border-[#c5a059]/20 shadow-sm">
-      <div className="px-5 py-4 border-b border-[#c5a059]/10">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#c5a059]">Needs your attention</h3>
-      </div>
       {items.length === 0 ? (
-        <div className="flex items-center gap-3 px-5 py-6">
+        <div className="flex items-center gap-3 px-4 py-3.5">
           <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          <p className="text-sm text-content tracking-wide">All caught up — no orders, payments, or requests waiting.</p>
+          <p className="text-sm text-content tracking-wide">All caught up — no orders or requests waiting.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#c5a059]/10">
@@ -287,14 +283,14 @@ function ActionQueue({
             <Link
               key={i.label}
               to={i.to}
-              className="group flex items-center justify-between gap-3 px-5 py-4 hover:bg-[#c5a059]/5 transition-colors"
+              className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-[#c5a059]/5 transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full border border-[#c5a059]/30 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-full border border-[#c5a059]/30 flex items-center justify-center shrink-0">
                   <i.icon className="w-4 h-4 text-[#c5a059]" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-lg font-bold text-content leading-none">{i.count}</div>
+                  <div className="text-base font-bold text-content leading-none">{i.count}</div>
                   <div className="text-[10px] uppercase tracking-widest text-muted mt-1 truncate">{i.label}</div>
                 </div>
               </div>
@@ -369,16 +365,11 @@ export function AdminPage() {
     );
 
     // Action queue: things the owner should act on today (not period-bound).
-    const newOrdersToConfirm = orders.filter(
-      (o) =>
-        o.status !== "Cancelled" &&
-        mapLegacyStatus(o.status || "Order Placed") === "Order Placed",
+    const craftingOrders = orders.filter(
+      (o) => mapLegacyStatus(o.status || "") === "Processing",
     );
-    const paymentsToVerify = orders.filter(
-      (o) =>
-        o.status !== "Cancelled" &&
-        ((o.payment?.status as string) === "submitted" ||
-          (o.payment?.status as string) === "processing"),
+    const readyToShipOrders = orders.filter(
+      (o) => mapLegacyStatus(o.status || "") === "Ready for Shipment",
     );
 
     const newCustomersCount = customers.filter((c) => {
@@ -567,8 +558,8 @@ export function AdminPage() {
       todaysOrders: todaysOrders.length,
       thisMonthSales,
       pendingPaymentsAmt,
-      newOrdersToConfirm: newOrdersToConfirm.length,
-      paymentsToVerify: paymentsToVerify.length,
+      craftingOrders: craftingOrders.length,
+      readyToShipOrders: readyToShipOrders.length,
       openSupportRequests: openSupportRequests.length,
       newCustomersCount,
       savedBuildsCount: savedBuildsPeriod.length,
@@ -594,7 +585,7 @@ export function AdminPage() {
 
   if (loading) {
     return (
-      <div className="pb-16 space-y-6 md:space-y-8 font-sans">
+      <div className="pb-10 space-y-4 font-sans">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 border-b border-[#c5a059]/10 pb-6">
           <div>
             <Skeleton variant="text" className="h-3 w-32 mb-2" />
@@ -607,12 +598,12 @@ export function AdminPage() {
              <Skeleton key={i} variant="rectangular" className="h-32" />
           ))}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array(4).fill(0).map((_, i) => (
              <Skeleton key={i} variant="rectangular" className="h-32" />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Skeleton variant="rectangular" className="h-64" />
           <Skeleton variant="rectangular" className="h-64" />
         </div>
@@ -621,7 +612,7 @@ export function AdminPage() {
   }
 
   return (
-    <div className="pb-16 space-y-6 md:space-y-8 font-sans">
+    <div className="pb-10 space-y-4 font-sans">
       <RevealSection>
         <PageHeader
           eyebrow="Metrics & Reports"
@@ -642,8 +633,8 @@ export function AdminPage() {
 
       <RevealSection delay={25}>
         <ActionQueue
-          newOrders={m.newOrdersToConfirm}
-          paymentsToVerify={m.paymentsToVerify}
+          crafting={m.craftingOrders}
+          readyToShip={m.readyToShipOrders}
           openSupport={m.openSupportRequests}
         />
       </RevealSection>
@@ -691,7 +682,7 @@ export function AdminPage() {
       </RevealSection>
 
       <RevealSection delay={100}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Saved Builds"
             value={m.savedBuildsCount}
@@ -729,7 +720,7 @@ export function AdminPage() {
         </div>
       </RevealSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RevealSection delay={150}>
           <LineChart title="Sales by Month" data={m.salesByMonthData} />
         </RevealSection>
@@ -738,7 +729,7 @@ export function AdminPage() {
         </RevealSection>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RevealSection delay={200}>
           <BarChart
             title="Sales by Series"
@@ -755,7 +746,7 @@ export function AdminPage() {
         </RevealSection>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RevealSection delay={250}>
           <DonutChart
             title="Support Requests by Type"
@@ -769,10 +760,10 @@ export function AdminPage() {
 
       {/* Tables */}
       <RevealSection delay={300}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Recent Orders Table */}
           <div className="bg-surface border border-[#c5a059]/20 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
+            <div className="px-4 py-3 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
               <h3 className="text-[10px] uppercase tracking-widest text-muted">
                 Recent Orders
               </h3>
@@ -793,7 +784,7 @@ export function AdminPage() {
                   <Link
                     key={i}
                     to={`/admin/orders/${o.id}`}
-                    className="p-4 flex justify-between items-center hover:bg-[#c5a059]/5 transition-colors cursor-pointer group"
+                    className="px-4 py-2.5 flex justify-between items-center hover:bg-[#c5a059]/5 transition-colors cursor-pointer group"
                   >
                     <div>
                       <div className="text-sm font-bold text-content font-mono group-hover:text-[#c5a059] transition-colors">
@@ -828,7 +819,7 @@ export function AdminPage() {
 
           {/* Recent Support Requests Table */}
           <div className="bg-surface border border-[#c5a059]/20 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
+            <div className="px-4 py-3 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
               <h3 className="text-[10px] uppercase tracking-widest text-muted">
                 Recent Support Requests
               </h3>
@@ -848,7 +839,7 @@ export function AdminPage() {
                 m.recentTickets.map((t, i) => (
                   <div
                     key={i}
-                    className="p-4 flex justify-between items-center hover:bg-[#c5a059]/5 transition-colors"
+                    className="px-4 py-2.5 flex justify-between items-center hover:bg-[#c5a059]/5 transition-colors"
                   >
                     <div>
                       <div className="text-sm font-bold text-content line-clamp-1">
@@ -878,7 +869,7 @@ export function AdminPage() {
 
           {/* Top Customers Table */}
           <div className="bg-surface border border-[#c5a059]/20 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
+            <div className="px-4 py-3 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
               <h3 className="text-[10px] uppercase tracking-widest text-muted">
                 Top Customers by AOV
               </h3>
@@ -898,7 +889,7 @@ export function AdminPage() {
                 m.topCustomers.map((c, i) => (
                   <div
                     key={i}
-                    className="p-4 flex flex-col sm:flex-row justify-between sm:items-center hover:bg-[#c5a059]/5 transition-colors gap-2"
+                    className="px-4 py-2.5 flex flex-col sm:flex-row justify-between sm:items-center hover:bg-[#c5a059]/5 transition-colors gap-2"
                   >
                     <div>
                       <div className="text-sm font-bold text-content">
@@ -930,7 +921,7 @@ export function AdminPage() {
 
           {/* Popular Builds/Products Table */}
           <div className="bg-surface border border-[#c5a059]/20 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
+            <div className="px-4 py-3 border-b border-[#c5a059]/10 flex justify-between items-center bg-bg">
               <h3 className="text-[10px] uppercase tracking-widest text-muted">
                 Popular Saved Builds
               </h3>
@@ -944,7 +935,7 @@ export function AdminPage() {
                 m.popularBuilds.map((pb, i) => (
                   <div
                     key={i}
-                    className="p-4 flex justify-between items-center hover:bg-[#c5a059]/5 transition-colors"
+                    className="px-4 py-2.5 flex justify-between items-center hover:bg-[#c5a059]/5 transition-colors"
                   >
                     <div className="text-sm font-bold text-content">
                       {pb[0]}
@@ -960,12 +951,6 @@ export function AdminPage() {
         </div>
       </RevealSection>
 
-      <div className="text-center mt-12 pb-8">
-        <p className="text-[9px] uppercase tracking-widest text-muted/50 flex items-center justify-center gap-1">
-          <Info className="w-3 h-3" />
-          Conversion stats not directly computable without ID link
-        </p>
-      </div>
     </div>
   );
 }

@@ -537,7 +537,7 @@ export function AdminContentEditorPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-[0.2em] text-content uppercase flex items-center gap-3">
             <Box className="w-6 h-6 text-[#c5a059]" />
@@ -573,7 +573,7 @@ export function AdminContentEditorPage() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-64 shrink-0">
           <div className="bg-surface/50 border border-[#c5a059]/20 p-2 flex flex-col gap-1 sticky top-4">
             {areas.map(area => (
