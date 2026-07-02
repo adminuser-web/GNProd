@@ -255,7 +255,7 @@ export function AdminAttributesTab({ attributes, onChange, storagePath, template
           { label: `Customer options (${custCount})`, hint: "Shown in the buy configurator", items: rows.filter((r) => r.a.mode === "customizable") },
           { label: `Fixed specs (${fixedCount})`, hint: "Shown on the spec sheet", items: rows.filter((r) => r.a.mode === "fixed") },
         ].filter((s) => s.items.length > 0)
-      : [{ label: null, hint: null, items: rows }];
+      : [{ label: null, hint: null, items: rows }].filter((s) => s.items.length > 0);
 
   return (
     <div className="space-y-4 animate-fade-in relative pb-10">

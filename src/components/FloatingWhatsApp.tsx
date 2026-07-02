@@ -20,8 +20,10 @@ export function FloatingWhatsApp() {
       target="_blank"
       rel="noreferrer"
       className={clsx(
-        "fixed right-6 z-dropdown flex items-center justify-center transition-transform hover:-translate-y-1",
-        isProductPage ? "bottom-24 lg:bottom-8" : "bottom-8"
+        "fixed right-6 z-dropdown items-center justify-center transition-transform hover:-translate-y-1",
+        // On mobile product pages the expanded build panel owns the bottom of the
+        // screen (and carries its own WhatsApp link) — the bubble sat on the CTA.
+        isProductPage ? "hidden lg:flex lg:bottom-8" : "flex bottom-8"
       )}
       aria-label="Chat on WhatsApp"
     >
