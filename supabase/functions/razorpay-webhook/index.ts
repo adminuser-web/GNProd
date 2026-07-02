@@ -53,11 +53,20 @@ Deno.serve(async (req) => {
     const d: any = row.data ?? {};
     if (d.payment?.status === 'confirmed') return json({ ok: true, already: true });
 
+    // Confirm the captured amount matches what we charged (webhook is signed, but
+    // guard against any amount discrepancy before marking the order paid).
+    const expectedPaise = Math.round(Number(d.totalPrice ?? d.pricing?.total ?? 0)) * 100;
+    const paidPaise = Number(payment?.amount ?? 0);
+    if (paidPaise && expectedPaise && paidPaise !== expectedPaise) {
+      log(`webhook amount mismatch got=${paidPaise} expected=${expectedPaise}`);
+      return json({ ok: true, amount_mismatch: true });
+    }
+
     const nowIso = new Date().toISOString();
     const newData = {
       ...d,
       status: 'Processing',
-      payment: { ...(d.payment || {}), status: 'confirmed', paidAmount: d.totalPrice ?? d.pricing?.total ?? 0,
+      payment: { ...(d.payment || {}), status: 'confirmed', paidAmount: (paidPaise || expectedPaise) / 100,
                  gateway: 'razorpay', razorpayOrderId: rzpOrderId, razorpayPaymentId: payment?.id, paidAt: nowIso },
       paymentStatus: 'confirmed',
       timeline: [...(d.timeline || []),
