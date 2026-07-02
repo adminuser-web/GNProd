@@ -39,6 +39,30 @@ export async function createRazorpayOrder(
   return (await res.json()) as RazorpayOrder;
 }
 
+export interface RazorpayPayment {
+  id: string;
+  order_id: string;
+  status: string;   // created | authorized | captured | refunded | failed
+  amount: number;   // paise
+  currency: string;
+}
+
+/** Fetch a payment from Razorpay to confirm its real status + amount server-side. */
+export async function fetchRazorpayPayment(
+  keyId: string,
+  keySecret: string,
+  paymentId: string,
+): Promise<RazorpayPayment> {
+  const res = await fetch(`${RZP_API}/payments/${paymentId}`, {
+    headers: { Authorization: basicAuth(keyId, keySecret) },
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`razorpay payment fetch failed ${res.status}: ${t.slice(0, 150)}`);
+  }
+  return (await res.json()) as RazorpayPayment;
+}
+
 export async function createRazorpayRefund(
   keyId: string,
   keySecret: string,

@@ -9,7 +9,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
-import { verifyPaymentSignature } from '../_shared/razorpay.ts';
+import { verifyPaymentSignature, fetchRazorpayPayment } from '../_shared/razorpay.ts';
 
 const log = (m: string) => console.log(`[razorpay-verify] ${m}`);
 
@@ -21,8 +21,9 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const keyId = Deno.env.get('RAZORPAY_KEY_ID');
     const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
-    if (!keySecret) return json({ ok: false, error: 'not_configured' }, 500);
+    if (!keyId || !keySecret) return json({ ok: false, error: 'not_configured' }, 500);
 
     const body = await req.json().catch(() => ({} as any));
     const orderId = String(body?.razorpay_order_id ?? '');
@@ -30,6 +31,7 @@ Deno.serve(async (req) => {
     const signature = String(body?.razorpay_signature ?? '');
     if (!orderId || !paymentId || !signature) return json({ ok: false, error: 'bad_request' }, 400);
 
+    // 1) Signature must match (proves this payment belongs to this order).
     const valid = await verifyPaymentSignature(keySecret, orderId, paymentId, signature);
     if (!valid) { log('invalid signature'); return json({ ok: false, error: 'invalid_signature' }, 400); }
 
@@ -43,11 +45,26 @@ Deno.serve(async (req) => {
     // Idempotent: if already paid, just return ok.
     if (d.payment?.status === 'confirmed') return json({ ok: true, orderId: row.id, already: true });
 
+    // 2) Defence-in-depth: re-fetch the payment from Razorpay and confirm it was
+    //    actually captured/authorized FOR THIS ORDER and the EXACT amount we set.
+    const expectedPaise = Math.round(Number(d.totalPrice ?? d.pricing?.total ?? 0)) * 100;
+    let payment;
+    try {
+      payment = await fetchRazorpayPayment(keyId, keySecret, paymentId);
+    } catch (e) {
+      // Transient API issue — don't confirm here; the webhook will reconcile.
+      log(`payment fetch failed: ${(e as Error).message}`);
+      return json({ ok: false, error: 'verify_deferred' }, 202);
+    }
+    if (payment.order_id !== orderId) { log('payment/order mismatch'); return json({ ok: false, error: 'order_mismatch' }, 400); }
+    if (!['captured', 'authorized'].includes(payment.status)) { log(`payment not captured: ${payment.status}`); return json({ ok: false, error: 'not_captured' }, 402); }
+    if (Number(payment.amount) !== expectedPaise) { log(`amount mismatch got=${payment.amount} expected=${expectedPaise}`); return json({ ok: false, error: 'amount_mismatch' }, 400); }
+
     const nowIso = new Date().toISOString();
     const newData = {
       ...d,
       status: 'Processing',
-      payment: { ...(d.payment || {}), status: 'confirmed', paidAmount: d.totalPrice ?? d.pricing?.total ?? 0,
+      payment: { ...(d.payment || {}), status: 'confirmed', paidAmount: Number(payment.amount) / 100,
                  gateway: 'razorpay', razorpayOrderId: orderId, razorpayPaymentId: paymentId, paidAt: nowIso },
       paymentStatus: 'confirmed',
       timeline: [...(d.timeline || []),
