@@ -146,8 +146,13 @@ function Customer360({
           <div className="w-full">
             <div className="flex flex-col md:flex-row md:items-center md:gap-4 justify-between w-full">
               <div>
-                <h2 className="text-xl font-bold tracking-widest uppercase text-content">
+                <h2 className="text-xl font-bold tracking-widest uppercase text-content flex items-center gap-2 flex-wrap">
                   {customer.name}
+                  {!customer.hasAccount && (
+                    <span className="text-[8px] px-2 py-0.5 uppercase tracking-widest border border-[#c5a059]/40 text-[#c5a059] bg-[#c5a059]/10 font-bold rounded-sm">
+                      Guest
+                    </span>
+                  )}
                 </h2>
                 {customer.userId && (
                   <p className="text-[9px] mt-1 text-muted uppercase tracking-widest font-mono">

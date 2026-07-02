@@ -32,6 +32,7 @@ const SecurityPage = lazy(() => import('./components/SecurityPage').then(m => ({
 const BatConsultantPage = lazy(() => import('./components/BatConsultantPage').then(m => ({ default: m.BatConsultantPage })));
 const ComparisonPage = lazy(() => import('./components/ComparisonPage').then(m => ({ default: m.ComparisonPage })));
 const LocateUsPage = lazy(() => import('./components/LocateUsPage').then(m => ({ default: m.LocateUsPage })));
+const TrackOrderPage = lazy(() => import('./components/TrackOrderPage').then(m => ({ default: m.TrackOrderPage })));
 
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
 const AdminPage = lazy(() => import('./components/AdminPage').then(m => ({ default: m.AdminPage })));
@@ -133,6 +134,7 @@ export default function App() {
                       <Route path="/bat-consultant" element={<BatConsultantPage />} />
                       <Route path="/comparison" element={<ComparisonPage />} />
                       <Route path="/locate-us" element={<LocateUsPage />} />
+                      <Route path="/track" element={<TrackOrderPage />} />
                       <Route path="/dashboard" element={<MyOrdersPage />} />
                       
                       {/* Admin Layout & Nested Routes */}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
 import { BRAND } from '../types';
-import { MapPin, Clock, Phone, ArrowRight, ShieldCheck, Hammer, Lock } from 'lucide-react';
+import { MapPin, Clock, Phone, ArrowRight, ShieldCheck, Hammer, Lock, PackageSearch } from 'lucide-react';
 import { useContent } from '../context/ContentContext';
 import { useTheme } from '../context/ThemeContext';
 import { resolveThemedImage } from '../lib/themedImage';
@@ -49,6 +49,12 @@ export function Footer() {
                 <a href={`https://wa.me/${brandContent?.contact?.whatsapp?.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="text-[12px] text-premium-gold-text hover:underline tracking-wider">
                   {brandContent?.contact?.phone} (Tap to call/WhatsApp)
                 </a>
+              </div>
+              <div className="flex items-center gap-3">
+                <PackageSearch size={16} className="text-[#c5a059]" />
+                <Link to="/track" className="text-[12px] text-premium-gold-text hover:underline tracking-wider">
+                  Track your order
+                </Link>
               </div>
             </div>
 
