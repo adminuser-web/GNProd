@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 
 export const STORAGE_BUCKET = 'media';
 export const PAYMENT_PROOFS_BUCKET = 'payment-proofs';
+export const SUPPORT_ATTACHMENTS_BUCKET = 'support-attachments';
 
 /**
  * Upload to a PRIVATE bucket and return the object PATH (not a URL — the bucket

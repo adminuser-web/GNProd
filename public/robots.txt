@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /admin
+Disallow: /my-orders
+Disallow: /my-builds
+Disallow: /my-requests
+Disallow: /profile
+Disallow: /order
+Allow: /

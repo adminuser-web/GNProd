@@ -10,6 +10,7 @@ import { ticketService } from '../features/support/services/ticketService';
 import { useUserTickets } from '../features/support/hooks/useTickets';
 import { Skeleton, SkeletonTextLines } from './Skeleton';
 import { EmptyState } from './EmptyState';
+import { AttachmentLink } from './AttachmentLink';
 import { toast } from 'sonner';
 import { ImageUpload } from './admin/ImageUpload';
 
@@ -157,14 +158,16 @@ function TicketDetail({ ticket, onBack }: { ticket: SupportTicket, onBack: () =>
                   {msg.attachments && msg.attachments.length > 0 && (
                      <div className="mt-3 flex gap-2 overflow-x-auto">
                        {msg.attachments.map((att, i) => (
-                          <a key={i} href={att.url} target="_blank" rel="noopener noreferrer" className="block w-24 h-24 border border-line flex-shrink-0 relative group">
+                          <AttachmentLink key={i} att={att} className="block w-24 h-24 border border-line flex-shrink-0 relative group">
+                            {(url) => (<>
                             {att.contentType?.startsWith('image/') ? (
-                              <img src={att.url} alt={att.name || "Attachment"} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                              <img src={url || ''} alt={att.name || "Attachment"} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-xs text-muted">File</div>
                             )}
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs">View</div>
-                          </a>
+                            </>)}
+                          </AttachmentLink>
                        ))}
                      </div>
                   )}

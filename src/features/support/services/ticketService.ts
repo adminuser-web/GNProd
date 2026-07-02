@@ -1,4 +1,4 @@
-import { uploadToStorage } from '../../../lib/storage';
+import { uploadPrivate, SUPPORT_ATTACHMENTS_BUCKET } from '../../../lib/storage';
 import { supabase } from '../../../lib/supabase';
 import { SupportTicket, SupportTicketMessage, TicketAttachment } from '../../../types';
 import { notificationService } from '../../notifications/services/notificationService';
@@ -18,9 +18,10 @@ async function fetchTicketRow(ticketId: string): Promise<any | null> {
 export const ticketService = {
   async uploadAttachment(file: File, userId: string, ticketId: string): Promise<TicketAttachment> {
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-    const path = `support/${userId}/${ticketId}/${Date.now()}_${safeName}`;
-    const url = await uploadToStorage(path, file);
-    return { name: file.name, url, contentType: file.type };
+    // Private bucket, path keyed by uid (RLS: owner + admin read via signed URL).
+    const path = `${userId}/${ticketId}/${Date.now()}_${safeName}`;
+    await uploadPrivate(SUPPORT_ATTACHMENTS_BUCKET, path, file);
+    return { name: file.name, path, bucket: SUPPORT_ATTACHMENTS_BUCKET, contentType: file.type };
   },
 
   // "Subscriptions" — fetch-on-call (no-op unsubscribe).

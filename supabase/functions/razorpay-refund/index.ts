@@ -26,14 +26,17 @@ Deno.serve(async (req) => {
     const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
     if (!keyId || !keySecret) return json({ ok: false, error: 'not_configured' }, 500);
 
-    // Admins only.
+    // Admins only — and enforce MFA at the data layer. is_admin() (SECURITY
+    // DEFINER) returns true only when the caller is an admin AND their session
+    // is MFA-elevated (aal2) if they have a verified factor. Evaluated in the
+    // caller's own context via their JWT, so a password-only session can't refund.
     const authHeader = req.headers.get('Authorization') ?? '';
     const admin = createClient(supabaseUrl, serviceKey);
     const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return json({ ok: false, error: 'unauthorized' }, 401);
-    const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') return json({ ok: false, error: 'forbidden' }, 403);
+    const { data: isAdmin, error: adminErr } = await userClient.rpc('is_admin');
+    if (adminErr || isAdmin !== true) return json({ ok: false, error: 'forbidden' }, 403);
 
     const body = await req.json().catch(() => ({} as any));
     const orderId = String(body?.orderId ?? '');
