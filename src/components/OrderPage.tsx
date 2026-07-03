@@ -191,6 +191,7 @@ export function OrderPage() {
       if (error || !data?.ok) {
         const code = (data as any)?.error;
         if (code === 'price_changed') setSubmitError('Prices have updated — please review your cart and try again.');
+        else if (code === 'out_of_stock') setSubmitError('One of the bats in your cart is now out of stock. Please remove it and try again.');
         else if (code === 'not_configured') setSubmitError('Payments are being set up. Please try again shortly.');
         else setSubmitError('Could not start payment. Please try again.');
         setIsSubmitting(false);

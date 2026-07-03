@@ -103,6 +103,8 @@ Deno.serve(async (req) => {
       const entry = subMap.get(String(it.productId));
       if (!entry) { log(`unknown product ${it.productId}`); return json({ ok: false, error: 'product_unavailable' }, 409); }
       const sub = entry.sub;
+      // Stock gate — never accept an order for an out-of-stock variant.
+      if (sub.outOfStock === true) { log(`out of stock ${it.productId}`); return json({ ok: false, error: 'out_of_stock' }, 409); }
       const base = Number(sub.price ?? sub.basePrice ?? 0);
       const product: SProduct = {
         id: sub.id, slug: entry.seriesSlug, price: base, activeSubSeriesId: sub.id,

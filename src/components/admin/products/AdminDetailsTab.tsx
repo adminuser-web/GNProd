@@ -70,6 +70,27 @@ export function AdminDetailsTab({
         </p>
       </div>
 
+      {/* Availability / stock gate */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-line rounded-lg p-4">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted mb-1">Availability</p>
+          <p className="text-sm text-content">
+            {subSeries.outOfStock ? 'Out of stock — customers can view but not order this bat.' : 'In stock — available to order.'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => handleChange('outOfStock', !subSeries.outOfStock)}
+          className={`shrink-0 text-[10px] font-bold uppercase tracking-widest px-4 py-2.5 rounded-sm border transition-colors ${
+            subSeries.outOfStock
+              ? 'border-red-500/40 text-red-400 bg-red-500/10 hover:bg-red-500/20'
+              : 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20'
+          }`}
+        >
+          {subSeries.outOfStock ? 'Out of Stock' : 'In Stock'}
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>

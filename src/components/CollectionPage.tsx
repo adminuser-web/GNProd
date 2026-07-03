@@ -217,6 +217,10 @@ export function CollectionPage() {
             startingPrice = Math.min(...series.subSeries.map(s => s.basePrice || 9999999));
           }
 
+          // The series reads as out of stock only when every visible variant is.
+          const stockables = (series.subSeries || []).filter((s: any) => s.active !== false);
+          const seriesOOS = stockables.length > 0 && stockables.every((s: any) => s.outOfStock === true);
+
           // Badge labels — primary is the descriptive tag; secondary only shows
           // when it's genuinely different (avoids the same badge appearing twice).
           const primaryTag =
@@ -240,7 +244,11 @@ export function CollectionPage() {
                     <span className="px-3 py-1 border border-[#c5a059]/30 text-[#c5a059] text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
                       {primaryTag}
                     </span>
-                    {secondaryTag && (
+                    {seriesOOS ? (
+                      <span className="px-3 py-1 border border-red-500/40 bg-red-500/10 text-red-400 text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
+                        Out of Stock
+                      </span>
+                    ) : secondaryTag && (
                       <span className="px-3 py-1 border border-[#c5a059]/30 text-content text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
                         {secondaryTag}
                       </span>
