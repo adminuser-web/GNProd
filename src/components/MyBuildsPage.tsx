@@ -210,7 +210,11 @@ export function MyBuildsPage() {
                     currentTotal = pricingResult.total;
                  }
                  
-                 const savedPrice = build.priceSnapshot || (build as any).estimatedPrice;
+                 // priceSnapshot is normally a number; tolerate an object shape ({total}) too.
+                 const rawSnap: any = build.priceSnapshot ?? (build as any).estimatedPrice;
+                 const savedPrice = typeof rawSnap === 'object' && rawSnap !== null
+                   ? (rawSnap.total ?? rawSnap.basePrice ?? 0)
+                   : (rawSnap || 0);
                  const hasPriceChanged = currentTotal > 0 && Math.abs(currentTotal - savedPrice) > 5;
 
                  return (

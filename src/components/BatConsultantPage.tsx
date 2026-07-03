@@ -146,7 +146,9 @@ export function BatConsultantPage() {
         subSeriesName: result.subSeriesName || result.seriesName,
         productSnapshot: { gradeLabel: result.gradeLabel, price: result.price },
         selections,
-        priceSnapshot: { basePrice: result.price ?? 0, customizationTotal: 0, total: result.price ?? 0, currency: 'INR' },
+        // Stored as a number to match the product-page convention (My Builds
+        // reads priceSnapshot directly as the amount).
+        priceSnapshot: result.price ?? 0,
         source: 'ai_consultant',
       } as any);
 
