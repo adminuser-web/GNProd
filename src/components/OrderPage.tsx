@@ -191,6 +191,7 @@ export function OrderPage() {
       if (error || !data?.ok) {
         const code = (data as any)?.error;
         if (code === 'price_changed') setSubmitError('Prices have updated — please review your cart and try again.');
+        else if (code === 'out_of_stock') setSubmitError('One of the bats in your cart is now out of stock. Please remove it and try again.');
         else if (code === 'not_configured') setSubmitError('Payments are being set up. Please try again shortly.');
         else setSubmitError('Could not start payment. Please try again.');
         setIsSubmitting(false);
@@ -262,7 +263,7 @@ export function OrderPage() {
             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-16">
 
                 {!user && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 bg-[#c5a059]/5 border border-[#c5a059]/20 px-4 py-3 -mb-8">
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-[#c5a059]/5 border border-[#c5a059]/20 px-4 py-3 mb-0 sm:-mb-8">
                     <p className="text-[11px] text-content/80 tracking-wide">Checking out as a guest — no account needed.</p>
                     <Link to="/login" state={{ from: '/order' }} className="text-[11px] font-bold uppercase tracking-widest text-[#c5a059] hover:underline">
                       Sign in to prefill

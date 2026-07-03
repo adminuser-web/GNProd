@@ -74,6 +74,7 @@ export function ProductPage() {
       warrantyMonths: activeSub.warrantyMonths || baseProduct.warrantyMonths,
       includedAccessories: activeSub.includedAccessories || baseProduct.includedAccessories,
       active: activeSub.active !== false && baseProduct.active !== false,
+      outOfStock: activeSub.outOfStock === true,
     };
   }, [baseProduct, activeSubSeriesId]);
 
@@ -301,8 +302,11 @@ export function ProductPage() {
     }, 150); // half of 300ms transition
   };
 
+  const outOfStock = (product as any).outOfStock === true;
+
   const handleAddToCart = () => {
     if (!allRequiredSelected) return;
+    if (outOfStock) { toast.error('This bat is currently out of stock.'); return; }
 
     addToOrder({
       product,
@@ -505,6 +509,11 @@ export function ProductPage() {
                     )}
                   </div>
                   <p className="text-xs text-muted/80 tracking-widest uppercase mt-2 font-medium">Final build price updates as you customize.</p>
+                  {outOfStock && (
+                    <span className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 border border-red-500/40 bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Out of Stock
+                    </span>
+                  )}
                 </div>
                 {(product as any).subSeriesGrade && (
                   <div className="md:mb-[4px] px-3 py-1 border border-[#c5a059]/30 bg-surface/50 inline-block w-fit">
@@ -790,9 +799,9 @@ export function ProductPage() {
                         onClick={handleAddToCart}
                         variant="solid"
                         className="w-full"
-                        disabled={!allRequiredSelected}
+                        disabled={!allRequiredSelected || outOfStock}
                       >
-                        ADD TO CART
+                        {outOfStock ? "OUT OF STOCK" : "ADD TO CART"}
                       </GoldButton>
                     )}
 
@@ -1143,8 +1152,8 @@ export function ProductPage() {
                 <Check size={18} /> ADDED ✓
               </GoldButton>
             ) : (
-              <GoldButton onClick={handleAddToCart} disabled={!allRequiredSelected} variant="solid" className="w-full py-3">
-                {allRequiredSelected ? "ADD TO CART" : "SELECT REQUIRED"}
+              <GoldButton onClick={handleAddToCart} disabled={!allRequiredSelected || outOfStock} variant="solid" className="w-full py-3">
+                {outOfStock ? "OUT OF STOCK" : allRequiredSelected ? "ADD TO CART" : "SELECT REQUIRED"}
               </GoldButton>
             )}
             

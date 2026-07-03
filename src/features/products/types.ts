@@ -45,6 +45,8 @@ export interface ProductSubSeries {
 
   /** Storefront visibility + list ordering (present on real data). */
   active?: boolean;
+  /** When true, the product stays visible but can't be ordered (stock gate). */
+  outOfStock?: boolean;
   sortOrder?: number;
 
   gradeLabel?: string;

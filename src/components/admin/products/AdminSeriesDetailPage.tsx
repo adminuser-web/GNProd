@@ -402,7 +402,10 @@ export function AdminSeriesDetailPage() {
                  </div>
                  {/* Info */}
                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold tracking-wider text-content truncate uppercase">{sub.name || 'UNNAMED PRODUCT'}</h4>
+                    <div className="flex items-center gap-2">
+                       <h4 className="text-sm font-bold tracking-wider text-content truncate uppercase">{sub.name || 'UNNAMED PRODUCT'}</h4>
+                       {sub.outOfStock && <span className="shrink-0 text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm border border-red-500/40 text-red-400 bg-red-500/10">Out of Stock</span>}
+                    </div>
                     <div className="flex items-center gap-3 mt-1">
                        <span className="text-[10px] tracking-widest uppercase text-muted font-mono">{sub.sku || 'NO-SKU'}</span>
                        <span className="text-[10px] text-muted">&bull;</span>
