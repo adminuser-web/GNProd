@@ -1,6 +1,8 @@
 import { ProductSubSeries } from '../products/types';
 import { getCustomizableAttributes } from '../products/attributes';
 import { Product } from '../../types';
+import { BattingDNA } from './battingProfile';
+import { getPlayerFit } from './playerFit';
 
 export type PlayerProfile =
   | "Beginner / Casual Player"
@@ -71,6 +73,210 @@ export interface BatConsultantRecommendation {
     reason: string;
     score: number;
   }[];
+}
+
+// ---------------------------------------------------------------------------
+// Stats-based path — matches a batsman's Batting DNA to a bat's Player Fit.
+// ---------------------------------------------------------------------------
+
+export interface StatsFollowUp {
+  budgetRange: BudgetRange;
+  pickupFeel: PickupFeel;
+}
+
+export interface StatsRecommendation extends BatConsultantRecommendation {
+  battingDNA: BattingDNA;
+  fitScore: number;              // 0–100 — how well the pick's Player Fit matches
+  fitBreakdown: { label: string; need: number; bat: number }[];
+}
+
+const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+
+/** The bat characteristics a batsman with this DNA actually needs (each 0–10). */
+function needsFromDNA(dna: BattingDNA) {
+  return {
+    power: clamp(dna.power * 0.6 + dna.aggression * 0.4, 0, 10),
+    control: clamp((10 - dna.aggression) * 0.5 + dna.consistency * 0.5, 0, 10),
+    pickup: clamp(6 + (5 - dna.experience) * 0.35 + (dna.aggression < 5 ? 1 : 0), 0, 10),
+    balance: clamp(5.5 + (dna.consistency - 5) * 0.3 + (dna.experience - 5) * 0.15, 0, 10),
+  };
+}
+
+/** Dominant playing-style tag implied by the DNA. */
+function dominantStyle(dna: BattingDNA): string {
+  if (dna.power >= 7 && dna.aggression >= 7) return 'aggressive';
+  if (dna.consistency >= 6.5 && dna.aggression <= 5) return 'defensive';
+  if (dna.aggression >= 6 && dna.power <= 5) return 'touch';
+  return 'all-rounder';
+}
+
+/** Skill/level score (0–10) → target series tier index (0 entry … 4 elite). */
+function targetTier(dna: BattingDNA): number {
+  const level = dna.consistency * 0.4 + dna.experience * 0.3 + ((dna.aggression + dna.power) / 2) * 0.3;
+  if (level < 3) return 0;
+  if (level < 5) return 1;
+  if (level < 7) return 2;
+  if (level < 8.5) return 3;
+  return 4;
+}
+
+function seriesTierIndex(name: string): number {
+  const n = name.toLowerCase();
+  if (n.includes('debutant')) return 0;
+  if (n.includes('millennium')) return 1;
+  if (n.includes('legend')) return 2;
+  if (n.includes('eternal')) return 3;
+  if (n.includes('immortal')) return 4;
+  return 2;
+}
+
+function budgetBand(range: BudgetRange): number {
+  switch (range) {
+    case 'Under ₹15,000': return 0;
+    case '₹15,000 – ₹25,000': return 1;
+    case '₹25,000 – ₹40,000': return 2;
+    case '₹40,000 – ₹60,000': return 3;
+    default: return 4;
+  }
+}
+function priceBand(price: number): number {
+  if (price <= 15000) return 0;
+  if (price <= 25000) return 1;
+  if (price <= 40000) return 2;
+  if (price <= 60000) return 3;
+  return 4;
+}
+
+export function consultByStats(
+  dna: BattingDNA,
+  followUp: StatsFollowUp,
+  activeProducts: Product[]
+): StatsRecommendation | null {
+  if (!activeProducts || activeProducts.length === 0) return null;
+
+  const needs = needsFromDNA(dna);
+  const style = dominantStyle(dna);
+  const tTier = targetTier(dna);
+  const bBand = budgetBand(followUp.budgetRange);
+
+  // Vector fit: weighted closeness of a bat's Player Fit to the batsman's needs.
+  const W = { power: 0.35, control: 0.35, pickup: 0.15, balance: 0.15 };
+  type Scored = { series: Product; sub: ProductSubSeries; fit: number; total: number; highlights: string[]; breakdown: StatsRecommendation['fitBreakdown'] };
+  const scored: Scored[] = [];
+
+  for (const series of activeProducts) {
+    if (!series.active || !series.subSeries) continue;
+    for (const sub of series.subSeries) {
+      if (!sub.active || !sub.slug || !series.slug) continue;
+      const price = sub.basePrice || series.price || 0;
+      if (price === 0) continue;
+
+      const pf = getPlayerFit(sub, series);
+      if (pf.ballType !== dna_ballType(dna)) { /* leather-only catalogue: no-op filter */ }
+
+      const dist =
+        W.power * Math.abs(needs.power - pf.power) +
+        W.control * Math.abs(needs.control - pf.control) +
+        W.pickup * Math.abs(needs.pickup - pf.pickup) +
+        W.balance * Math.abs(needs.balance - pf.balance);
+      const fit = clamp(Math.round(100 - dist * 6.5), 35, 99);
+
+      const highlights: string[] = [];
+      if (fit >= 85) highlights.push('Closely matches your batting profile');
+
+      // Style tag alignment.
+      const styleScore = pf.styleTags.includes(style as any) ? 100 : 55;
+      if (styleScore === 100) highlights.push(`Built for your ${styleLabel(style)} game`);
+
+      // Tier alignment.
+      const tierScore = clamp(100 - Math.abs(seriesTierIndex(series.name) - tTier) * 28, 0, 100);
+
+      // Budget alignment.
+      const bandDiff = Math.abs(priceBand(price) - bBand);
+      const budgetScore = bandDiff === 0 ? 100 : bandDiff === 1 ? 60 : 15;
+      if (bandDiff === 0) highlights.push('Fits your budget');
+
+      // Strike-rate window.
+      const inBand = true; // SR contributes via aggression → needs; kept soft here.
+
+      const total = fit * 0.55 + styleScore * 0.15 + tierScore * 0.15 + budgetScore * 0.15;
+
+      scored.push({
+        series, sub, fit, total, highlights,
+        breakdown: [
+          { label: 'Power', need: round1(needs.power), bat: round1(pf.power) },
+          { label: 'Control', need: round1(needs.control), bat: round1(pf.control) },
+          { label: 'Pickup', need: round1(needs.pickup), bat: round1(pf.pickup) },
+          { label: 'Balance', need: round1(needs.balance), bat: round1(pf.balance) },
+        ],
+      });
+      void inBand;
+    }
+  }
+
+  if (scored.length === 0) return null;
+  scored.sort((a, b) => b.total - a.total);
+  const best = scored[0];
+  const second = scored[1] || null;
+
+  const setup = recommendedSetup(dna, followUp);
+  const reason = statsReason(dna, best.series.name);
+
+  const alternatives = [];
+  if (second && second.total >= best.total - 20) {
+    alternatives.push({
+      seriesSlug: second.series.slug,
+      subSeriesSlug: second.sub.slug,
+      seriesName: second.series.name,
+      subSeriesName: second.sub.name,
+      reason: (second.sub.basePrice || 0) > (best.sub.basePrice || 0)
+        ? 'A step up if you want more bat for the same game.'
+        : 'A strong value alternative with a similar feel.',
+      score: Math.round(second.total),
+    });
+  }
+
+  return {
+    seriesSlug: best.series.slug,
+    subSeriesSlug: best.sub.slug,
+    seriesName: best.series.name,
+    subSeriesName: best.sub.name,
+    sku: best.sub.sku,
+    price: best.sub.basePrice || best.series.price,
+    gradeLabel: (best.sub as any).gradeLabel || (best.sub as any).grade,
+    score: Math.round(best.total),
+    confidence: best.fit,
+    fitScore: best.fit,
+    battingDNA: dna,
+    fitBreakdown: best.breakdown,
+    reason,
+    matchHighlights: Array.from(new Set(best.highlights)),
+    recommendedSetup: setup,
+    alternatives,
+  };
+}
+
+function dna_ballType(_dna: BattingDNA): 'leather' { return 'leather'; }
+function round1(n: number) { return Math.round(n * 10) / 10; }
+function styleLabel(s: string) {
+  return s === 'aggressive' ? 'power-hitting' : s === 'defensive' ? 'anchoring' : s === 'touch' ? 'timing' : 'all-round';
+}
+
+function recommendedSetup(dna: BattingDNA, followUp: StatsFollowUp): BatConsultantRecommendation['recommendedSetup'] {
+  let weightProfile = 'Medium / 2lb 9oz – 2lb 11oz';
+  if (followUp.pickupFeel === 'Light Pickup') weightProfile = 'Light / 2lb 7oz – 2lb 9oz';
+  else if (followUp.pickupFeel === 'Powerful / Slightly Heavy') weightProfile = 'Medium-heavy / 2lb 11oz+';
+
+  const power = dna.power;
+  const sweetSpot = power >= 7 ? 'Mid-to-high sweet spot' : power >= 4.5 ? 'Mid sweet spot' : 'Mid-to-low sweet spot';
+  const batProfile = power >= 7 ? 'Full profile' : power >= 4.5 ? 'Mid profile' : 'Mid-to-low profile';
+  const handleShape = power >= 7 ? 'Round handle' : 'Semi-oval handle';
+
+  return { batSize: 'Short Handle (SH)', weightProfile, sweetSpot, handleShape, batProfile, gripColor: 'White' };
+}
+
+function statsReason(dna: BattingDNA, seriesName: string): string {
+  return `${seriesName} is your best match because your numbers point to a ${dna.archetype.toLowerCase()}: ${dna.summary}`;
 }
 
 export function consultBat(
