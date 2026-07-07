@@ -4,12 +4,26 @@ import {
   
   ProductSubSeries,
 } from "../../../features/products/types";
-import { 
+import {
   BADGES,
   PLAYER_LEVELS,
   PLAYING_STYLES,
   ACCESSORIES
 } from "../../../config/productOptions";
+import { getPlayerFit, StyleTag } from "../../../features/consultant/playerFit";
+
+const FIT_AXES: { key: 'power' | 'control' | 'pickup' | 'balance'; label: string; hint: string }[] = [
+  { key: 'power', label: 'Power', hint: 'Punch / six-hitting' },
+  { key: 'control', label: 'Control', hint: 'Placement / precision' },
+  { key: 'pickup', label: 'Pickup', hint: 'How light it feels' },
+  { key: 'balance', label: 'Balance', hint: 'Overall poise' },
+];
+const STYLE_TAGS: { id: StyleTag; label: string }[] = [
+  { id: 'aggressive', label: 'Power Hitter' },
+  { id: 'all-rounder', label: 'All-Rounder' },
+  { id: 'touch', label: 'Touch / Timing' },
+  { id: 'defensive', label: 'Defensive / Anchor' },
+];
 
 interface AdminDetailsTabProps {
   series: Product;
@@ -45,6 +59,16 @@ export function AdminDetailsTab({
     const arr = [...((subSeries[field] as string[]) || [])];
     arr.splice(index, 1);
     handleChange(field, arr);
+  };
+
+  // Player Fit — the signature the AI consultant matches a batsman against.
+  const fit = getPlayerFit(subSeries, series);
+  const updateFit = (patch: Partial<typeof fit>) => {
+    handleChange('playerFit' as any, { ...fit, ...patch });
+  };
+  const toggleStyleTag = (tag: StyleTag) => {
+    const has = fit.styleTags.includes(tag);
+    updateFit({ styleTags: has ? fit.styleTags.filter((t) => t !== tag) : [...fit.styleTags, tag] });
   };
 
   const toggleAccessory = (accessoryId: string) => {
@@ -368,6 +392,88 @@ export function AdminDetailsTab({
             {(!subSeries.idealFor || subSeries.idealFor.length === 0) && (
               <p className="text-xs text-muted italic">No "Ideal For" items.</p>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Player Fit — powers the AI Bat Consultant's stats-based matching. */}
+      <div className="pt-6 border-t border-line">
+        <div className="mb-5">
+          <h2 className="text-sm font-bold tracking-widest uppercase text-content flex items-center gap-2">
+            Player Fit
+            <span className="text-[9px] font-bold uppercase tracking-widest text-[#c5a059] bg-[#c5a059]/10 border border-[#c5a059]/30 px-2 py-0.5 rounded-sm">AI Consultant</span>
+          </h2>
+          <p className="text-sm text-muted">
+            How this bat scores on each axis (0–10) and who it suits. The consultant matches a batsman's stats against these values.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 mb-6">
+          {FIT_AXES.map((axis) => (
+            <div key={axis.key}>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[10px] uppercase tracking-widest text-muted">
+                  {axis.label} <span className="text-muted/60 normal-case tracking-normal">· {axis.hint}</span>
+                </label>
+                <span className="text-sm font-bold text-[#c5a059] tabular-nums w-8 text-right">{fit[axis.key].toFixed(1)}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={10}
+                step={0.5}
+                value={fit[axis.key]}
+                onChange={(e) => updateFit({ [axis.key]: Number(e.target.value) } as any)}
+                className="w-full accent-[#c5a059] cursor-pointer"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <label className="block text-[10px] uppercase tracking-widest text-muted mb-3">Suits These Players</label>
+            <div className="flex flex-wrap gap-2">
+              {STYLE_TAGS.map((t) => {
+                const on = fit.styleTags.includes(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => toggleStyleTag(t.id)}
+                    className={`text-[11px] font-bold uppercase tracking-widest px-3 py-2 border rounded-sm transition-colors ${
+                      on
+                        ? 'border-[#c5a059] bg-[#c5a059]/10 text-[#c5a059]'
+                        : 'border-line text-muted hover:border-[#c5a059]/50'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] uppercase tracking-widest text-muted mb-3">
+              Ideal Strike-Rate Range
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                value={fit.idealStrikeRate.min}
+                onChange={(e) => updateFit({ idealStrikeRate: { ...fit.idealStrikeRate, min: Number(e.target.value) } })}
+                className="w-24 bg-bg border border-line p-2.5 text-sm text-content focus:border-[#c5a059] focus:outline-none"
+              />
+              <span className="text-muted text-sm">to</span>
+              <input
+                type="number"
+                value={fit.idealStrikeRate.max}
+                onChange={(e) => updateFit({ idealStrikeRate: { ...fit.idealStrikeRate, max: Number(e.target.value) } })}
+                className="w-24 bg-bg border border-line p-2.5 text-sm text-content focus:border-[#c5a059] focus:outline-none"
+              />
+            </div>
+            <p className="text-[11px] text-muted mt-2">Batsmen scoring in this SR band match this bat best.</p>
           </div>
         </div>
       </div>
