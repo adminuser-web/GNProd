@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ArrowRight } from 'lucide-react';
 import { BRAND } from '../types';
@@ -36,6 +36,21 @@ export function HomePage() {
     document.getElementById('collection')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Hero video: browsers increasingly block muted-autoplay (low-power mode,
+  // data saver, Safari), which would leave the hero black. Nudge play() once the
+  // frame is ready; if it's blocked, the poster image stays up instead of black.
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const heroVideoUrl = content?.hero?.videoUrl;
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !heroVideoUrl) return;
+    v.muted = true;
+    const tryPlay = () => { v.play().catch(() => { /* autoplay blocked — poster remains */ }); };
+    if (v.readyState >= 2) tryPlay();
+    v.addEventListener('canplay', tryPlay, { once: true });
+    return () => v.removeEventListener('canplay', tryPlay);
+  }, [heroVideoUrl]);
+
   const heroHeadlineParts = content?.hero?.headline?.split('PERFORMANCE') || [];
 
   return (
@@ -47,11 +62,14 @@ export function HomePage() {
         <div className="absolute inset-0 z-base bg-bg">
           {content?.hero?.videoUrl ? (
             <>
-              <video 
-                autoPlay 
-                muted 
-                loop 
-                playsInline 
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                poster={content?.hero?.bgImageUrl || (content?.hero as any)?.image}
                 className="w-full h-full object-cover hidden md:block"
               >
                 <source src={content.hero.videoUrl} type="video/mp4" />
